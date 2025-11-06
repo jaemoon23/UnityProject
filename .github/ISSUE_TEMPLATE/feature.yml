@@ -1,0 +1,31 @@
+# .github/ISSUE_TEMPLATE/feature.yml
+name: 🚀 Feature Request
+description: 새로운 기능 제안
+title: "[Feature] "
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Branch 생성 안내
+        
+        이 Issue를 assign하면 자동으로 다음 형식의 branch가 생성됩니다:
+```
+        feature/{issue-number}-{description}
+```
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: 기능 설명
+      description: 구현하고자 하는 기능을 설명해주세요
+      placeholder: 어떤 기능이 필요한가요?
+    validations:
+      required: true
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: 추가 정보
+      description: 참고할 만한 추가 정보가 있다면 작성해주세요
