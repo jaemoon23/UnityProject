@@ -15,9 +15,8 @@ slack_webhook = os.environ.get("SLACK_WEBHOOK_URL")
 
 # LMJ: Calculate yesterday's date
 now = datetime.utcnow()
-yesterday = now - timedelta(days=1)
-yesterday_start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
-yesterday_end = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+yesterday_start = now - timedelta(days=7)  # 최근 7일
+yesterday_end = now
 
 print(f"Collecting issues from {yesterday_start} to {yesterday_end}")
 
