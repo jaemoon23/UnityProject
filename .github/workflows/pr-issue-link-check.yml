@@ -5,6 +5,11 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 jobs:
   check-issue-link:
     runs-on: ubuntu-latest
@@ -14,9 +19,11 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           PR_BODY="${{ github.event.pull_request.body }}"
           BRANCH_NAME="${{ github.head_ref }}"
+          REPO="${{ github.repository }}"
           
           echo "🔍 Checking PR #$PR_NUMBER"
           echo "Branch: $BRANCH_NAME"
+          echo "Repository: $REPO"
           
           # Branch에서 Issue 번호 추출
           BRANCH_ISSUE=$(echo "$BRANCH_NAME" | grep -oP '(?<=/)[0-9]+(?=-)' || echo "")
@@ -44,19 +51,19 @@ jobs:
             exit 1
           fi
           
-          # Issue가 실제로 존재하는지 확인
-          if gh issue view $BRANCH_ISSUE --json number > /dev/null 2>&1; then
-            echo "✅ Issue #$BRANCH_ISSUE exists and is valid"
+          # Issue가 실제로 존재하는지 확인 (원본 저장소에서)
+          if gh issue view $BRANCH_ISSUE --repo $REPO --json number > /dev/null 2>&1; then
+            echo "✅ Issue #$BRANCH_ISSUE exists in $REPO"
             
             # Issue 상태 확인
-            ISSUE_STATE=$(gh issue view $BRANCH_ISSUE --json state --jq '.state')
+            ISSUE_STATE=$(gh issue view $BRANCH_ISSUE --repo $REPO --json state --jq '.state')
             if [ "$ISSUE_STATE" = "OPEN" ]; then
               echo "✅ Issue #$BRANCH_ISSUE is open"
             else
               echo "⚠️  Warning: Issue #$BRANCH_ISSUE is already $ISSUE_STATE"
             fi
           else
-            echo "❌ Issue #$BRANCH_ISSUE does not exist"
+            echo "❌ Issue #$BRANCH_ISSUE does not exist in $REPO"
             exit 1
           fi
         env:
