@@ -1,0 +1,24 @@
+# .github/ISSUE_TEMPLATE/refactor.yml
+name: ♻️ Refactor
+description: 코드 리팩토링
+title: "[Refactor] "
+labels: ["refactor"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 작업 흐름 안내
+        
+        1. 이 Issue가 생성되면 고유 번호가 부여됩니다
+        2. 담당자가 assign되면 자동으로 리팩토링 작업용 branch가 생성됩니다
+        3. Branch 형식: `refactor/567-optimize-database-queries`
+        
+  - type: textarea
+    id: refactor-description
+    attributes:
+      label: 리팩토링 내용
+      description: 어떤 코드를 개선하려고 하나요?
+      placeholder: 개선이 필요한 코드와 이유를 설명해주세요
+    validations:
+      required: true
