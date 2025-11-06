@@ -1,0 +1,33 @@
+# .github/ISSUE_TEMPLATE/hotfix.yml
+name: 🔥 Hotfix
+description: 긴급 수정이 필요한 버그
+title: "[Hotfix] "
+labels: ["hotfix", "bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🚨 긴급 수정 흐름
+        
+        1. 이 Issue가 생성되면 고유 번호가 부여됩니다
+        2. 담당자가 assign되면 즉시 긴급 수정용 branch가 생성됩니다
+        3. Branch 형식: `hotfix/789-critical-security-fix`
+        4. 우선적으로 처리하고 신속하게 merge합니다
+        
+  - type: textarea
+    id: urgency
+    attributes:
+      label: 긴급도
+      description: 왜 긴급하게 수정이 필요한가요?
+      placeholder: 서비스에 미치는 영향을 설명해주세요
+    validations:
+      required: true
+      
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 버그 설명
+      description: 어떤 버그가 발생했나요?
+    validations:
+      required: true
