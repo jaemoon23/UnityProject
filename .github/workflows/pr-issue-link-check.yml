@@ -1,0 +1,63 @@
+# .github/workflows/pr-issue-link-check.yml
+name: PR Issue Link Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-issue-link:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR has linked issue
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_BODY="${{ github.event.pull_request.body }}"
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          echo "🔍 Checking PR #$PR_NUMBER"
+          echo "Branch: $BRANCH_NAME"
+          
+          # Branch에서 Issue 번호 추출
+          BRANCH_ISSUE=$(echo "$BRANCH_NAME" | grep -oP '(?<=/)[0-9]+(?=-)' || echo "")
+          
+          if [ -z "$BRANCH_ISSUE" ]; then
+            echo "❌ Could not extract issue number from branch name"
+            echo "Branch name must follow: type/{issue-number}-description"
+            exit 1
+          fi
+          
+          echo "📌 Issue from branch: #$BRANCH_ISSUE"
+          
+          # PR Body에 Issue 링크가 있는지 확인
+          if echo "$PR_BODY" | grep -qiE "(close[sd]?|fix(e[sd])?|resolve[sd]?) #$BRANCH_ISSUE"; then
+            echo "✅ PR correctly links to issue #$BRANCH_ISSUE"
+          else
+            echo "⚠️  PR body does not link to issue #$BRANCH_ISSUE"
+            echo ""
+            echo "Please add one of the following to your PR description:"
+            echo "  • Closes #$BRANCH_ISSUE"
+            echo "  • Fixes #$BRANCH_ISSUE"
+            echo "  • Resolves #$BRANCH_ISSUE"
+            echo ""
+            echo "This will automatically close the issue when the PR is merged."
+            exit 1
+          fi
+          
+          # Issue가 실제로 존재하는지 확인
+          if gh issue view $BRANCH_ISSUE --json number > /dev/null 2>&1; then
+            echo "✅ Issue #$BRANCH_ISSUE exists and is valid"
+            
+            # Issue 상태 확인
+            ISSUE_STATE=$(gh issue view $BRANCH_ISSUE --json state --jq '.state')
+            if [ "$ISSUE_STATE" = "OPEN" ]; then
+              echo "✅ Issue #$BRANCH_ISSUE is open"
+            else
+              echo "⚠️  Warning: Issue #$BRANCH_ISSUE is already $ISSUE_STATE"
+            fi
+          else
+            echo "❌ Issue #$BRANCH_ISSUE does not exist"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
