@@ -5,6 +5,11 @@ on:
   issues:
     types: [assigned]
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   create-branch:
     runs-on: ubuntu-latest
@@ -56,9 +61,38 @@ jobs:
           git checkout main
           git pull origin main
           
-          # 새 브랜치 생성 및 푸시
-          git checkout -b "$BRANCH_NAME"
-          git push origin "$BRANCH_NAME"
+          # 브랜치가 이미 존재하는지 확인
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME already exists"
+          else
+            # 새 브랜치 생성 및 푸시
+            git checkout -b "$BRANCH_NAME"
+            git push origin "$BRANCH_NAME"
+            echo "Branch $BRANCH_NAME created successfully"
+          fi
           
-          # Issue에 코멘트 추가
-          gh issue comment $ISSUE_NUMBER --body "✅ **Branch가 자동 생성되었습니다!**
+          # Issue에 코멘트 추가 (heredoc 사용)
+          gh issue comment $ISSUE_NUMBER --body "$(cat <<EOF
+          ✅ **Branch가 자동 생성되었습니다!**
+
+          \`\`\`
+          $BRANCH_NAME
+          \`\`\`
+
+          📋 **다음 단계:**
+          1. 로컬에서 브랜치를 체크아웃하세요:
+             \`\`\`bash
+             git fetch origin
+             git checkout $BRANCH_NAME
+             \`\`\`
+
+          2. 작업을 완료하고 커밋하세요
+
+          3. PR 생성 시 이 Issue를 자동으로 닫으려면 PR 설명에 다음을 포함하세요:
+             \`Closes #$ISSUE_NUMBER\`
+
+          🎯 **담당자:** @$ASSIGNEE
+          EOF
+          )"
+        env:
+          GH_TOKEN: ${{ github.token }}
