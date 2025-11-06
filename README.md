@@ -45,44 +45,126 @@
 
 ---
 
-### 코딩 컨벤션
-```csharp
-// 클래스명: PascalCase
-public class BookmarkSystem { }
+# Novelian 프로젝트 코딩 컨벤션
 
-// 메서드명: PascalCase
-public void ApplyBookmark() { }
+## **1. 명명 규칙 (Naming Conventions)**
 
-// 변수명: camelCase
-private int bookmarkCount;
+### **클래스 & 구조체**
 
-// 상수: UPPER_SNAKE_CASE
-private const int MAX_BOOKMARK_SLOTS = 5;
+    // 클래스: PascalCase
+    public class BookmarkSystem { }
 
-// LMJ: 주석은 본인이 작성한 메서드에 "영어로" 필수 기입
-주석 예시 : //LMJ(이니셜)(공백):(공백)
-스니펫 제공 예정.
+    // 인터페이스: I + PascalCase
+    public interface IBookmarkable { }
 
-```
+    // 추상 클래스: Base/Abstract + PascalCase
+    public abstract class BaseBookmarkSystem { }
+
+### **메서드**
+
+    // 메서드: PascalCase
+    public void ApplyBookmark() { }
+
+    // 이벤트 핸들러: Handle + PascalCase
+    private void HandleBookmarkApplied() { }
+
+    // UniTask: 동사 + Async 접미사
+    private async UniTask LoadBookmarkAsync() { }
+
+### **변수**
+
+    // 변수: camelCase
+    private int bookmarkCount;
+
+    // 상수: UPPER_SNAKE_CASE
+    private const int MAX_BOOKMARK_SLOTS = 5;
+
+    // SerializeField: camelCase
+    [SerializeField] private int maxBookmarkSlots = 5;
+
+    // Public 프로퍼티: PascalCase
+    public int MaxBookmarkSlots => maxBookmarkSlots;
+
+### **이벤트 & 델리게이트**
+
+    // 이벤트: On + PascalCase
+    public event Action OnBookmarkApplied;
 
 ---
 
-## 🎯 마일스톤 (임시)
+## **2. 네임스페이스 (Namespace)**
 
-### v0.1 - 프로토타입 (MVP)
-- [ ] 기본 전투 시스템
-- [ ] 책갈피 장착 기능
-- [ ] 캐릭터 1종 구현
+    namespace Novelian.Bookmark { }
+    namespace Novelian.UI { }
+    namespace Novelian.Managers { }
+    namespace Novelian.Core { }
+    namespace Novelian.Utilities { }
 
-### v0.5 - 알파
-- [ ] 도감 시스템
-- [ ] 채집 시스템
-- [ ] 캐릭터 5종 이상
+---
 
-### v1.0 - 정식 출시
-- [ ] 모든 핵심 콘텐츠 완성
-- [ ] UI/UX 최적화
-- [ ] 밸런스 조정 완료
+## **3. 주석 규칙 (Comments)**
+
+    // 본인이 작성한 메서드에는 영어로 필수 기입
+    // 형식: //이니셜 : 설명
+
+    //LMJ : Applies the bookmark to current position
+    public void ApplyBookmark() 
+    {
+        // 구현
+    }
+
+    //LMJ : Loads bookmark data asynchronously from server
+    private async UniTask LoadBookmarkAsync() 
+    {
+        // 구현
+    }
+
+---
+
+## **4. Inspector 노출 변수**
+
+    // Header로 그룹화, Tooltip으로 설명 추가 (기획자 협업용)
+    [Header("Bookmark Settings")]
+    [SerializeField, Tooltip("Maximum number of bookmarks")]
+    private int maxBookmarkSlots = 5;
+
+    // 범위 제한이 필요한 경우
+    [SerializeField, Tooltip("Spawn interval in seconds"), Range(1f, 10f)]
+    private float spawnInterval = 3f;
+
+---
+
+## **5. 매직 넘버 금지**
+
+    // Bad
+    if (count > 5) { }
+
+    // Good
+    private const int MAX_BOOKMARK_COUNT = 5;
+    if (count > MAX_BOOKMARK_COUNT) { }
+
+---
+
+## **6. 프리팹/에셋 명명**
+- **Prefabs**: PascalCase (예: `BookmarkUI`, `PlayerCharacter`)
+- **ScriptableObjects**: PascalCase + Data/Config (예: `BookmarkData`, `StageConfig`)
+- **Scenes**: PascalCase (예: `MainMenu`, `Stage01`)
+
+---
+
+## **7. 폴더 구조**
+
+    Assets/
+    ├── Scripts/
+    │   ├── Core/
+    │   ├── UI/
+    │   ├── Managers/
+    │   ├── Bookmark/
+    │   └── Utilities/
+    ├── Prefabs/
+    ├── Resources/
+    ├── ScriptableObjects/
+    └── Scenes/
 
 ---
 
