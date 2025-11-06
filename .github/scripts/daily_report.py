@@ -15,14 +15,15 @@ slack_webhook = os.environ.get("SLACK_WEBHOOK_URL")
 
 # LMJ: Calculate yesterday's date
 now = datetime.utcnow()
-yesterday_start = now - timedelta(days=7)  # 최근 7일
+# 최근 24시간 이슈 수집
+yesterday_start = now - timedelta(hours=24)
 yesterday_end = now
 
 # LMJ: Date for display (KST based yesterday)
 kst_now = now + timedelta(hours=9)
-yesterday = kst_now - timedelta(days=1)
+yesterday = (kst_now - timedelta(days=1)).date()
 
-print(f"Collecting issues from {yesterday_start} to {yesterday_end}")
+print(f"Collecting issues from last 24 hours ({yesterday_start} to {yesterday_end})")
 
 # LMJ: Fetch issues from GitHub
 headers = {
@@ -161,7 +162,7 @@ notion_headers = {
     "Content-Type": "application/json"
 }
 
-page_title = f"📅 {yesterday.strftime('%Y년 %m월 %d일')} 개발 현황 보고"
+page_title = f"{yesterday.strftime('%y.%m.%d')} 일간 보고"
 
 # LMJ: Build page content
 children = []
@@ -344,7 +345,7 @@ except Exception as e:
 # LMJ: Send Slack notification
 if slack_webhook and notion_page_url:
     try:
-        slack_message = f"📅 *{yesterday.strftime('%Y년 %m월 %d일')} 일간 보고서*가 생성되었습니다.\n\n"
+        slack_message = f"📅 *{yesterday.strftime('%y.%m.%d')} 일간 보고*가 생성되었습니다.\n\n"
         slack_message += f"📊 신규 {len(new_issues)}건 | 완료 {len(completed_issues)}건 | 진행중 {len(all_open)}건\n\n"
         slack_message += f"🔗 <{notion_page_url}|보고서 보기>"
         
