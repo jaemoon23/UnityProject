@@ -29,7 +29,6 @@ jobs:
             const assignees = context.payload.issue.assignees.map(a => a.login).join(', ') || '미배정';
             const milestone = context.payload.issue.milestone?.title || '없음';
             
-            // LMJ : Call Gemini API to summarize issue
             async function callGemini(prompt) {
               const apiKey = process.env.GEMINI_API_KEY;
               const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
@@ -61,7 +60,6 @@ jobs:
               });
             }
             
-            // LMJ : Send message to Slack
             async function sendToSlack(message) {
               const webhookUrl = process.env.SLACK_WEBHOOK_URL;
               const url = new URL(webhookUrl);
@@ -92,19 +90,19 @@ jobs:
               
               const prompt = `Summarize this GitHub issue in Korean with 2-3 bullet points.
 
-Title: ${issueTitle}
-Description: ${issueBody}
+            Title: ${issueTitle}
+            Description: ${issueBody}
 
-RULES:
-- Output ONLY bullet points (use "- " prefix)
-- Each point: maximum 40 Korean characters
-- Focus on KEY ACTIONS
-- NO markdown, NO headers, NO extra text
+            RULES:
+            - Output ONLY bullet points (use "- " prefix)
+            - Each point: maximum 40 Korean characters
+            - Focus on KEY ACTIONS
+            - NO markdown, NO headers, NO extra text
 
-Format:
-- First key point
-- Second key point
-- Third key point (if needed)`;
+            Format:
+            - First key point
+            - Second key point
+            - Third key point (if needed)`;
 
               console.log('Calling Gemini API...');
               let summary;
@@ -125,15 +123,15 @@ Format:
               
               const slackMessage = `${actionEmoji[action]} *Issue #${issueNumber} ${actionText[action]}*
 
-*${issueTitle}*
+            *${issueTitle}*
 
-${summary}
+            ${summary}
 
-👤 *담당:* ${assignees}
-🏷️ *레이블:* ${labels}
-📅 *마일스톤:* ${milestone}
+            👤 *담당:* ${assignees}
+            🏷️ *레이블:* ${labels}
+            📅 *마일스톤:* ${milestone}
 
-🔗 <${issueUrl}|자세히 보기>`;
+            🔗 <${issueUrl}|자세히 보기>`;
               
               console.log('Sending to Slack...');
               await sendToSlack(slackMessage);
