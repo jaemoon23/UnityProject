@@ -37,22 +37,17 @@ jobs:
           script: |
             const https = require('https');
             
-            // Gemini API 호출 함수
             async function callGeminiAPI(prompt) {
               const apiKey = process.env.GEMINI_API_KEY;
               const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
               
               const data = JSON.stringify({
                 contents: [{
-                  parts: [{
-                    text: prompt
-                  }]
+                  parts: [{ text: prompt }]
                 }],
                 generationConfig: {
                   temperature: 0.3,
-                  maxOutputTokens: 300,
-                  topP: 0.8,
-                  topK: 40
+                  maxOutputTokens: 300
                 }
               });
               
@@ -70,10 +65,9 @@ jobs:
                     try {
                       const response = JSON.parse(body);
                       if (response.candidates && response.candidates[0]) {
-                        const text = response.candidates[0].content.parts[0].text;
-                        resolve(text);
+                        resolve(response.candidates[0].content.parts[0].text);
                       } else {
-                        reject(new Error('Invalid Gemini API response'));
+                        reject(new Error('Invalid Gemini response'));
                       }
                     } catch (error) {
                       reject(error);
@@ -87,7 +81,6 @@ jobs:
               });
             }
             
-            // Slack에 메시지 전송 함수
             async function sendToSlack(message) {
               const webhookUrl = process.env.SLACK_WEBHOOK_URL;
               const url = new URL(webhookUrl);
@@ -115,7 +108,6 @@ jobs:
               });
             }
             
-            // 메인 로직
             try {
               const issueTitle = process.env.ISSUE_TITLE;
               const issueBody = process.env.ISSUE_BODY || '내용 없음';
@@ -127,75 +119,45 @@ jobs:
               const assignees = JSON.parse(process.env.ISSUE_ASSIGNEES || '[]');
               const milestone = process.env.ISSUE_MILESTONE || '없음';
               
-              // 액션에 따른 이모지
-              const actionEmoji = {
-                'opened': '🆕',
-                'closed': '✅',
-                'reopened': '🔄'
-              };
+              const actionEmoji = { 'opened': '🆕', 'closed': '✅', 'reopened': '🔄' };
+              const actionText = { 'opened': '생성됨', 'closed': '완료됨', 'reopened': '재오픈됨' };
               
-              const actionText = {
-                'opened': '생성됨',
-                'closed': '완료됨', 
-                'reopened': '재오픈됨'
-              };
-              
-              // 레이블 정보
               const labelNames = labels.map(l => l.name).join(', ') || '없음';
-              
-              // 담당자 정보
               const assigneeNames = assignees.map(a => a.login).join(', ') || '미배정';
               
-              // Gemini에게 bullet point 형식으로 요약 요청
-              const prompt = `You are a GitHub issue summarizer for Slack. Summarize this issue in Korean with bullet points.
+              const prompt = `Summarize this GitHub issue in Korean with 2-3 bullet points.
 
-INPUT DATA:
-- Title: ${issueTitle}
-- Description: ${issueBody}
+Title: ${issueTitle}
+Description: ${issueBody}
 
-CRITICAL RULES (MUST FOLLOW EXACTLY):
-1. Output 2-3 bullet points ONLY
-2. Each bullet point MUST start with "- " (dash + space)
-3. Each bullet point on a NEW LINE
-4. Maximum 40 characters per bullet point
-5. Focus on KEY ACTIONS or DELIVERABLES
-6. Use simple, clear Korean
-7. NO markdown formatting (no **, no ###, no extra text)
-8. NO introductions, NO conclusions - ONLY bullet points
+RULES:
+- Output ONLY bullet points (use "- " prefix)
+- Each point: maximum 40 Korean characters
+- Focus on KEY ACTIONS
+- NO markdown, NO headers, NO extra text
 
-EXACT FORMAT (copy this structure):
-- First key point here
-- Second key point here
-- Third key point here (if needed)
+Format:
+- First key point
+- Second key point
+- Third key point (if needed)`;
 
-NOW WRITE THE SUMMARY (bullet points only):`;
-
-              console.log('Gemini API 호출 중...');
+              console.log('Calling Gemini API...');
               let summary;
               try {
                 summary = await callGeminiAPI(prompt);
+                summary = summary.replace(/\*\*/g, '').replace(/###/g, '').trim();
                 
-                // 불필요한 마크다운/포맷팅 제거
-                summary = summary
-                  .replace(/\*\*/g, '')
-                  .replace(/###/g, '')
-                  .replace(/^\s*[\r\n]/gm, '')
-                  .trim();
-                
-                // bullet point가 없으면 강제로 추가
                 if (!summary.includes('- ')) {
                   const lines = summary.split('\n').filter(l => l.trim());
                   summary = lines.map(l => '- ' + l.trim().replace(/^[-•]\s*/, '')).join('\n');
                 }
                 
-                console.log('Gemini 요약 완료:', summary);
+                console.log('Summary:', summary);
               } catch (error) {
-                console.error('Gemini API 에러:', error);
-                // Fallback: 제목을 bullet point로
+                console.error('Gemini error:', error);
                 summary = `- ${issueTitle}`;
               }
               
-              // Slack 메시지 구성 (명확한 줄바꿈)
               const slackMessage = `${actionEmoji[action]} *Issue #${issueNumber} ${actionText[action]}*
 
 *${issueTitle}*
@@ -208,10 +170,9 @@ ${summary}
 
 🔗 <${issueUrl}|자세히 보기>`;
               
-              console.log('Slack으로 전송 중...');
-              console.log('메시지 내용:\n', slackMessage);
+              console.log('Sending to Slack...');
               await sendToSlack(slackMessage);
-              console.log('Slack 전송 완료!');
+              console.log('Done!');
               
             } catch (error) {
               console.error('Error:', error);
