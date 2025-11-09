@@ -1,13 +1,13 @@
-name: Slack Notification
+name: Notion Sync
 
 on:
   issues:
-    types: [opened, closed, reopened, assigned, labeled]
+    types: [opened, closed, reopened, assigned, labeled, unlabeled, edited]
   pull_request:
-    types: [opened, closed, reopened, ready_for_review]
+    types: [opened, closed, reopened, ready_for_review, converted_to_draft]
 
 jobs:
-  notify:
+  sync-to-notion:
     runs-on: ubuntu-latest
     
     steps:
@@ -23,11 +23,12 @@ jobs:
         run: |
           pip install requests
       
-      - name: Send Slack notification
+      - name: Sync to Notion
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           GITHUB_EVENT: ${{ toJson(github.event) }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           EVENT_ACTION: ${{ github.event.action }}
         run: |
-          python .github/scripts/slack_notify.py
+          python .github/scripts/notion_sync.py
