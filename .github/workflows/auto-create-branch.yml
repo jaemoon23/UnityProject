@@ -50,8 +50,8 @@ jobs:
           CLEAN_TITLE=$(echo "$ISSUE_TITLE" | sed 's/^\[.*\][[:space:]]*//')
           DESCRIPTION=$(echo "$CLEAN_TITLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-$//' | sed 's/^-//')
           
-          # LMJ : Branch naming convention: {type}/{description}
-          BRANCH_NAME="${BRANCH_TYPE}/${DESCRIPTION}"
+          # LMJ : Branch naming convention: {type}/{issue-number}-{description}
+          BRANCH_NAME="${BRANCH_TYPE}/${ISSUE_NUMBER}-${DESCRIPTION}"
           
           echo "Creating branch: $BRANCH_NAME"
           
@@ -91,6 +91,8 @@ $BRANCH_NAME
    \`Closes #$ISSUE_NUMBER\`
 
 🎯 **담당자:** @$ASSIGNEE
+
+💡 **Tip:** 브랜치명에 Issue 번호(#$ISSUE_NUMBER)가 포함되어 있어 추적이 용이합니다!
 EOF
 )"
           fi
