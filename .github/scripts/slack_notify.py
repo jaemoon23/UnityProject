@@ -69,6 +69,10 @@ def send_issue_notification(webhook_url, event_data, repository, action):
     if not assignees_text:
         assignees_text = '미할당'
     
+    # LMJ : Get milestone information
+    milestone = issue.get('milestone')
+    milestone_text = milestone['title'] if milestone else '없음'
+    
     # LMJ : Build Block Kit message
     blocks = [
         {
@@ -101,21 +105,25 @@ def send_issue_notification(webhook_url, event_data, repository, action):
                 },
                 {
                     "type": "mrkdwn",
+                    "text": f"*마일스톤:*\n{milestone_text}"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
                     "text": f"*레이블:*\n{', '.join(labels) if labels else '없음'}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Repository:*\n{repository}"
                 }
             ]
         },
         {
             "type": "divider"
-        },
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"📌 Repository: {repository}"
-                }
-            ]
         }
     ]
     
@@ -170,6 +178,10 @@ def send_pr_notification(webhook_url, event_data, repository, action):
     elif action == 'closed':
         color = '#d73a4a'
     
+    # LMJ : Get milestone information
+    milestone = pr.get('milestone')
+    milestone_text = milestone['title'] if milestone else '없음'
+    
     # LMJ : Build Block Kit message
     blocks = [
         {
@@ -202,21 +214,25 @@ def send_pr_notification(webhook_url, event_data, repository, action):
                 },
                 {
                     "type": "mrkdwn",
+                    "text": f"*마일스톤:*\n{milestone_text}"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
                     "text": f"*상태:*\n{'🟢 머지됨' if pr.get('merged') else '🟡 대기 중' if pr.get('state') == 'open' else '🔴 닫힘'}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Repository:*\n{repository}"
                 }
             ]
         },
         {
             "type": "divider"
-        },
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"📌 Repository: {repository}"
-                }
-            ]
         }
     ]
     
