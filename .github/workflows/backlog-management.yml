@@ -1,0 +1,94 @@
+name: Backlog Management
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, milestoned, demilestoned]
+
+jobs:
+  manage-backlog:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Auto-add backlog label for new issues without milestone
+        if: github.event.action == 'opened' && github.event.issue.milestone == null
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // 📥 backlog 레이블 추가
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['📥 backlog']
+            });
+            
+            console.log(`Added 📥 backlog label to issue #${issue_number}`);
+
+      - name: Remove backlog label when milestone is assigned
+        if: github.event.action == 'milestoned'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            try {
+              // 📥 backlog 레이블 제거
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: '📥 backlog'
+              });
+              
+              // ✅ ready 레이블 추가
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ['✅ ready']
+              });
+              
+              console.log(`Moved issue #${issue_number} from backlog to ready`);
+            } catch (error) {
+              console.log('Backlog label not found or already removed');
+            }
+
+      - name: Move back to backlog when milestone is removed
+        if: github.event.action == 'demilestoned'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            try {
+              // ✅ ready 레이블 제거
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: '✅ ready'
+              });
+            } catch (error) {
+              console.log('Ready label not found');
+            }
+            
+            // 📥 backlog 레이블 추가
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['📥 backlog']
+            });
+            
+            console.log(`Moved issue #${issue_number} back to backlog`);
