@@ -49,8 +49,10 @@ jobs:
                   }]
                 }],
                 generationConfig: {
-                  temperature: 0.7,
-                  maxOutputTokens: 800
+                  temperature: 0.3,
+                  maxOutputTokens: 300,
+                  topP: 0.8,
+                  topK: 40
                 }
               });
               
@@ -67,8 +69,12 @@ jobs:
                   res.on('end', () => {
                     try {
                       const response = JSON.parse(body);
-                      const text = response.candidates[0].content.parts[0].text;
-                      resolve(text);
+                      if (response.candidates && response.candidates[0]) {
+                        const text = response.candidates[0].content.parts[0].text;
+                        resolve(text);
+                      } else {
+                        reject(new Error('Invalid Gemini API response'));
+                      }
                     } catch (error) {
                       reject(error);
                     }
@@ -128,48 +134,67 @@ jobs:
                 'reopened': '🔄'
               };
               
+              const actionText = {
+                'opened': '생성됨',
+                'closed': '완료됨', 
+                'reopened': '재오픈됨'
+              };
+              
               // 레이블 정보
               const labelNames = labels.map(l => l.name).join(', ') || '없음';
               
               // 담당자 정보
-              const assigneeNames = assignees.map(a => `@${a.login}`).join(', ') || '미배정';
+              const assigneeNames = assignees.map(a => a.login).join(', ') || '미배정';
               
-              // Gemini에게 요약 요청
-              const prompt = `다음 GitHub Issue를 한국어로 간결하고 보기 좋게 요약해주세요. 
-              
-Issue 제목: ${issueTitle}
-Issue 내용: ${issueBody}
-액션: ${action}
-레이블: ${labelNames}
-담당자: ${assigneeNames}
-마일스톤: ${milestone}
+              // Gemini에게 요약 요청 (매우 구체적이고 엄격한 프롬프트)
+              const prompt = `You are a GitHub issue summarizer. Your task is to create a VERY SHORT Korean summary.
 
-요구사항:
-1. 핵심 내용만 2-3문장으로 요약
-2. 중요한 정보(우선순위, 담당자, 마일스톤 등)는 강조
-3. 이모지를 적절히 사용하여 가독성 향상
-4. Slack 메시지 형식으로 작성 (markdown 지원)
-5. 너무 길지 않게 작성 (최대 200자)
+INPUT DATA:
+- Title: ${issueTitle}
+- Description: ${issueBody}
+- Labels: ${labelNames}
+- Assignee: ${assigneeNames}
+- Milestone: ${milestone}
 
-형식 예시:
-📝 **[요약]**
-핵심 내용 요약...
+RULES (CRITICAL - MUST FOLLOW):
+1. Output ONLY 1-2 sentences in Korean
+2. Maximum 100 characters total
+3. Focus on WHAT needs to be done, not technical details
+4. Use simple, clear Korean
+5. Do NOT include any markdown, formatting, or extra information
+6. Do NOT repeat the title
+7. Just write the core summary - nothing else
 
-👤 **담당:** @사용자
-🏷️ **레이블:** 레이블들
-📅 **마일스톤:** 마일스톤명`;
+Example good output:
+"Data Manager 싱글톤으로 CSV 파싱 구현. 스테이지, 캐릭터, 몬스터, 스킬, 효과 데이터 우선 처리."
+
+NOW WRITE THE SUMMARY:`;
 
               console.log('Gemini API 호출 중...');
-              const geminiSummary = await callGeminiAPI(prompt);
-              console.log('Gemini 요약 완료:', geminiSummary);
+              let summary;
+              try {
+                summary = await callGeminiAPI(prompt);
+                // 불필요한 마크다운 제거
+                summary = summary.replace(/\*\*/g, '').replace(/###/g, '').replace(/\n\n+/g, '\n').trim();
+                console.log('Gemini 요약 완료:', summary);
+              } catch (error) {
+                console.error('Gemini API 에러:', error);
+                // Fallback: 제목만 사용
+                summary = issueTitle;
+              }
               
-              // Slack 메시지 구성
-              const slackMessage = `${actionEmoji[action]} *Issue #${issueNumber} ${action === 'opened' ? '생성됨' : action === 'closed' ? '완료됨' : '재오픈됨'}*
-              
-${geminiSummary}
+              // Slack 메시지 구성 (깔끔한 형식)
+              const slackMessage = `${actionEmoji[action]} *Issue #${issueNumber} ${actionText[action]}*
 
-🔗 <${issueUrl}|Issue 보기>
-👨‍💻 작성자: @${issueUser}`;
+*${issueTitle}*
+
+${summary}
+
+👤 *담당:* ${assigneeNames}
+🏷️ *레이블:* ${labelNames}
+📅 *마일스톤:* ${milestone}
+
+🔗 <${issueUrl}|자세히 보기>`;
               
               console.log('Slack으로 전송 중...');
               await sendToSlack(slackMessage);
