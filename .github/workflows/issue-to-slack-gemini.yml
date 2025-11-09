@@ -146,44 +146,56 @@ jobs:
               // 담당자 정보
               const assigneeNames = assignees.map(a => a.login).join(', ') || '미배정';
               
-              // Gemini에게 요약 요청 (매우 구체적이고 엄격한 프롬프트)
-              const prompt = `You are a GitHub issue summarizer. Your task is to create a VERY SHORT Korean summary.
+              // Gemini에게 bullet point 형식으로 요약 요청
+              const prompt = `You are a GitHub issue summarizer for Slack. Summarize this issue in Korean with bullet points.
 
 INPUT DATA:
 - Title: ${issueTitle}
 - Description: ${issueBody}
-- Labels: ${labelNames}
-- Assignee: ${assigneeNames}
-- Milestone: ${milestone}
 
-RULES (CRITICAL - MUST FOLLOW):
-1. Output ONLY 1-2 sentences in Korean
-2. Maximum 100 characters total
-3. Focus on WHAT needs to be done, not technical details
-4. Use simple, clear Korean
-5. Do NOT include any markdown, formatting, or extra information
-6. Do NOT repeat the title
-7. Just write the core summary - nothing else
+CRITICAL RULES (MUST FOLLOW EXACTLY):
+1. Output 2-3 bullet points ONLY
+2. Each bullet point MUST start with "- " (dash + space)
+3. Each bullet point on a NEW LINE
+4. Maximum 40 characters per bullet point
+5. Focus on KEY ACTIONS or DELIVERABLES
+6. Use simple, clear Korean
+7. NO markdown formatting (no **, no ###, no extra text)
+8. NO introductions, NO conclusions - ONLY bullet points
 
-Example good output:
-"Data Manager 싱글톤으로 CSV 파싱 구현. 스테이지, 캐릭터, 몬스터, 스킬, 효과 데이터 우선 처리."
+EXACT FORMAT (copy this structure):
+- First key point here
+- Second key point here
+- Third key point here (if needed)
 
-NOW WRITE THE SUMMARY:`;
+NOW WRITE THE SUMMARY (bullet points only):`;
 
               console.log('Gemini API 호출 중...');
               let summary;
               try {
                 summary = await callGeminiAPI(prompt);
-                // 불필요한 마크다운 제거
-                summary = summary.replace(/\*\*/g, '').replace(/###/g, '').replace(/\n\n+/g, '\n').trim();
+                
+                // 불필요한 마크다운/포맷팅 제거
+                summary = summary
+                  .replace(/\*\*/g, '')
+                  .replace(/###/g, '')
+                  .replace(/^\s*[\r\n]/gm, '')
+                  .trim();
+                
+                // bullet point가 없으면 강제로 추가
+                if (!summary.includes('- ')) {
+                  const lines = summary.split('\n').filter(l => l.trim());
+                  summary = lines.map(l => '- ' + l.trim().replace(/^[-•]\s*/, '')).join('\n');
+                }
+                
                 console.log('Gemini 요약 완료:', summary);
               } catch (error) {
                 console.error('Gemini API 에러:', error);
-                // Fallback: 제목만 사용
-                summary = issueTitle;
+                // Fallback: 제목을 bullet point로
+                summary = `- ${issueTitle}`;
               }
               
-              // Slack 메시지 구성 (깔끔한 형식)
+              // Slack 메시지 구성 (명확한 줄바꿈)
               const slackMessage = `${actionEmoji[action]} *Issue #${issueNumber} ${actionText[action]}*
 
 *${issueTitle}*
@@ -197,6 +209,7 @@ ${summary}
 🔗 <${issueUrl}|자세히 보기>`;
               
               console.log('Slack으로 전송 중...');
+              console.log('메시지 내용:\n', slackMessage);
               await sendToSlack(slackMessage);
               console.log('Slack 전송 완료!');
               
