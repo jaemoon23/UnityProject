@@ -2,7 +2,7 @@ name: Backlog Management
 
 on:
   issues:
-    types: [opened, reopened, labeled, unlabeled, milestoned, demilestoned]
+    types: [opened, reopened, milestoned, demilestoned]
 
 jobs:
   manage-backlog:
@@ -21,15 +21,15 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             
-            // 📥 backlog 레이블 추가
+            // LMJ : Add backlog label to new issues without milestone
             await github.rest.issues.addLabels({
               owner,
               repo,
               issue_number,
-              labels: ['📥 backlog']
+              labels: ['backlog']
             });
             
-            console.log(`Added 📥 backlog label to issue #${issue_number}`);
+            console.log(`Added backlog label to issue #${issue_number}`);
 
       - name: Remove backlog label when milestone is assigned
         if: github.event.action == 'milestoned'
@@ -41,20 +41,20 @@ jobs:
             const repo = context.repo.repo;
             
             try {
-              // 📥 backlog 레이블 제거
+              // LMJ : Remove backlog label
               await github.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number,
-                name: '📥 backlog'
+                name: 'backlog'
               });
               
-              // ✅ ready 레이블 추가
+              // LMJ : Add ready label
               await github.rest.issues.addLabels({
                 owner,
                 repo,
                 issue_number,
-                labels: ['✅ ready']
+                labels: ['ready']
               });
               
               console.log(`Moved issue #${issue_number} from backlog to ready`);
@@ -72,23 +72,23 @@ jobs:
             const repo = context.repo.repo;
             
             try {
-              // ✅ ready 레이블 제거
+              // LMJ : Remove ready label
               await github.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number,
-                name: '✅ ready'
+                name: 'ready'
               });
             } catch (error) {
               console.log('Ready label not found');
             }
             
-            // 📥 backlog 레이블 추가
+            // LMJ : Add backlog label
             await github.rest.issues.addLabels({
               owner,
               repo,
               issue_number,
-              labels: ['📥 backlog']
+              labels: ['backlog']
             });
             
             console.log(`Moved issue #${issue_number} back to backlog`);
