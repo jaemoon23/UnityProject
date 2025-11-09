@@ -1,131 +1,187 @@
-# 백로그 관리 시스템 가이드
+# 📋 백로그 관리 가이드
 
-## 📋 백로그 시스템 개요
+## 개요
 
-이 프로젝트는 **레이블 기반 백로그**와 **GitHub Projects 칸반 보드**를 함께 사용합니다.
+이 가이드는 **Novelian Magic Library Defense** 프로젝트의 백로그 관리 방법을 설명합니다.
+
+---
+
+## 🎯 백로그란?
+
+**백로그(Backlog)**는 아직 특정 마일스톤이나 스프린트에 할당되지 않은 작업들의 저장소입니다.
+
+### 백로그의 목적
+- 모든 아이디어와 작업을 한 곳에 수집
+- 우선순위에 따라 작업 선택
+- 스프린트/마일스톤 계획 시 참고
+
+---
 
 ## 🏷️ 레이블 시스템
 
-### 작업 상태 레이블
-- **📥 backlog** - 백로그에 있는 작업 (마일스톤 미할당)
-- **✅ ready** - 작업 준비 완료 (마일스톤 할당됨)
-- **🚀 in-progress** - 현재 진행 중
-- **👀 in-review** - 리뷰 중
-- **✨ blocked** - 차단됨 (의존성 문제 등)
+### 백로그 관련 레이블
+
+| 레이블 | 설명 | 사용 시점 |
+|--------|------|-----------|
+| `backlog` | 백로그에 있는 작업 | 마일스톤 미할당 작업 |
+| `ready` | 작업 준비 완료 | 요구사항 명확화 완료 |
+| `blocked` | 진행 차단된 작업 | 의존성 등으로 대기 중 |
+| `wontfix` | 진행하지 않을 작업 | 우선순위 낮음 또는 불필요 |
 
 ### 우선순위 레이블
-- **🔴 priority: critical** - 최우선
-- **🟡 priority: high** - 높음
-- **🔵 priority: medium** - 중간
-- **⚪ priority: low** - 낮음
 
-## 🔄 자동화 흐름
+| 레이블 | 색상 | 설명 |
+|--------|------|------|
+| `priority: critical` | 🔴 빨강 | 즉시 처리 필요 |
+| `priority: high` | 🟠 주황 | 다음 스프린트 우선 |
+| `priority: medium` | 🟡 노랑 | 일반 우선순위 |
+| `priority: low` | 🟢 초록 | 여유 있을 때 처리 |
 
-### 1. 새 이슈 생성시
-- 마일스톤이 없으면 자동으로 `📥 backlog` 레이블 추가
+---
 
-### 2. 마일스톤 할당시
-- `📥 backlog` 레이블 제거
-- `✅ ready` 레이블 추가
+## 📊 워크플로우
 
-### 3. 마일스톤 제거시
-- `✅ ready` 레이블 제거
-- `📥 backlog` 레이블 추가
+### 1. 백로그에 작업 추가
 
-## 📊 GitHub Projects 보드 설정
-
-### 1단계: 프로젝트 생성
-```
-1. GitHub 레포지토리 → Projects 탭
-2. "New project" 클릭
-3. "Board" 템플릿 선택
-4. 이름: "Sprint Board" 또는 "Development Board"
-```
-
-### 2단계: 컬럼 구성
-다음 컬럼들을 만드세요:
-
-```
-┌──────────┬─────────┬─────────────┬────────────┬──────┐
-│ Backlog  │  Ready  │ In Progress │ In Review  │ Done │
-├──────────┼─────────┼─────────────┼────────────┼──────┤
-│ 마일스톤 │ 스프린트│   작업 중   │  리뷰 중   │ 완료 │
-│ 미할당   │ 준비완료│             │            │      │
-└──────────┴─────────┴─────────────┴────────────┴──────┘
-```
-
-### 3단계: 자동화 설정
-각 컬럼에서 "..." → "Workflows" 설정:
-
-**Backlog 컬럼:**
-- When: Issues are added to project
-- Set: Status to Backlog
-
-**Ready 컬럼:**
-- When: Issues are moved to Ready
-- Set: Label to "✅ ready"
-
-**In Progress 컬럼:**
-- When: Issues are moved to In Progress
-- Set: Label to "🚀 in-progress"
-
-**In Review 컬럼:**
-- When: Pull request is opened
-- Move to: In Review
-- Set: Label to "👀 in-review"
-
-**Done 컬럼:**
-- When: Issues are closed
-- Move to: Done
-
-### 4단계: 레이블 필터 추가
-프로젝트에서 Filter 사용:
-```
-label:"📥 backlog"  → 백로그 보기
-label:"✅ ready"    → 준비된 작업 보기
-milestone:@current  → 현재 스프린트 보기
-```
-
-## 💡 사용 방법
-
-### 백로그에서 스프린트로 이동하기
-1. **방법 1 (자동):** 이슈에 마일스톤 할당
-2. **방법 2 (수동):** Projects 보드에서 Backlog → Ready로 드래그
-
-### 작업 우선순위 지정하기
 ```bash
-# 우선순위 레이블 추가
-🔴 priority: critical  # 최우선
-🟡 priority: high      # 높음
-🔵 priority: medium    # 중간
-⚪ priority: low       # 낮음
+# 이슈 생성 시
+- 마일스톤: 할당하지 않음
+- 레이블: backlog + priority 레이블 추가
+- 담당자: 미정 또는 팀 리더
 ```
 
-### 백로그 보기
-- GitHub Issues에서 `label:"📥 backlog"` 필터
-- 또는 Projects 보드의 Backlog 컬럼 확인
-
-## 📈 워크플로우 예시
-
-### 새로운 기능 아이디어
-```
-1. Issue 생성 → 자동으로 "📥 backlog" 추가
-2. 기획 회의에서 검토
-3. 다음 스프린트에 포함 결정
-4. Milestone 할당 → 자동으로 "✅ ready"로 변경
-5. 개발자 할당 및 작업 시작
-6. PR 생성 → 자동으로 "👀 in-review"
-7. 리뷰 완료 후 merge → "Done"
+**예시:**
+```markdown
+제목: 스킬 쿨다운 UI 추가
+레이블: backlog, enhancement, priority: medium
+마일스톤: (없음)
 ```
 
-### 백로그 정리
-정기적으로 (주 1회 권장):
-1. Backlog 이슈 검토
-2. 우선순위 레이블 업데이트
-3. 오래된/불필요한 이슈 close
-4. 다음 스프린트 계획
+### 2. 스프린트 계획 회의
 
-## 🔗 유용한 링크
+**매주 또는 마일스톤 시작 시:**
 
-- [GitHub Projects 문서](https://docs.github.com/en/issues/planning-and-tracking-with-projects)
-- [레이블 관리](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work)
+1. 백로그 검토
+   - `backlog` 레이블 이슈 필터링
+   - 우선순위 순으로 정렬
+
+2. 작업 선택
+   - 팀 역량 고려
+   - 의존성 확인
+   - 마일스톤 목표 부합 여부
+
+3. 마일스톤 할당
+   ```bash
+   # 선택된 이슈에 마일스톤 할당
+   - backlog 레이블 제거
+   - ready 레이블 추가
+   - 담당자 지정
+   ```
+
+### 3. 작업 진행
+
+```
+Backlog → Ready → In Progress → In Review → Done
+```
+
+---
+
+## 🎨 GitHub Projects 보드
+
+### 컬럼 구성
+
+| 컬럼 | 설명 | 이슈 상태 |
+|------|------|-----------|
+| **Backlog** | 백로그 작업 | `backlog` 레이블 |
+| **Ready** | 준비 완료 | `ready` 레이블 + 마일스톤 할당 |
+| **In Progress** | 진행 중 | 담당자 할당 + 작업 중 |
+| **In Review** | 리뷰 중 | PR 생성됨 |
+| **Done** | 완료 | 이슈 닫힘 |
+
+### 보드 사용법
+
+1. **드래그 앤 드롭**
+   - Backlog → Ready: 스프린트에 추가
+   - Ready → In Progress: 작업 시작
+   - In Progress → In Review: PR 생성
+
+2. **자동화 (GitHub Actions)**
+   - 이슈 생성 시 자동으로 Backlog 추가
+   - PR 머지 시 자동으로 Done 이동
+
+---
+
+## 🔍 필터링 & 검색
+
+### 백로그 이슈만 보기
+
+```
+is:issue is:open no:milestone label:backlog
+```
+
+### 우선순위별 필터링
+
+```
+is:issue is:open label:backlog label:"priority: high"
+```
+
+### 특정 타입 + 백로그
+
+```
+is:issue is:open label:backlog label:bug
+```
+
+---
+
+## 📅 정기 리뷰
+
+### 주간 백로그 그루밍 (매주 금요일)
+
+- [ ] 새로운 이슈 검토
+- [ ] 우선순위 재조정
+- [ ] 중복 이슈 통합
+- [ ] 오래된 이슈 정리 (3개월 이상)
+
+### 마일스톤 계획 회의 (마일스톤 시작 전)
+
+- [ ] 백로그에서 작업 선택
+- [ ] 팀원별 작업 할당
+- [ ] 예상 작업 시간 산정
+- [ ] 의존성 파악
+
+---
+
+## 💡 Best Practices
+
+### ✅ 좋은 예
+
+```markdown
+제목: [Feature] 캐릭터 스킬 쿨다운 UI 구현
+내용:
+- 스킬 아이콘 위에 쿨다운 타이머 표시
+- 쿨다운 중 아이콘 반투명 처리
+- 쿨다운 완료 시 이펙트
+
+레이블: backlog, enhancement, priority: high, UI
+```
+
+### ❌ 피해야 할 것
+
+```markdown
+제목: UI 수정
+내용: UI 좀 고쳐주세요
+
+레이블: backlog
+```
+
+---
+
+## 🔗 관련 문서
+
+- [코딩 컨벤션](../README.md#coding-conventions)
+- [이슈 템플릿](.github/ISSUE_TEMPLATE/)
+- [PR 템플릿](.github/pull_request_template.md)
+
+---
+
+**Last Updated**: 2025-11-09
