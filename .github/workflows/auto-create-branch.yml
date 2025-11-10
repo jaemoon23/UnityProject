@@ -12,7 +12,6 @@ permissions:
 jobs:
   create-branch:
     runs-on: ubuntu-latest
-    if: github.event.issue.assignee != null
     steps:
       - uses: actions/checkout@v3
         with:
@@ -24,6 +23,12 @@ jobs:
           ASSIGNEE="${{ github.event.issue.assignee.login }}"
           ISSUE_TITLE="${{ github.event.issue.title }}"
           LABELS='${{ toJson(github.event.issue.labels.*.name) }}'
+          
+          # LMJ : Check if issue has an assignee
+          if [ -z "$ASSIGNEE" ] || [ "$ASSIGNEE" = "null" ]; then
+            echo "No assignee for this issue. Skipping branch creation."
+            exit 0
+          fi
           
           # LMJ : Check if this issue should create a branch
           if echo "$LABELS" | grep -qE "feature-request|meeting"; then
