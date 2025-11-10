@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 public class DynamicCanvasMatch : MonoBehaviour
 {
-    [SerializeField] float pivotAspect = 1080f / 2400f; // Production standard (20:9)
+    [SerializeField] float pivotAspect = 1020f / 1830f; // Production standard (20:9)
     [SerializeField] float widthBias = 0.0f;            // 0 = pure calculation, + value means weight on Width side
     void OnEnable()
     {
