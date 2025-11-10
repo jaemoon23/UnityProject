@@ -60,7 +60,7 @@ jobs:
                 .replace(/:/g, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim()
-                .substring(0, 500);
+                .substring(0, 1000);
             }
             
             function callGeminiAPI(prompt) {
@@ -91,15 +91,20 @@ jobs:
                         const text = response.candidates?.[0]?.content?.parts?.[0]?.text || null;
                         resolve(text);
                       } catch (error) {
+                        console.log('Gemini parse error:', error.message);
                         resolve(null);
                       }
                     } else {
+                      console.log('Gemini API error:', res.statusCode);
                       resolve(null);
                     }
                   });
                 });
                 
-                req.on('error', () => resolve(null));
+                req.on('error', (err) => {
+                  console.log('Gemini request error:', err.message);
+                  resolve(null);
+                });
                 req.write(data);
                 req.end();
               });
@@ -180,11 +185,17 @@ jobs:
                 
                 let summary = null;
                 if (issueBody && issueBody.trim().length > 0) {
+                  console.log('📨 Calling Gemini API...');
                   const prompt = `다음 GitHub Issue를 2-3줄로 간단히 요약해주세요. 특수문자나 마크다운 포맷팅 없이 평범한 텍스트로만 작성해주세요:\n\n제목: ${issueTitle}\n\n내용: ${issueBody.substring(0, 2000)}`;
                   summary = await callGeminiAPI(prompt);
                   
                   if (summary) {
-                    console.log('🤖 Gemini 요약 생성 완료');
+                    console.log('🤖 Gemini raw response:', summary.substring(0, 200));
+                    console.log('🤖 Response length:', summary.length);
+                  } else {
+                    console.log('⚠️ Gemini returned null, using fallback');
+                    const lines = issueBody.split('\n').filter(line => line.trim().length > 0);
+                    summary = lines.slice(0, 3).join(' ').substring(0, 300);
                   }
                 }
                 
@@ -192,6 +203,10 @@ jobs:
                 const safeSummary = summary ? sanitizeForSlack(summary) : null;
                 const assigneeName = assignee || '미지정';
                 const labelsText = labels.length > 0 ? labels.join(', ') : '없음';
+                
+                console.log('📝 Safe title:', safeTitle.substring(0, 100));
+                console.log('📝 Safe summary:', safeSummary ? safeSummary.substring(0, 100) : 'null');
+                console.log('📝 Summary length:', safeSummary ? safeSummary.length : 0);
                 
                 const blocks = [
                   {
@@ -229,7 +244,7 @@ jobs:
                   });
                 }
                 
-                if (safeSummary) {
+                if (safeSummary && safeSummary.length > 0) {
                   blocks.push({
                     type: 'divider'
                   });
@@ -240,6 +255,9 @@ jobs:
                       text: `*🤖 AI 요약*\n${safeSummary}`
                     }
                   });
+                  console.log('✅ Summary block added');
+                } else {
+                  console.log('⚠️ No summary to display');
                 }
                 
                 blocks.push({
@@ -266,6 +284,7 @@ jobs:
                   blocks: blocks
                 };
                 
+                console.log('📨 Sending to Slack with', blocks.length, 'blocks');
                 await sendToSlack(slackMessage);
                 console.log('✅ Slack 알림 전송 완료');
                 
