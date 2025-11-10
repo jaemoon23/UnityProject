@@ -77,7 +77,7 @@ jobs:
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Content-Length': data.length
+                    'Content-Length': Buffer.byteLength(data)
                   }
                 };
                 
@@ -110,16 +110,13 @@ jobs:
                 const data = JSON.stringify(message);
                 const url = new URL(process.env.SLACK_WEBHOOK_URL);
                 
-                console.log('📨 Slack message JSON:', data);
-                console.log('📨 Message length:', data.length);
-                
                 const options = {
                   hostname: url.hostname,
                   path: url.pathname + url.search,
                   method: 'POST',
                   headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': data.length
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Content-Length': Buffer.byteLength(data)
                   }
                 };
                 
@@ -127,8 +124,6 @@ jobs:
                   let body = '';
                   res.on('data', (chunk) => body += chunk);
                   res.on('end', () => {
-                    console.log('📨 Slack response status:', res.statusCode);
-                    console.log('📨 Slack response body:', body);
                     if (res.statusCode === 200 && body === 'ok') {
                       resolve(body);
                     } else {
@@ -137,10 +132,7 @@ jobs:
                   });
                 });
                 
-                req.on('error', (err) => {
-                  console.log('📨 Slack request error:', err.message);
-                  reject(err);
-                });
+                req.on('error', reject);
                 req.write(data);
                 req.end();
               });
@@ -166,7 +158,7 @@ jobs:
                     'Authorization': 'Bearer ' + process.env.NOTION_API_TOKEN,
                     'Content-Type': 'application/json',
                     'Notion-Version': '2022-06-28',
-                    'Content-Length': data.length
+                    'Content-Length': Buffer.byteLength(data)
                   }
                 };
                 
@@ -192,25 +184,21 @@ jobs:
                   summary = await callGeminiAPI(prompt);
                   
                   if (summary) {
-                    console.log('🤖 Gemini raw response:', summary);
-                    console.log('🤖 Gemini response length:', summary.length);
+                    console.log('🤖 Gemini 요약 생성 완료');
                   }
                 }
                 
                 const safeTitle = sanitizeForSlack(issueTitle);
                 const safeSummary = summary ? sanitizeForSlack(summary) : null;
-                const assigneeName = assignee || 'Unassigned';
-                const labelsText = labels.length > 0 ? labels.join(', ') : 'None';
-                
-                console.log('📝 Safe title:', safeTitle);
-                console.log('📝 Safe summary:', safeSummary);
+                const assigneeName = assignee || '미지정';
+                const labelsText = labels.length > 0 ? labels.join(', ') : '없음';
                 
                 const blocks = [
                   {
                     type: 'header',
                     text: {
                       type: 'plain_text',
-                      text: `New Issue #${issueNumber}`,
+                      text: `🆕 New Issue #${issueNumber}`,
                       emoji: true
                     }
                   },
@@ -219,11 +207,11 @@ jobs:
                     fields: [
                       {
                         type: 'mrkdwn',
-                        text: `*Title*\n${safeTitle}`
+                        text: `*제목*\n${safeTitle}`
                       },
                       {
                         type: 'mrkdwn',
-                        text: `*Assignee*\n${assigneeName}`
+                        text: `*담당자*\n${assigneeName}`
                       }
                     ]
                   }
@@ -249,7 +237,7 @@ jobs:
                     type: 'section',
                     text: {
                       type: 'mrkdwn',
-                      text: `*AI Summary*\n${safeSummary}`
+                      text: `*🤖 AI 요약*\n${safeSummary}`
                     }
                   });
                 }
@@ -274,13 +262,12 @@ jobs:
                 });
                 
                 const slackMessage = {
-                  text: `New Issue ${issueNumber}`,
+                  text: `New Issue #${issueNumber}`,
                   blocks: blocks
                 };
                 
-                console.log('📨 Sending Slack message...');
                 await sendToSlack(slackMessage);
-                console.log('✅ Slack notification sent');
+                console.log('✅ Slack 알림 전송 완료');
                 
                 await addToNotion({
                   'Name': { title: [{ text: { content: issueTitle } }] },
@@ -306,7 +293,7 @@ jobs:
                           type: 'section',
                           text: {
                             type: 'mrkdwn',
-                            text: `Branch created\n${branchName}\nAssignee: ${mention}`
+                            text: `✅ *Branch 생성 완료*\n\`${branchName}\`\n담당자: ${mention}`
                           }
                         },
                         {
@@ -341,13 +328,13 @@ jobs:
                   const mention = slackUserId ? `<@${slackUserId}>` : assignee;
                   
                   await sendToSlack({
-                    text: `Issue ${issueNumber} assigned and branch created`,
+                    text: `Issue ${issueNumber} assigned`,
                     blocks: [
                       {
                         type: 'header',
                         text: {
                           type: 'plain_text',
-                          text: 'Branch Created',
+                          text: '🌿 Branch Created',
                           emoji: true
                         }
                       },
@@ -356,11 +343,11 @@ jobs:
                         fields: [
                           {
                             type: 'mrkdwn',
-                            text: `*Branch*\n${branchName}`
+                            text: `*Branch*\n\`${branchName}\``
                           },
                           {
                             type: 'mrkdwn',
-                            text: `*Assignee*\n${mention}`
+                            text: `*담당자*\n${mention}`
                           }
                         ]
                       },
@@ -399,7 +386,7 @@ jobs:
                       type: 'header',
                       text: {
                         type: 'plain_text',
-                        text: 'Issue Reopened',
+                        text: '🔄 Issue Reopened',
                         emoji: true
                       }
                     },
@@ -408,11 +395,11 @@ jobs:
                       fields: [
                         {
                           type: 'mrkdwn',
-                          text: `*Issue*\n${sanitizeForSlack(issueTitle)}`
+                          text: `*Issue #${issueNumber}*\n${sanitizeForSlack(issueTitle)}`
                         },
                         {
                           type: 'mrkdwn',
-                          text: `*Assignee*\n${assignee || 'Unassigned'}`
+                          text: `*담당자*\n${assignee || '미지정'}`
                         }
                       ]
                     },
@@ -448,7 +435,7 @@ jobs:
                       type: 'header',
                       text: {
                         type: 'plain_text',
-                        text: 'Important Issue Alert',
+                        text: '🚨 Important Issue Alert',
                         emoji: true
                       }
                     },
@@ -456,7 +443,7 @@ jobs:
                       type: 'section',
                       text: {
                         type: 'mrkdwn',
-                        text: `${mention} An important issue has been assigned.`
+                        text: `${mention} 중요한 Issue가 할당되었습니다.`
                       }
                     },
                     {
@@ -464,7 +451,7 @@ jobs:
                       fields: [
                         {
                           type: 'mrkdwn',
-                          text: `*Issue*\n${sanitizeForSlack(issueTitle)}`
+                          text: `*Issue #${issueNumber}*\n${sanitizeForSlack(issueTitle)}`
                         },
                         {
                           type: 'mrkdwn',
