@@ -24,20 +24,17 @@ jobs:
           ISSUE_TITLE="${{ github.event.issue.title }}"
           LABELS='${{ toJson(github.event.issue.labels.*.name) }}'
           
-          # LMJ : Check if issue has an assignee
           if [ -z "$ASSIGNEE" ] || [ "$ASSIGNEE" = "null" ]; then
             echo "No assignee for this issue. Skipping branch creation."
             exit 0
           fi
           
-          # LMJ : Check if this issue should create a branch
           if echo "$LABELS" | grep -qE "feature-request|meeting"; then
             echo "This issue type does not create branches"
             gh issue comment $ISSUE_NUMBER --body "ℹ️ **이 Issue는 브랜치를 자동 생성하지 않습니다.**"
             exit 0
           fi
           
-          # LMJ : Determine branch type from labels
           if echo "$LABELS" | grep -q "bug\|fix"; then
             BRANCH_TYPE="fix"
           elif echo "$LABELS" | grep -q "enhancement\|feature"; then
@@ -52,11 +49,9 @@ jobs:
             BRANCH_TYPE="feature"
           fi
           
-          # LMJ : Clean title and convert to branch name
           CLEAN_TITLE=$(echo "$ISSUE_TITLE" | sed 's/^\[.*\][[:space:]]*//')
           DESCRIPTION=$(echo "$CLEAN_TITLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-$//' | sed 's/^-//')
           
-          # LMJ : Branch naming convention: {type}/{issue-number}-{description}
           BRANCH_NAME="${BRANCH_TYPE}/${ISSUE_NUMBER}-${DESCRIPTION}"
           
           echo "Creating branch: $BRANCH_NAME"
@@ -67,7 +62,6 @@ jobs:
           git checkout main
           git pull origin main
           
-          # LMJ : Check if branch already exists
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
             echo "Branch $BRANCH_NAME already exists"
             gh issue comment $ISSUE_NUMBER --body "⚠️ **Branch가 이미 존재합니다:** \`$BRANCH_NAME\`"
@@ -76,31 +70,29 @@ jobs:
             git push origin "$BRANCH_NAME"
             echo "Branch $BRANCH_NAME created successfully"
             
-            # LMJ : Add comment to issue
-            gh issue comment $ISSUE_NUMBER --body "$(cat <<EOF
-✅ **Branch가 자동 생성되었습니다!**
+            COMMENT="✅ **Branch가 자동 생성되었습니다!**
 
 \`\`\`
-$BRANCH_NAME
+${BRANCH_NAME}
 \`\`\`
 
 📋 **다음 단계:**
 1. 로컬에서 브랜치를 체크아웃하세요:
-   \`\`\`bash
-   git fetch origin
-   git checkout $BRANCH_NAME
-   \`\`\`
+\`\`\`bash
+git fetch origin
+git checkout ${BRANCH_NAME}
+\`\`\`
 
 2. 작업을 완료하고 커밋하세요
 
 3. PR 생성 시 이 Issue를 자동으로 닫으려면 PR 설명에 다음을 포함하세요:
-   \`Closes #$ISSUE_NUMBER\`
+\`Closes #${ISSUE_NUMBER}\`
 
-🎯 **담당자:** @$ASSIGNEE
+🎯 **담당자:** @${ASSIGNEE}
 
-💡 **Tip:** 브랜치명에 Issue 번호(#$ISSUE_NUMBER)가 포함되어 있어 추적이 용이합니다!
-EOF
-)"
+💡 **Tip:** 브랜치명에 Issue 번호(#${ISSUE_NUMBER})가 포함되어 있어 추적이 용이합니다!"
+            
+            gh issue comment $ISSUE_NUMBER --body "$COMMENT"
           fi
         env:
           GH_TOKEN: ${{ github.token }}
