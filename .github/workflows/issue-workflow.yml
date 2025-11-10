@@ -53,14 +53,9 @@ jobs:
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/`/g, '')
-                .replace(/\*/g, '')
-                .replace(/_/g, '')
-                .replace(/~/g, '')
-                .replace(/:/g, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim()
-                .substring(0, 1000);
+                .substring(0, 2000);
             }
             
             function callGeminiAPI(prompt) {
@@ -186,7 +181,19 @@ jobs:
                 let summary = null;
                 if (issueBody && issueBody.trim().length > 0) {
                   console.log('📨 Calling Gemini API...');
-                  const prompt = `다음 GitHub Issue를 2-3줄로 간단히 요약해주세요. 특수문자나 마크다운 포맷팅 없이 평범한 텍스트로만 작성해주세요:\n\n제목: ${issueTitle}\n\n내용: ${issueBody.substring(0, 2000)}`;
+                  const prompt = `다음 GitHub Issue를 5-7줄 정도로 상세하게 요약해주세요.
+
+주요 내용:
+- 이슈의 핵심 목적이나 문제점
+- 구체적인 작업 내용이나 요구사항
+- 중요한 세부사항이나 제약조건
+
+각 항목은 줄바꿈으로 구분하고, 불렛 포인트(-)를 사용해서 작성해주세요.
+마크다운 강조(**bold**, *italic* 등)는 사용하지 말고 평문으로 작성해주세요.
+
+제목: ${issueTitle}
+
+내용: ${issueBody.substring(0, 3000)}`;
                   summary = await callGeminiAPI(prompt);
                   
                   if (summary) {
@@ -195,7 +202,7 @@ jobs:
                   } else {
                     console.log('⚠️ Gemini returned null, using fallback');
                     const lines = issueBody.split('\n').filter(line => line.trim().length > 0);
-                    summary = lines.slice(0, 3).join(' ').substring(0, 300);
+                    summary = lines.slice(0, 5).join('\n').substring(0, 500);
                   }
                 }
                 
