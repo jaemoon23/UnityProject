@@ -47,16 +47,6 @@ jobs:
               'kimjiw8698-crypto': 'U09RVE84DQS'
             };
             
-            function slugify(text) {
-              return text
-                .toLowerCase()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-+|-+$/g, '')
-                .substring(0, 50);
-            }
-            
             function removeMarkdown(text) {
               if (!text) return '';
               let result = text;
@@ -332,8 +322,7 @@ jobs:
                 
                 if (assignee) {
                   try {
-                    const titleSlug = slugify(issueTitle);
-                    const branchName = 'feature/issue-' + issueNumber + '-' + titleSlug;
+                    const branchName = 'feature/issue-' + issueNumber + '-' + assignee;
                     console.log('🌿 Creating branch:', branchName);
                     
                     execSync('git checkout -b ' + branchName, { stdio: 'inherit' });
@@ -373,8 +362,7 @@ jobs:
               }
               
               if (action === 'assigned' && assignee) {
-                const titleSlug = slugify(issueTitle);
-                const branchName = 'feature/issue-' + issueNumber + '-' + titleSlug;
+                const branchName = 'feature/issue-' + issueNumber + '-' + assignee;
                 console.log('🌿 Creating branch:', branchName);
                 
                 try {
