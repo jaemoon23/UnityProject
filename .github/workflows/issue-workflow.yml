@@ -49,19 +49,27 @@ jobs:
             
             function removeMarkdown(text) {
               if (!text) return '';
-              return text
-                .replace(/^#{1,6}\s+/gm, '')
-                .replace(/\*\*(.+?)\*\*/g, '$1')
-                .replace(/\*(.+?)\*/g, '$1')
-                .replace(/__(.+?)__/g, '$1')
-                .replace(/_(.+?)_/g, '$1')
-                .replace(/~~(.+?)~~/g, '$1')
-                .replace(/`(.+?)`/g, '$1')
-                .replace(/^\s*[-*+]\s+/gm, '')
-                .replace(/^\s*\d+\.\s+/gm, '')
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
+              let result = text;
+              result = result.replace(/^#{1,6}\s+/gm, '');
+              result = result.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
+              result = result.replace(/\*\*(.+?)\*\*/g, '$1');
+              result = result.replace(/\*(.+?)\*/g, '$1');
+              result = result.replace(/___(.+?)___/g, '$1');
+              result = result.replace(/__(.+?)__/g, '$1');
+              result = result.replace(/_(.+?)_/g, '$1');
+              result = result.replace(/~~(.+?)~~/g, '$1');
+              result = result.replace(/`(.+?)`/g, '$1');
+              result = result.replace(/^\s*[-*+]\s+/gm, '');
+              result = result.replace(/^\s*\d+\.\s+/gm, '');
+              result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+              result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
+              result = result.replace(/>\s+/gm, '');
+              result = result.replace(/```[\s\S]*?```/g, '');
+              result = result.replace(/`([^`]+)`/g, '$1');
+              result = result.replace(/^\s*[-=]{3,}\s*$/gm, '');
+              result = result.replace(/\|/g, '');
+              result = result.replace(/\n{3,}/g, '\n\n');
+              return result.trim();
             }
             
             function sanitizeForSlack(text) {
@@ -198,17 +206,18 @@ jobs:
                 let summary = null;
                 if (issueBody && issueBody.trim().length > 0) {
                   console.log('📨 Calling Gemini API...');
-                  const prompt = 'IMPORTANT: You must respond in plain text only, without ANY markdown formatting.\n\nPlease summarize the following GitHub Issue in 5-7 sentences as a single continuous paragraph. Write naturally in plain text format without any markdown syntax (no ##, -, *, **, __, or any other formatting). Include the main purpose, key tasks, and important constraints.\n\nTitle: ' + issueTitle + '\n\nContent: ' + issueBody.substring(0, 3000) + '\n\nRemember: Plain text only, no markdown formatting whatsoever.';
-                  summary = await callGeminiAPI(prompt);
+                  const prompt = '아래 GitHub Issue를 읽고 핵심 내용만 추려서 5-7문장으로 요약해주세요.\n\n중요 규칙:\n1. 절대로 원본 텍스트를 복사하지 마세요. 반드시 당신의 언어로 다시 작성하세요.\n2. 마크다운 문법(#, -, *, **, ##, ###, 등)을 절대 사용하지 마세요.\n3. 평범한 문장으로만 작성하세요. 불렛 포인트나 섹션 헤더 없이.\n4. 하나의 자연스러운 문단으로 작성하세요.\n5. "이 이슈는..." 또는 "이 작업은..."으로 시작하세요.\n\n예시 형식:\n이 이슈는 [핵심 목적]을 위한 작업입니다. [주요 내용 1]과 [주요 내용 2]를 포함하며, [중요 제약사항]이 있습니다.\n\n이슈 제목: ' + issueTitle + '\n\n이슈 내용:\n' + issueBody.substring(0, 3000) + '\n\n위 규칙을 반드시 지켜서 요약해주세요.';
                   
-                  if (summary) {
-                    console.log('🤖 Gemini raw response:', summary.substring(0, 200));
-                    summary = removeMarkdown(summary);
+                  const rawSummary = await callGeminiAPI(prompt);
+                  
+                  if (rawSummary) {
+                    console.log('🤖 Gemini raw response:', rawSummary.substring(0, 200));
+                    summary = removeMarkdown(rawSummary);
                     console.log('🤖 After markdown removal:', summary.substring(0, 200));
                     console.log('🤖 Final length:', summary.length);
                   } else {
                     console.log('⚠️ Gemini returned null, using fallback');
-                    const lines = issueBody.split('\n').filter(line => line.trim().length > 0);
+                    const lines = issueBody.split('\n').filter(line => line.trim().length > 0 && !line.trim().startsWith('#'));
                     summary = lines.slice(0, 3).join(' ').substring(0, 500);
                   }
                 }
