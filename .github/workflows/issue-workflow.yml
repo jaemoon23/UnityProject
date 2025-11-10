@@ -29,6 +29,10 @@ jobs:
             const https = require('https');
             const { execSync } = require('child_process');
             
+            console.log('=== Workflow Started ===');
+            console.log('Webhook URL exists:', !!process.env.SLACK_WEBHOOK_URL);
+            console.log('Webhook URL length:', process.env.SLACK_WEBHOOK_URL?.length || 0);
+            
             const issueNumber = context.payload.issue.number;
             const issueTitle = context.payload.issue.title;
             const issueBody = context.payload.issue.body || '내용 없음';
@@ -37,7 +41,9 @@ jobs:
             const labels = context.payload.issue.labels.map(l => l.name);
             const assignees = context.payload.issue.assignees;
             const assignee = assignees.length > 0 ? assignees[0].login : null;
-            const milestone = context.payload.issue.milestone?.title || '없음';
+            
+            console.log(`Issue #${issueNumber}: ${issueTitle}`);
+            console.log(`Action: ${action}`);
             
             const userMapping = {
               'leemjmorris': 'U09R6F3CBHN',
@@ -50,6 +56,7 @@ jobs:
             
             function callGeminiAPI(prompt) {
               return new Promise((resolve, reject) => {
+                console.log('[Gemini] Calling API...');
                 const data = JSON.stringify({
                   contents: [{
                     parts: [{ text: prompt }]
@@ -67,20 +74,26 @@ jobs:
                 };
                 
                 const req = https.request(options, (res) => {
+                  console.log('[Gemini] Response status:', res.statusCode);
                   let body = '';
                   res.on('data', (chunk) => body += chunk);
                   res.on('end', () => {
                     try {
                       const response = JSON.parse(body);
                       const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '요약 실패';
+                      console.log('[Gemini] Success');
                       resolve(text);
                     } catch (error) {
+                      console.error('[Gemini] Parse error:', error);
                       reject(error);
                     }
                   });
                 });
                 
-                req.on('error', reject);
+                req.on('error', (error) => {
+                  console.error('[Gemini] Request error:', error);
+                  reject(error);
+                });
                 req.write(data);
                 req.end();
               });
@@ -88,8 +101,14 @@ jobs:
             
             function sendToSlack(message) {
               return new Promise((resolve, reject) => {
+                console.log('[Slack] Preparing to send message...');
+                console.log('[Slack] Message preview:', JSON.stringify(message).substring(0, 200));
+                
                 const data = JSON.stringify(message);
                 const url = new URL(process.env.SLACK_WEBHOOK_URL);
+                
+                console.log('[Slack] Target hostname:', url.hostname);
+                console.log('[Slack] Target path:', url.pathname);
                 
                 const options = {
                   hostname: url.hostname,
@@ -102,12 +121,28 @@ jobs:
                 };
                 
                 const req = https.request(options, (res) => {
+                  console.log('[Slack] Response status:', res.statusCode);
                   let body = '';
                   res.on('data', (chunk) => body += chunk);
-                  res.on('end', () => resolve(body));
+                  res.on('end', () => {
+                    console.log('[Slack] Response body:', body);
+                    
+                    if (res.statusCode === 200 && body === 'ok') {
+                      console.log('[Slack] ✅ Message sent successfully!');
+                      resolve(body);
+                    } else {
+                      const errorMsg = `Slack returned ${res.statusCode}: ${body}`;
+                      console.error('[Slack] ❌ Error:', errorMsg);
+                      reject(new Error(errorMsg));
+                    }
+                  });
                 });
                 
-                req.on('error', reject);
+                req.on('error', (error) => {
+                  console.error('[Slack] ❌ Request error:', error);
+                  reject(error);
+                });
+                
                 req.write(data);
                 req.end();
               });
@@ -115,6 +150,13 @@ jobs:
             
             function addToNotion(properties) {
               return new Promise((resolve, reject) => {
+                if (!process.env.NOTION_API_TOKEN) {
+                  console.log('[Notion] Skipping - no token configured');
+                  resolve('skipped');
+                  return;
+                }
+                
+                console.log('[Notion] Adding to database...');
                 const data = JSON.stringify({
                   parent: { database_id: process.env.NOTION_DATABASE_ID },
                   properties: properties
@@ -133,9 +175,17 @@ jobs:
                 };
                 
                 const req = https.request(options, (res) => {
+                  console.log('[Notion] Response status:', res.statusCode);
                   let body = '';
                   res.on('data', (chunk) => body += chunk);
-                  res.on('end', () => resolve(body));
+                  res.on('end', () => {
+                    if (res.statusCode === 200) {
+                      console.log('[Notion] ✅ Success');
+                    } else {
+                      console.error('[Notion] ❌ Error:', res.statusCode, body);
+                    }
+                    resolve(body);
+                  });
                 });
                 
                 req.on('error', reject);
@@ -146,6 +196,8 @@ jobs:
             
             try {
               if (action === 'opened') {
+                console.log('>>> Handling "opened" action');
+                
                 const summary = await callGeminiAPI(
                   `다음 GitHub Issue를 3줄 이내로 요약해주세요:\n제목: ${issueTitle}\n내용: ${issueBody}`
                 );
@@ -186,39 +238,35 @@ jobs:
                 
                 await sendToSlack(slackMessage);
                 
-                const notionProperties = {
+                await addToNotion({
                   'Name': { title: [{ text: { content: issueTitle } }] },
                   'Issue Number': { number: issueNumber },
                   'Status': { select: { name: 'Open' } },
                   'URL': { url: issueUrl },
                   'Assignee': assignee ? { rich_text: [{ text: { content: assignee } }] } : { rich_text: [] }
-                };
-                
-                await addToNotion(notionProperties);
+                });
                 
                 if (assignee) {
+                  console.log('[Git] Creating branch...');
                   const branchName = `issue-${issueNumber}`;
                   execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
                   execSync(`git push origin ${branchName}`, { stdio: 'inherit' });
                   
-                  const branchSlackMessage = {
+                  await sendToSlack({
                     text: 'Branch가 자동 생성되었습니다',
-                    blocks: [
-                      {
-                        type: 'section',
-                        text: {
-                          type: 'mrkdwn',
-                          text: `:white_check_mark: Branch 생성 완료\n*Branch:* ${branchName}\n*Issue:* #${issueNumber} ${issueTitle}`
-                        }
+                    blocks: [{
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: `:white_check_mark: Branch 생성 완료\n*Branch:* ${branchName}\n*Issue:* #${issueNumber} ${issueTitle}`
                       }
-                    ]
-                  };
-                  
-                  await sendToSlack(branchSlackMessage);
+                    }]
+                  });
                 }
               }
               
               if (action === 'assigned' && assignee) {
+                console.log('>>> Handling "assigned" action');
                 const branchName = `issue-${issueNumber}`;
                 
                 try {
@@ -228,40 +276,33 @@ jobs:
                   const slackUserId = userMapping[assignee];
                   const mentionText = slackUserId ? `<@${slackUserId}>` : assignee;
                   
-                  const slackMessage = {
+                  await sendToSlack({
                     text: 'Branch가 자동 생성되었습니다',
-                    blocks: [
-                      {
-                        type: 'section',
-                        text: {
-                          type: 'mrkdwn',
-                          text: `:white_check_mark: Branch 생성 완료\n*Branch:* ${branchName}\n*Assignee:* ${mentionText}\n*Issue:* #${issueNumber} ${issueTitle}\n<${issueUrl}|Issue 보기>`
-                        }
+                    blocks: [{
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: `:white_check_mark: Branch 생성 완료\n*Branch:* ${branchName}\n*Assignee:* ${mentionText}\n*Issue:* #${issueNumber} ${issueTitle}\n<${issueUrl}|Issue 보기>`
                       }
-                    ]
-                  };
-                  
-                  await sendToSlack(slackMessage);
+                    }]
+                  });
                 } catch (error) {
-                  console.log('Branch already exists or creation failed:', error.message);
+                  console.log('[Git] Branch creation failed:', error.message);
                 }
               }
               
               if (action === 'reopened') {
-                const slackMessage = {
+                console.log('>>> Handling "reopened" action');
+                await sendToSlack({
                   text: 'Issue가 다시 열렸습니다',
-                  blocks: [
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: `:repeat: *Issue 재오픈* #${issueNumber}\n*제목:* ${issueTitle}\n*Assignee:* ${assignee || '미지정'}\n<${issueUrl}|Issue 보기>`
-                      }
+                  blocks: [{
+                    type: 'section',
+                    text: {
+                      type: 'mrkdwn',
+                      text: `:repeat: *Issue 재오픈* #${issueNumber}\n*제목:* ${issueTitle}\n*Assignee:* ${assignee || '미지정'}\n<${issueUrl}|Issue 보기>`
                     }
-                  ]
-                };
-                
-                await sendToSlack(slackMessage);
+                  }]
+                });
               }
               
               const hasImportantLabel = labels.some(label => 
@@ -269,26 +310,27 @@ jobs:
               );
               
               if (hasImportantLabel && assignee) {
+                console.log('>>> Important label detected');
                 const slackUserId = userMapping[assignee];
                 const mentionText = slackUserId ? `<@${slackUserId}>` : assignee;
                 
-                const slackMessage = {
+                await sendToSlack({
                   text: '중요 라벨이 있는 Issue입니다',
-                  blocks: [
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: `:rotating_light: *중요 Issue 알림*\n${mentionText}\n*Issue:* #${issueNumber} ${issueTitle}\n*Labels:* ${labels.join(', ')}\n<${issueUrl}|Issue 보기>`
-                      }
+                  blocks: [{
+                    type: 'section',
+                    text: {
+                      type: 'mrkdwn',
+                      text: `:rotating_light: *중요 Issue 알림*\n${mentionText}\n*Issue:* #${issueNumber} ${issueTitle}\n*Labels:* ${labels.join(', ')}\n<${issueUrl}|Issue 보기>`
                     }
-                  ]
-                };
-                
-                await sendToSlack(slackMessage);
+                  }]
+                });
               }
               
+              console.log('=== Workflow Completed Successfully ===');
+              
             } catch (error) {
+              console.error('=== Workflow Failed ===');
               console.error('Error:', error);
-              core.setFailed(error.message);
+              console.error('Stack:', error.stack);
+              throw error;
             }
