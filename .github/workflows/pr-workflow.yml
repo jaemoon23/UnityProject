@@ -1,1 +1,118 @@
-$(cat /tmp/pr-workflow-fixed.yml)
+name: PR Workflow
+
+on:
+  pull_request:
+    types: [opened, review_requested]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  handle-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Handle PR Event
+        uses: actions/github-script@v7
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          script: |
+            const https = require('https');
+            
+            const prNumber = context.payload.pull_request.number;
+            const prTitle = context.payload.pull_request.title;
+            const prUrl = context.payload.pull_request.html_url;
+            const action = context.payload.action;
+            const author = context.payload.pull_request.user.login;
+            const headBranch = context.payload.pull_request.head.ref;
+            const baseBranch = context.payload.pull_request.base.ref;
+            
+            const userMapping = {
+              'leemjmorris': 'U09R6F3CBHN',
+              'jaemoon23': 'U09QR380TLH',
+              'LeeChaeBin002': 'U09QFND0J20',
+              'Kdwio': 'U09LZ9Q6F3J',
+              'bunggoo0105': 'U09RL7QCYV7',
+              'JangYeJin1207': 'U09QAEF5FEJ'
+            };
+            
+            function sendToSlack(message) {
+              return new Promise((resolve, reject) => {
+                const data = JSON.stringify(message);
+                const url = new URL(process.env.SLACK_WEBHOOK_URL);
+                
+                const options = {
+                  hostname: url.hostname,
+                  path: url.pathname + url.search,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': data.length
+                  }
+                };
+                
+                const req = https.request(options, (res) => {
+                  let body = '';
+                  res.on('data', (chunk) => body += chunk);
+                  res.on('end', () => resolve(body));
+                });
+                
+                req.on('error', reject);
+                req.write(data);
+                req.end();
+              });
+            }
+            
+            try {
+              if (action === 'opened') {
+                const slackUserId = userMapping[author];
+                const mentionText = slackUserId ? `<@${slackUserId}>` : author;
+                
+                const slackMessage = {
+                  text: '새로운 PR이 생성되었습니다',
+                  blocks: [
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: `:rocket: *새로운 PR* #${prNumber}\n*제목:* ${prTitle}\n*작성자:* ${mentionText}\n*Branch:* ${headBranch} → ${baseBranch}\n<${prUrl}|:link: PR 보기>`
+                      }
+                    }
+                  ]
+                };
+                
+                await sendToSlack(slackMessage);
+              }
+              
+              if (action === 'review_requested') {
+                const reviewers = context.payload.pull_request.requested_reviewers || [];
+                const reviewerMentions = reviewers
+                  .map(r => {
+                    const slackUserId = userMapping[r.login];
+                    return slackUserId ? `<@${slackUserId}>` : r.login;
+                  })
+                  .join(', ');
+                
+                if (reviewerMentions) {
+                  const slackMessage = {
+                    text: 'PR 리뷰가 요청되었습니다',
+                    blocks: [
+                      {
+                        type: 'section',
+                        text: {
+                          type: 'mrkdwn',
+                          text: `:eyes: *리뷰 요청*\n${reviewerMentions}\n*PR:* #${prNumber} ${prTitle}\n*작성자:* ${author}\n<${prUrl}|:link: PR 보기>`
+                        }
+                      }
+                    ]
+                  };
+                  
+                  await sendToSlack(slackMessage);
+                }
+              }
+              
+            } catch (error) {
+              console.error('Error:', error);
+              core.setFailed(error.message);
+            }
