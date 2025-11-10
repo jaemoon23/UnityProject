@@ -37,6 +37,7 @@ jobs:
             const labels = context.payload.issue.labels.map(l => l.name);
             const assignees = context.payload.issue.assignees;
             const assignee = assignees.length > 0 ? assignees[0].login : null;
+            const wasJustCreated = context.payload.issue.created_at === context.payload.issue.updated_at;
             
             const userMapping = {
               'leemjmorris': 'U09RR542WJ1',
@@ -52,7 +53,7 @@ jobs:
               let result = text;
               result = result.replace(/^#{1,6}\s+/gm, '');
               result = result.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
-              result = result.replace(/\*\*(.+?)\*\*/g, '$1');
+              result = result.replace(/\*\*(.+?)\*\*\*/g, '$1');
               result = result.replace(/\*(.+?)\*/g, '$1');
               result = result.replace(/___(.+?)___/g, '$1');
               result = result.replace(/__(.+?)__/g, '$1');
@@ -228,9 +229,19 @@ jobs:
                 const assigneeName = slackUserId ? '<@' + slackUserId + '>' : (assignee || '미지정');
                 const labelsText = labels.length > 0 ? labels.join(', ') : '없음';
                 
-                console.log('📝 Safe title:', safeTitle.substring(0, 100));
-                console.log('📝 Safe summary:', safeSummary ? safeSummary.substring(0, 100) : 'null');
-                console.log('📝 Summary length:', safeSummary ? safeSummary.length : 0);
+                let branchName = null;
+                if (assignee) {
+                  try {
+                    branchName = 'feature/issue-' + issueNumber + '-' + assignee;
+                    console.log('🌿 Creating branch:', branchName);
+                    execSync('git checkout -b ' + branchName, { stdio: 'inherit' });
+                    execSync('git push origin ' + branchName, { stdio: 'inherit' });
+                    console.log('✅ Branch created successfully');
+                  } catch (error) {
+                    console.log('Branch creation failed:', error.message);
+                    branchName = null;
+                  }
+                }
                 
                 const blocks = [
                   {
@@ -268,6 +279,18 @@ jobs:
                   });
                 }
                 
+                if (branchName) {
+                  blocks.push({
+                    type: 'section',
+                    fields: [
+                      {
+                        type: 'mrkdwn',
+                        text: '*Branch*\n`' + branchName + '`'
+                      }
+                    ]
+                  });
+                }
+                
                 if (safeSummary && safeSummary.length > 0) {
                   blocks.push({
                     type: 'divider'
@@ -280,8 +303,6 @@ jobs:
                     }
                   });
                   console.log('✅ Summary block added');
-                } else {
-                  console.log('⚠️ No summary to display');
                 }
                 
                 blocks.push({
@@ -319,49 +340,9 @@ jobs:
                   'URL': { url: issueUrl },
                   'Assignee': assignee ? { rich_text: [{ text: { content: assignee } }] } : { rich_text: [] }
                 });
-                
-                if (assignee) {
-                  try {
-                    const branchName = 'feature/issue-' + issueNumber + '-' + assignee;
-                    console.log('🌿 Creating branch:', branchName);
-                    
-                    execSync('git checkout -b ' + branchName, { stdio: 'inherit' });
-                    execSync('git push origin ' + branchName, { stdio: 'inherit' });
-                    
-                    const mention = slackUserId ? '<@' + slackUserId + '>' : assignee;
-                    
-                    await sendToSlack({
-                      text: 'Branch created for issue ' + issueNumber,
-                      blocks: [
-                        {
-                          type: 'section',
-                          text: {
-                            type: 'mrkdwn',
-                            text: '✅ *Branch 생성 완료*\n`' + branchName + '`\n담당자: ' + mention
-                          }
-                        },
-                        {
-                          type: 'actions',
-                          elements: [
-                            {
-                              type: 'button',
-                              text: {
-                                type: 'plain_text',
-                                text: 'View Issue'
-                              },
-                              url: issueUrl
-                            }
-                          ]
-                        }
-                      ]
-                    });
-                  } catch (error) {
-                    console.log('Branch creation skipped:', error.message);
-                  }
-                }
               }
               
-              if (action === 'assigned' && assignee) {
+              if (action === 'assigned' && assignee && !wasJustCreated) {
                 const branchName = 'feature/issue-' + issueNumber + '-' + assignee;
                 console.log('🌿 Creating branch:', branchName);
                 
