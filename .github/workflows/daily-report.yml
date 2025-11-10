@@ -1,9 +1,500 @@
-# Disabled - will be recreated
-name: Disabled
+name: Daily Report
+
 on:
+  schedule:
+    - cron: '0 9 * * 1-5'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 jobs:
-  disabled:
+  generate-daily-report:
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'Disabled'
+      - name: Generate Daily Report
+        uses: actions/github-script@v7
+        env:
+          NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+          NOTION_REPORT_PAGE_ID: ${{ secrets.NOTION_REPORT_PAGE_ID }}
+        with:
+          script: |
+            const https = require('https');
+            
+            // LMJ : Get today's date in KST (UTC+9)
+            const now = new Date();
+            const kstOffset = 9 * 60 * 60 * 1000;
+            const kstDate = new Date(now.getTime() + kstOffset);
+            const today = kstDate.toISOString().split('T')[0];
+            const yesterday = new Date(kstDate.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            const dateStr = kstDate.toLocaleDateString('ko-KR', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              weekday: 'long'
+            });
+            
+            // LMJ : GitHub username to real name mapping
+            const userNames = {
+              'leemjmorris': '이명진',
+              'jaemoon23': '김재문',
+              'LeeChaeBin002': '이채빈',
+              'Kdwio': '김도윤',
+              'bigwaterplz': '오민준',
+              'kimjiw8698-crypto': '김지원'
+            };
+            
+            async function addToNotion(content) {
+              const token = process.env.NOTION_API_TOKEN;
+              const parentPageId = process.env.NOTION_REPORT_PAGE_ID;
+              
+              return new Promise((resolve, reject) => {
+                const data = JSON.stringify({
+                  parent: { page_id: parentPageId },
+                  icon: { emoji: '📊' },
+                  properties: {
+                    title: {
+                      title: [{ text: { content: `${dateStr} 개발 현황` } }]
+                    }
+                  },
+                  children: content
+                });
+                
+                const req = https.request({
+                  hostname: 'api.notion.com',
+                  path: '/v1/pages',
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Notion-Version': '2022-06-28'
+                  }
+                }, (res) => {
+                  let body = '';
+                  res.on('data', d => body += d);
+                  res.on('end', () => resolve(JSON.parse(body)));
+                });
+                req.on('error', reject);
+                req.write(data);
+                req.end();
+              });
+            }
+            
+            try {
+              console.log(`Generating daily report for ${dateStr}...`);
+              
+              // LMJ : Get issues created in last 24 hours
+              const issuesCreated = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                since: yesterday,
+                state: 'all',
+                per_page: 100
+              });
+              
+              const newIssues = issuesCreated.data.filter(issue => 
+                !issue.pull_request && 
+                new Date(issue.created_at) >= new Date(yesterday)
+              );
+              
+              // LMJ : Get issues closed in last 24 hours
+              const closedIssues = issuesCreated.data.filter(issue => 
+                !issue.pull_request && 
+                issue.state === 'closed' &&
+                issue.closed_at &&
+                new Date(issue.closed_at) >= new Date(yesterday)
+              );
+              
+              // LMJ : Get PRs created in last 24 hours
+              const prsCreated = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all',
+                sort: 'created',
+                direction: 'desc',
+                per_page: 100
+              });
+              
+              const newPRs = prsCreated.data.filter(pr => 
+                new Date(pr.created_at) >= new Date(yesterday)
+              );
+              
+              // LMJ : Get PRs merged in last 24 hours
+              const mergedPRs = prsCreated.data.filter(pr => 
+                pr.merged_at &&
+                new Date(pr.merged_at) >= new Date(yesterday)
+              );
+              
+              // LMJ : Get active issues (in progress)
+              const activeIssues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              });
+              
+              const inProgressIssues = activeIssues.data.filter(issue => 
+                !issue.pull_request &&
+                issue.assignees.length > 0
+              );
+              
+              // LMJ : Calculate statistics by user
+              const userStats = {};
+              
+              for (const issue of inProgressIssues) {
+                for (const assignee of issue.assignees) {
+                  const userName = userNames[assignee.login] || assignee.login;
+                  if (!userStats[userName]) {
+                    userStats[userName] = {
+                      inProgress: 0,
+                      completed: 0,
+                      prs: 0
+                    };
+                  }
+                  userStats[userName].inProgress++;
+                }
+              }
+              
+              for (const issue of closedIssues) {
+                for (const assignee of issue.assignees) {
+                  const userName = userNames[assignee.login] || assignee.login;
+                  if (!userStats[userName]) {
+                    userStats[userName] = {
+                      inProgress: 0,
+                      completed: 0,
+                      prs: 0
+                    };
+                  }
+                  userStats[userName].completed++;
+                }
+              }
+              
+              for (const pr of mergedPRs) {
+                const userName = userNames[pr.user.login] || pr.user.login;
+                if (!userStats[userName]) {
+                  userStats[userName] = {
+                    inProgress: 0,
+                    completed: 0,
+                    prs: 0
+                  };
+                }
+                userStats[userName].prs++;
+              }
+              
+              // LMJ : Create Notion blocks
+              const blocks = [
+                {
+                  object: 'block',
+                  type: 'heading_2',
+                  heading_2: {
+                    rich_text: [{ text: { content: '📊 일일 개발 현황' } }]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'divider',
+                  divider: {}
+                },
+                {
+                  object: 'block',
+                  type: 'heading_3',
+                  heading_3: {
+                    rich_text: [{ text: { content: '📈 통계 요약' } }]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'bulleted_list_item',
+                  bulleted_list_item: {
+                    rich_text: [
+                      { text: { content: '생성된 Issue: ' } },
+                      { text: { content: `${newIssues.length}개`, annotations: { bold: true } } }
+                    ]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'bulleted_list_item',
+                  bulleted_list_item: {
+                    rich_text: [
+                      { text: { content: '완료된 Issue: ' } },
+                      { text: { content: `${closedIssues.length}개`, annotations: { bold: true } } }
+                    ]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'bulleted_list_item',
+                  bulleted_list_item: {
+                    rich_text: [
+                      { text: { content: '생성된 PR: ' } },
+                      { text: { content: `${newPRs.length}개`, annotations: { bold: true } } }
+                    ]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'bulleted_list_item',
+                  bulleted_list_item: {
+                    rich_text: [
+                      { text: { content: '머지된 PR: ' } },
+                      { text: { content: `${mergedPRs.length}개`, annotations: { bold: true } } }
+                    ]
+                  }
+                },
+                {
+                  object: 'block',
+                  type: 'bulleted_list_item',
+                  bulleted_list_item: {
+                    rich_text: [
+                      { text: { content: '진행 중인 Issue: ' } },
+                      { text: { content: `${inProgressIssues.length}개`, annotations: { bold: true } } }
+                    ]
+                  }
+                }
+              ];
+              
+              // LMJ : Add user statistics
+              if (Object.keys(userStats).length > 0) {
+                blocks.push(
+                  {
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  },
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: '👥 팀원별 현황' } }]
+                    }
+                  }
+                );
+                
+                for (const [userName, stats] of Object.entries(userStats)) {
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [
+                        { text: { content: `${userName}: `, annotations: { bold: true } } },
+                        { text: { content: `진행중 ${stats.inProgress}개 ` } },
+                        { text: { content: '/ ', annotations: { color: 'gray' } } },
+                        { text: { content: `완료 ${stats.completed}개 ` } },
+                        { text: { content: '/ ', annotations: { color: 'gray' } } },
+                        { text: { content: `PR ${stats.prs}개` } }
+                      ]
+                    }
+                  });
+                }
+              }
+              
+              // LMJ : Add new issues section
+              if (newIssues.length > 0) {
+                blocks.push(
+                  {
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  },
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: '🆕 생성된 Issue' } }]
+                    }
+                  }
+                );
+                
+                for (const issue of newIssues) {
+                  const assigneeNames = issue.assignees.map(a => 
+                    userNames[a.login] || a.login
+                  ).join(', ') || '미배정';
+                  
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [
+                        { 
+                          text: { 
+                            content: `#${issue.number} `,
+                            link: { url: issue.html_url }
+                          },
+                          annotations: { bold: true }
+                        },
+                        { text: { content: `${issue.title} ` } },
+                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                      ]
+                    }
+                  });
+                }
+              }
+              
+              // LMJ : Add closed issues section
+              if (closedIssues.length > 0) {
+                blocks.push(
+                  {
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  },
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: '✅ 완료된 Issue' } }]
+                    }
+                  }
+                );
+                
+                for (const issue of closedIssues) {
+                  const assigneeNames = issue.assignees.map(a => 
+                    userNames[a.login] || a.login
+                  ).join(', ') || '미배정';
+                  
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [
+                        { 
+                          text: { 
+                            content: `#${issue.number} `,
+                            link: { url: issue.html_url }
+                          },
+                          annotations: { bold: true, strikethrough: true }
+                        },
+                        { text: { content: `${issue.title} `, annotations: { strikethrough: true } } },
+                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                      ]
+                    }
+                  });
+                }
+              }
+              
+              // LMJ : Add merged PRs section
+              if (mergedPRs.length > 0) {
+                blocks.push(
+                  {
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  },
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: '🔀 머지된 PR' } }]
+                    }
+                  }
+                );
+                
+                for (const pr of mergedPRs) {
+                  const authorName = userNames[pr.user.login] || pr.user.login;
+                  
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [
+                        { 
+                          text: { 
+                            content: `#${pr.number} `,
+                            link: { url: pr.html_url }
+                          },
+                          annotations: { bold: true }
+                        },
+                        { text: { content: `${pr.title} ` } },
+                        { text: { content: `(작성자: ${authorName})`, annotations: { color: 'gray' } } }
+                      ]
+                    }
+                  });
+                }
+              }
+              
+              // LMJ : Add in-progress issues section
+              if (inProgressIssues.length > 0) {
+                blocks.push(
+                  {
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  },
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: '🔄 진행 중인 Issue' } }]
+                    }
+                  }
+                );
+                
+                for (const issue of inProgressIssues.slice(0, 20)) {
+                  const assigneeNames = issue.assignees.map(a => 
+                    userNames[a.login] || a.login
+                  ).join(', ');
+                  
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [
+                        { 
+                          text: { 
+                            content: `#${issue.number} `,
+                            link: { url: issue.html_url }
+                          },
+                          annotations: { bold: true }
+                        },
+                        { text: { content: `${issue.title} ` } },
+                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                      ]
+                    }
+                  });
+                }
+                
+                if (inProgressIssues.length > 20) {
+                  blocks.push({
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [
+                        { text: { content: `... 외 ${inProgressIssues.length - 20}개`, annotations: { italic: true, color: 'gray' } } }
+                      ]
+                    }
+                  });
+                }
+              }
+              
+              // LMJ : Add footer
+              blocks.push(
+                {
+                  object: 'block',
+                  type: 'divider',
+                  divider: {}
+                },
+                {
+                  object: 'block',
+                  type: 'paragraph',
+                  paragraph: {
+                    rich_text: [
+                      { text: { content: '🤖 이 리포트는 GitHub Actions에 의해 자동으로 생성되었습니다.', annotations: { italic: true, color: 'gray' } } }
+                    ]
+                  }
+                }
+              );
+              
+              // LMJ : Add to Notion
+              await addToNotion(blocks);
+              console.log('✅ Daily report added to Notion');
+              
+              console.log('✅ Daily report generation completed');
+              
+            } catch (error) {
+              console.error('❌ Error:', error);
+              core.setFailed(error.message);
+            }
