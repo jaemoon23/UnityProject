@@ -23,7 +23,6 @@ jobs:
             
             console.log(`🔍 Checking PR #${pr_number}`);
             
-            // LMJ : Extract issue numbers from PR body
             const issueMatches = pr_body.match(/(close[sd]?|fix(e[sd])?|resolve[sd]?)\s+#(\d+)/gi);
             
             if (!issueMatches || issueMatches.length === 0) {
@@ -46,7 +45,6 @@ PR을 Issue와 연결하려면 PR 설명에 다음 중 하나를 추가하세요
               return;
             }
             
-            // LMJ : Extract issue numbers
             const linkedIssues = issueMatches.map(match => {
               const numberMatch = match.match(/#(\d+)/);
               return numberMatch ? numberMatch[1] : null;
@@ -54,7 +52,6 @@ PR을 Issue와 연결하려면 PR 설명에 다음 중 하나를 추가하세요
             
             console.log(`📌 Linked issues: ${linkedIssues.join(', ')}`);
             
-            // LMJ : Verify each linked issue exists
             for (const issueNumber of linkedIssues) {
               try {
                 const { data: issue } = await github.rest.issues.get({
