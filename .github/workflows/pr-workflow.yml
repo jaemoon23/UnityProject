@@ -76,7 +76,7 @@ jobs:
                       type: 'section',
                       text: {
                         type: 'mrkdwn',
-                        text: `:rocket: *새로운 PR* #${prNumber}\n*제목:* ${prTitle}\n*작성자:* ${mentionText}\n*Branch:* ${headBranch} → ${baseBranch}\n<${prUrl}|:link: PR 보기>`
+                        text: `:rocket: *새로운 PR* #${prNumber}\n*제목:* ${prTitle}\n*작성자:* ${mentionText}\n*Branch:* ${headBranch} → ${baseBranch}\n<${prUrl}|PR 보기>`
                       }
                     }
                   ]
@@ -102,7 +102,7 @@ jobs:
                         type: 'section',
                         text: {
                           type: 'mrkdwn',
-                          text: `:eyes: *리뷰 요청*\n${reviewerMentions}\n*PR:* #${prNumber} ${prTitle}\n*작성자:* ${author}\n<${prUrl}|:link: PR 보기>`
+                          text: `:eyes: *리뷰 요청*\n${reviewerMentions}\n*PR:* #${prNumber} ${prTitle}\n*작성자:* ${author}\n<${prUrl}|PR 보기>`
                         }
                       }
                     ]
