@@ -47,6 +47,23 @@ jobs:
               'kimjiw8698-crypto': 'U09RVE84DQS'
             };
             
+            function removeMarkdown(text) {
+              if (!text) return '';
+              return text
+                .replace(/^#{1,6}\s+/gm, '')
+                .replace(/\*\*(.+?)\*\*/g, '$1')
+                .replace(/\*(.+?)\*/g, '$1')
+                .replace(/__(.+?)__/g, '$1')
+                .replace(/_(.+?)_/g, '$1')
+                .replace(/~~(.+?)~~/g, '$1')
+                .replace(/`(.+?)`/g, '$1')
+                .replace(/^\s*[-*+]\s+/gm, '')
+                .replace(/^\s*\d+\.\s+/gm, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+            }
+            
             function sanitizeForSlack(text) {
               if (!text) return '';
               return text
@@ -181,12 +198,14 @@ jobs:
                 let summary = null;
                 if (issueBody && issueBody.trim().length > 0) {
                   console.log('📨 Calling Gemini API...');
-                  const prompt = '다음 GitHub Issue의 전체 내용을 파악하여 5-7문장 정도의 하나의 연속된 문단으로 요약해주세요. 구조화하지 말고 자연스러운 문단 형태로 작성하며, 핵심 목적, 주요 작업 내용, 중요한 제약사항을 포함해주세요. 마크다운 강조나 불렛 포인트 없이 평문으로만 작성해주세요.\n\n제목: ' + issueTitle + '\n\n내용: ' + issueBody.substring(0, 3000);
+                  const prompt = 'IMPORTANT: You must respond in plain text only, without ANY markdown formatting.\n\nPlease summarize the following GitHub Issue in 5-7 sentences as a single continuous paragraph. Write naturally in plain text format without any markdown syntax (no ##, -, *, **, __, or any other formatting). Include the main purpose, key tasks, and important constraints.\n\nTitle: ' + issueTitle + '\n\nContent: ' + issueBody.substring(0, 3000) + '\n\nRemember: Plain text only, no markdown formatting whatsoever.';
                   summary = await callGeminiAPI(prompt);
                   
                   if (summary) {
                     console.log('🤖 Gemini raw response:', summary.substring(0, 200));
-                    console.log('🤖 Response length:', summary.length);
+                    summary = removeMarkdown(summary);
+                    console.log('🤖 After markdown removal:', summary.substring(0, 200));
+                    console.log('🤖 Final length:', summary.length);
                   } else {
                     console.log('⚠️ Gemini returned null, using fallback');
                     const lines = issueBody.split('\n').filter(line => line.trim().length > 0);
