@@ -38,17 +38,7 @@ public class MonsterSpawner : MonoBehaviour
     private void Update()
     {
         
-        //CBL: every 1.5 seconds -> JML: changed to spawnInterval variable
-        // if (monsterCount < maxMonsterCount)
-        // {
-        //     timer += Time.deltaTime;
-        //     if (timer >= spawnInterval)
-        //     {
-        //         SpawnMonster();
-        //         timer = 0f;
-        //     }
-        // }
-
+        
         if (ObjectPoolManager.Instance.GetActiveCount<Monster>() < maxMonsterCount)
         {
             timer += Time.deltaTime;
