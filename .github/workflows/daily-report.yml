@@ -360,61 +360,52 @@ jobs:
             try {
               console.log('Generating daily report for ' + dateStr + '...');
               console.log('Looking back ' + daysToLookBack + ' days (since ' + startDate + ')');
-              
-              const issuesCreated = await github.rest.issues.listForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                since: startDate,
-                state: 'all',
-                per_page: 100
-              });
-              
-              const newIssues = issuesCreated.data.filter(issue => 
-                !issue.pull_request && 
-                new Date(issue.created_at) >= new Date(startDate)
-              );
-              
-              const closedIssues = issuesCreated.data.filter(issue => 
-                !issue.pull_request && 
+
+              // Fetch all issues once (both open and closed)
+              const [allIssuesResponse, allPRsResponse] = await Promise.all([
+                github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  since: startDate,
+                  state: 'all',
+                  per_page: 100
+                }),
+                github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'all',
+                  sort: 'created',
+                  direction: 'desc',
+                  per_page: 100
+                })
+              ]);
+
+              const startDateObj = new Date(startDate);
+
+              // Filter issues from the single API call
+              const allIssues = allIssuesResponse.data.filter(issue => !issue.pull_request);
+              const newIssues = allIssues.filter(issue => new Date(issue.created_at) >= startDateObj);
+              const closedIssues = allIssues.filter(issue =>
                 issue.state === 'closed' &&
                 issue.closed_at &&
-                new Date(issue.closed_at) >= new Date(startDate)
+                new Date(issue.closed_at) >= startDateObj
               );
-              
-              const allRecentIssues = issuesCreated.data.filter(issue => !issue.pull_request);
-              
-              const prsCreated = await github.rest.pulls.list({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'all',
-                sort: 'created',
-                direction: 'desc',
-                per_page: 100
-              });
-              
-              const newPRs = prsCreated.data.filter(pr => 
-                new Date(pr.created_at) >= new Date(startDate)
-              );
-              
-              const mergedPRs = prsCreated.data.filter(pr => 
-                pr.merged_at &&
-                new Date(pr.merged_at) >= new Date(startDate)
-              );
-              
-              const activeIssues = await github.rest.issues.listForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                per_page: 100
-              });
-              
-              const inProgressIssues = activeIssues.data.filter(issue => 
-                !issue.pull_request &&
+              const inProgressIssues = allIssues.filter(issue =>
+                issue.state === 'open' &&
                 issue.assignees.length > 0
               );
+
+              // Filter PRs from the single API call
+              const newPRs = allPRsResponse.data.filter(pr => new Date(pr.created_at) >= startDateObj);
+              const mergedPRs = allPRsResponse.data.filter(pr =>
+                pr.merged_at &&
+                new Date(pr.merged_at) >= startDateObj
+              );
+
+              const allRecentIssues = allIssues;
               
               console.log('🤖 Generating AI summary with Gemini...');
-              const aiSummary = await generateGeminiSummary(allRecentIssues, prsCreated.data, dayOfWeek === 1);
+              const aiSummary = await generateGeminiSummary(allRecentIssues, allPRsResponse.data, dayOfWeek === 1);
               console.log('✅ AI summary generated');
               
               const userStats = {};
@@ -777,9 +768,31 @@ jobs:
               console.log('📤 Creating Notion page...');
               const page = await createNotionPage();
               const pageId = page.id;
-              
+
               console.log('📝 Total blocks to add:', blocks.length);
-              
+
+              // Notion has a limit of ~2000 blocks per page
+              const MAX_BLOCKS = 1900;
+              if (blocks.length > MAX_BLOCKS) {
+                console.log('⚠️ Warning: Block count (' + blocks.length + ') exceeds recommended limit (' + MAX_BLOCKS + ')');
+                console.log('⚠️ Truncating to ' + MAX_BLOCKS + ' blocks to prevent errors');
+                blocks.splice(MAX_BLOCKS);
+                blocks.push({
+                  object: 'block',
+                  type: 'callout',
+                  callout: {
+                    rich_text: [{
+                      text: {
+                        content: '⚠️ 일부 항목이 생략되었습니다. 전체 내용은 GitHub에서 확인하세요.'
+                      }
+                    }],
+                    icon: { emoji: '⚠️' },
+                    color: 'yellow_background'
+                  }
+                });
+              }
+
+              // Notion API allows max 100 blocks per request
               for (let i = 0; i < blocks.length; i += 100) {
                 const chunk = blocks.slice(i, i + 100);
                 console.log('📤 Adding blocks ' + (i + 1) + '-' + (i + chunk.length) + '...');

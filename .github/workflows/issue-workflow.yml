@@ -202,16 +202,44 @@ jobs:
                 if (issueBody && issueBody.trim().length > 0) {
                   console.log('📨 Calling Gemini API...');
                   const prompt = '아래 GitHub Issue를 읽고 핵심 내용만 추려서 3-5문장으로 간결하게 요약해주세요.\n\n🚨 절대 지켜야 할 규칙:\n1. 순수한 평문(plain text)으로만 작성하세요.\n2. 마크다운 문법을 절대 사용하지 마세요: #, ##, -, *, **, __, `, [], (), ~~ 등 모두 금지\n3. 체크박스 표시를 절대 사용하지 마세요: [ ], [x] 금지\n4. 불렛 포인트, 번호 매기기, 섹션 헤더를 사용하지 마세요.\n5. 하나의 자연스러운 문단으로 작성하세요.\n6. "이 이슈는..." 또는 "이 작업은..."으로 시작하세요.\n7. 원본 텍스트를 그대로 복사하지 말고, 당신의 언어로 다시 작성하세요.\n\n✅ 올바른 예시:\n이 이슈는 스테이지 타이머 시스템을 구현하는 작업입니다. 남은 시간을 계산하고 콘솔에 출력하는 기능을 추가하며, 타이머가 0이 되면 게임 오버 처리를 수행합니다. 타이머는 UI에도 표시되어야 합니다.\n\n❌ 잘못된 예시 (마크다운 사용):\nStage Timer Sys 구현 - [ ] 남은 시간 계산\n\n이슈 제목: ' + issueTitle + '\n\n이슈 내용:\n' + issueBody.substring(0, 3000) + '\n\n위 규칙을 반드시 지켜서 순수한 평문으로만 요약해주세요. 마크다운, 체크박스, 기호를 절대 사용하지 마세요.';
-                  
-                  const rawSummary = await callGeminiAPI(prompt);
-                  
-                  if (rawSummary) {
-                    console.log('🤖 Gemini raw response:', rawSummary.substring(0, 200));
-                    summary = removeMarkdown(rawSummary);
-                    console.log('🤖 After markdown removal:', summary.substring(0, 200));
-                  } else {
-                    console.log('⚠️ Gemini returned null, using fallback');
-                    const lines = issueBody.split('\n').filter(line => line.trim().length > 0 && !line.trim().startsWith('#'));
+
+                  try {
+                    const rawSummary = await callGeminiAPI(prompt);
+
+                    if (rawSummary && rawSummary.trim().length > 0) {
+                      console.log('🤖 Gemini raw response:', rawSummary.substring(0, 200));
+                      summary = removeMarkdown(rawSummary);
+
+                      // Validate summary quality
+                      if (summary.trim().length < 10) {
+                        console.log('⚠️ Summary too short after cleaning, using fallback');
+                        summary = null;
+                      } else if (summary.includes('```') || summary.includes('##')) {
+                        console.log('⚠️ Summary still contains markdown, cleaning again');
+                        summary = removeMarkdown(summary);
+                      }
+
+                      console.log('🤖 After markdown removal:', summary.substring(0, 200));
+                    } else {
+                      console.log('⚠️ Gemini returned empty response');
+                      summary = null;
+                    }
+                  } catch (error) {
+                    console.log('⚠️ Gemini API call failed:', error.message);
+                    summary = null;
+                  }
+
+                  // Fallback if summary is invalid
+                  if (!summary) {
+                    console.log('📝 Using fallback summary from issue body');
+                    const lines = issueBody.split('\n').filter(line => {
+                      const trimmed = line.trim();
+                      return trimmed.length > 0 &&
+                             !trimmed.startsWith('#') &&
+                             !trimmed.startsWith('-') &&
+                             !trimmed.startsWith('*') &&
+                             !trimmed.match(/^\[[ xX]\]/);
+                    });
                     summary = lines.slice(0, 3).join(' ').substring(0, 500);
                   }
                 }
