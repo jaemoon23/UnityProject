@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(dir %APPDATA%Claudelogs /b /o-d 2)",
+      "Bash(nul)",
+      "Bash(powershell -Command:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
