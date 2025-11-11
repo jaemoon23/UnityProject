@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.Pool;
-public class Monster : MonsterBase, ITargetable
+public class BossMonster : MonsterBase, ITargetable
 {
     [SerializeField] new Collider2D collider2D;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private float damage = 10f;
     [SerializeField] private float attackInterval = 0.7f;
-    [SerializeField] private float maxHealth = 100f;
+    [SerializeField] private float maxHealth = 1000f;
 
     private float attackTimer = 0f;
     private Wall wall;
@@ -18,7 +18,7 @@ public class Monster : MonsterBase, ITargetable
     public Transform GetTransform() => transform;
     public Vector3 GetPosition() => transform.position;
     public bool IsAlive() => gameObject.activeInHierarchy && currentHealth > 0;
-    public float Weight { get; private set; } = 1f; // Example weight value
+    public float Weight { get; private set; } = 5f; // Example weight value
     //--------------------------------
     private void OnEnable()
     {
@@ -35,7 +35,6 @@ public class Monster : MonsterBase, ITargetable
     {
         float randomX = Random.Range(-0.4f, 0.4f);
         transform.position = new Vector3(randomX, 2, -7.5f);
-        
     }
 
     private void Update()
@@ -100,8 +99,7 @@ public class Monster : MonsterBase, ITargetable
         isWallHit = false;
         wall = null;
         attackTimer = 0f;
-        Weight = 1f;
-        
+        Weight = 5f;
         TargetRegistry.Instance.RegisterTarget(this);
         Debug.Log("Monster spawned");
     }
@@ -111,7 +109,7 @@ public class Monster : MonsterBase, ITargetable
         isWallHit = false;
         wall = null;
         attackTimer = 0f;
-        Weight = 1f;
+        Weight = 5f;
         TargetRegistry.Instance.UnregisterTarget(this);
         Debug.Log("Monster despawned");
     }

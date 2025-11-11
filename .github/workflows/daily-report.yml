@@ -2,7 +2,7 @@ name: Daily Report
 
 on:
   schedule:
-    - cron: '0 9 * * 1-5'
+    - cron: '0 0 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -19,16 +19,19 @@ jobs:
         env:
           NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
           NOTION_REPORT_PAGE_ID: ${{ secrets.NOTION_REPORT_PAGE_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           script: |
             const https = require('https');
             
-            // LMJ : Get today's date in KST (UTC+9)
             const now = new Date();
             const kstOffset = 9 * 60 * 60 * 1000;
             const kstDate = new Date(now.getTime() + kstOffset);
+            const dayOfWeek = kstDate.getDay();
+            
+            const daysToLookBack = (dayOfWeek === 1) ? 3 : 1;
+            const startDate = new Date(kstDate.getTime() - daysToLookBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             const today = kstDate.toISOString().split('T')[0];
-            const yesterday = new Date(kstDate.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             
             const dateStr = kstDate.toLocaleDateString('ko-KR', { 
               year: 'numeric', 
@@ -37,17 +40,184 @@ jobs:
               weekday: 'long'
             });
             
-            // LMJ : GitHub username to real name mapping
+            const periodStr = (dayOfWeek === 1) 
+              ? '(주말 포함)' 
+              : '';
+            
             const userNames = {
               'leemjmorris': '이명진',
-              'jaemoon23': '김재문',
+              'jaemoon23': '이재문',
               'LeeChaeBin002': '이채빈',
-              'Kdwio': '김도윤',
-              'bigwaterplz': '오민준',
+              'Kdwio': '김동욱',
+              'bigwaterplz': '김민휘',
               'kimjiw8698-crypto': '김지원'
             };
             
-            async function addToNotion(content) {
+            function parseAISummaryToBlocks(summary) {
+              const blocks = [];
+              const lines = summary.split('\n');
+              
+              for (const line of lines) {
+                const trimmed = line.trim();
+                
+                if (!trimmed) {
+                  continue;
+                }
+                
+                if (trimmed === '---') {
+                  blocks.push({
+                    object: 'block',
+                    type: 'divider',
+                    divider: {}
+                  });
+                } else if (trimmed.startsWith('## ')) {
+                  const text = trimmed.substring(3).trim();
+                  blocks.push({
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [{ text: { content: text } }]
+                    }
+                  });
+                } else if (trimmed.startsWith('# ')) {
+                  const text = trimmed.substring(2).trim();
+                  blocks.push({
+                    object: 'block',
+                    type: 'heading_2',
+                    heading_2: {
+                      rich_text: [{ text: { content: text } }]
+                    }
+                  });
+                } else if (trimmed.startsWith('- ')) {
+                  const text = trimmed.substring(2).trim();
+                  blocks.push({
+                    object: 'block',
+                    type: 'bulleted_list_item',
+                    bulleted_list_item: {
+                      rich_text: [{ text: { content: text } }]
+                    }
+                  });
+                } else {
+                  blocks.push({
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [{ text: { content: trimmed } }]
+                    }
+                  });
+                }
+              }
+              
+              return blocks;
+            }
+            
+            async function generateGeminiSummary(issues, prs, isMonday) {
+              const geminiApiKey = process.env.GEMINI_API_KEY;
+              
+              const issuesList = issues.map(issue => {
+                const assignees = issue.assignees.map(a => userNames[a.login] || a.login).join(', ') || '미배정';
+                const labels = issue.labels.map(l => l.name).join(', ');
+                return '- #' + issue.number + ' ' + issue.title + ' (담당: ' + assignees + ') [' + labels + '] - ' + issue.state;
+              }).join('\n');
+              
+              const prsList = prs.map(pr => {
+                const author = userNames[pr.user.login] || pr.user.login;
+                return '- #' + pr.number + ' ' + pr.title + ' (작성: ' + author + ') - ' + (pr.merged_at ? '머지됨' : pr.state);
+              }).join('\n');
+              
+              const periodInfo = isMonday ? '금요일부터 월요일까지 (주말 포함 3일간)' : '전일';
+              
+              const prompt = '당신은 Unity 게임 개발 팀의 일일 보고서를 작성하는 AI입니다.\n' +
+                '아래의 GitHub Issues와 Pull Requests를 분석하여, 팀원별 작업 내용을 요약해주세요.\n' +
+                '**기간: ' + periodInfo + '의 작업 내용**\n\n' +
+                '**팀원 목록:**\n' +
+                '- 이명진 (팀장, 프로그래머)\n' +
+                '- 이재문 (프로그래머)\n' +
+                '- 이채빈 (프로그래머/디자이너)\n' +
+                '- 김동욱 (기획자)\n' +
+                '- 김민휘 (기획자)\n' +
+                '- 김지원 (기획자)\n\n' +
+                '**GitHub Issues (' + periodInfo + '):**\n' +
+                (issuesList || '없음') + '\n\n' +
+                '**Pull Requests (' + periodInfo + '):**\n' +
+                (prsList || '없음') + '\n\n' +
+                '**중요: 다음 형식을 정확히 따라주세요. 이슈 목록은 포함하지 마세요:**\n\n' +
+                '# 전일 보고\n' +
+                '## 완료\n' +
+                '- 담당자 - 완료한 작업 내용\n\n' +
+                '## 미완료 (사유, 처리)\n' +
+                '- 담당자 - 미완료 작업 및 사유\n\n' +
+                '---\n\n' +
+                '# 금일 보고\n' +
+                '## 오전\n' +
+                '- 담당자 - 오전 작업 계획\n\n' +
+                '## 오후\n' +
+                '- 담당자 - 오후 작업 계획\n\n' +
+                '## (야근)\n' +
+                '- 담당자 - 야근 작업 계획 (있는 경우에만)\n\n' +
+                '**작성 규칙:**\n' +
+                '1. 반드시 위의 형식만 사용하세요. "# 이슈" 섹션은 절대 추가하지 마세요.\n' +
+                '2. 제목은 반드시 # 또는 ##로 시작해야 합니다.\n' +
+                '3. Issue의 label과 상태(open/closed)를 참고하여 작업 완료 여부를 판단하세요.\n' +
+                '4. PR의 merge 여부를 참고하여 작업 완료를 판단하세요.\n' +
+                '5. 간결하고 명확하게 작성하세요.\n' +
+                '6. 작업 내용이 없으면 "없음"이라고 표시하세요.\n' +
+                '7. 각 항목은 "- 담당자 - 작업내용" 형식으로 작성하세요.\n' +
+                (isMonday ? '8. 주말 작업 내용도 포함되어 있으므로, 금요일~일요일의 작업을 모두 반영하세요.\n' : '') +
+                '\n요약을 시작하세요:';
+
+              return new Promise((resolve, reject) => {
+                const postData = JSON.stringify({
+                  contents: [{
+                    parts: [{ text: prompt }]
+                  }]
+                });
+                
+                const req = https.request({
+                  hostname: 'generativelanguage.googleapis.com',
+                  path: '/v1beta/models/gemini-2.5-flash:generateContent?key=' + geminiApiKey,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                  }
+                }, (res) => {
+                  console.log('🔍 Gemini API Status:', res.statusCode);
+                  
+                  let body = '';
+                  res.on('data', d => body += d);
+                  res.on('end', () => {
+                    try {
+                      const result = JSON.parse(body);
+                      
+                      if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text) {
+                        console.log('✅ AI summary generated successfully');
+                        resolve(result.candidates[0].content.parts[0].text);
+                      } else if (result.error) {
+                        console.error('❌ Gemini API Error:', result.error);
+                        reject(new Error('Gemini API error: ' + result.error.message));
+                      } else {
+                        console.error('❌ Unexpected response structure:', JSON.stringify(result));
+                        reject(new Error('Invalid Gemini API response structure'));
+                      }
+                    } catch (e) {
+                      console.error('❌ Failed to parse Gemini response:', body);
+                      reject(e);
+                    }
+                  });
+                });
+                
+                req.on('error', (e) => {
+                  console.error('❌ Gemini request error:', e);
+                  reject(e);
+                });
+                
+                req.write(postData);
+                req.end();
+              });
+            }
+            
+            async function createNotionPage() {
               const token = process.env.NOTION_API_TOKEN;
               const parentPageId = process.env.NOTION_REPORT_PAGE_ID;
               
@@ -57,10 +227,9 @@ jobs:
                   icon: { emoji: '📊' },
                   properties: {
                     title: {
-                      title: [{ text: { content: `${dateStr} 개발 현황` } }]
+                      title: [{ text: { content: dateStr + ' 개발 현황 ' + periodStr } }]
                     }
-                  },
-                  children: content
+                  }
                 });
                 
                 const req = https.request({
@@ -68,47 +237,112 @@ jobs:
                   path: '/v1/pages',
                   method: 'POST',
                   headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json',
                     'Notion-Version': '2022-06-28'
                   }
                 }, (res) => {
                   let body = '';
                   res.on('data', d => body += d);
-                  res.on('end', () => resolve(JSON.parse(body)));
+                  res.on('end', () => {
+                    try {
+                      const result = JSON.parse(body);
+                      
+                      if (res.statusCode === 200) {
+                        console.log('📄 Page created:', result.url);
+                        resolve(result);
+                      } else {
+                        console.error('❌ Notion API Error:', JSON.stringify(result, null, 2));
+                        reject(new Error('Notion API returned ' + res.statusCode + ': ' + (result.message || 'Unknown error')));
+                      }
+                    } catch (e) {
+                      console.error('❌ Failed to parse response:', body);
+                      reject(e);
+                    }
+                  });
                 });
-                req.on('error', reject);
+                
+                req.on('error', (e) => {
+                  console.error('❌ Request error:', e);
+                  reject(e);
+                });
+                
+                req.write(data);
+                req.end();
+              });
+            }
+            
+            async function appendBlocksToNotion(pageId, blocks) {
+              const token = process.env.NOTION_API_TOKEN;
+              
+              return new Promise((resolve, reject) => {
+                const data = JSON.stringify({ children: blocks });
+                
+                const req = https.request({
+                  hostname: 'api.notion.com',
+                  path: '/v1/blocks/' + pageId + '/children',
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json',
+                    'Notion-Version': '2022-06-28'
+                  }
+                }, (res) => {
+                  let body = '';
+                  res.on('data', d => body += d);
+                  res.on('end', () => {
+                    try {
+                      const result = JSON.parse(body);
+                      
+                      if (res.statusCode === 200) {
+                        resolve(result);
+                      } else {
+                        console.error('❌ Notion API Error:', JSON.stringify(result, null, 2));
+                        reject(new Error('Notion API returned ' + res.statusCode + ': ' + (result.message || 'Unknown error')));
+                      }
+                    } catch (e) {
+                      console.error('❌ Failed to parse response:', body);
+                      reject(e);
+                    }
+                  });
+                });
+                
+                req.on('error', (e) => {
+                  console.error('❌ Request error:', e);
+                  reject(e);
+                });
+                
                 req.write(data);
                 req.end();
               });
             }
             
             try {
-              console.log(`Generating daily report for ${dateStr}...`);
+              console.log('Generating daily report for ' + dateStr + '...');
+              console.log('Looking back ' + daysToLookBack + ' days (since ' + startDate + ')');
               
-              // LMJ : Get issues created in last 24 hours
               const issuesCreated = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                since: yesterday,
+                since: startDate,
                 state: 'all',
                 per_page: 100
               });
               
               const newIssues = issuesCreated.data.filter(issue => 
                 !issue.pull_request && 
-                new Date(issue.created_at) >= new Date(yesterday)
+                new Date(issue.created_at) >= new Date(startDate)
               );
               
-              // LMJ : Get issues closed in last 24 hours
               const closedIssues = issuesCreated.data.filter(issue => 
                 !issue.pull_request && 
                 issue.state === 'closed' &&
                 issue.closed_at &&
-                new Date(issue.closed_at) >= new Date(yesterday)
+                new Date(issue.closed_at) >= new Date(startDate)
               );
               
-              // LMJ : Get PRs created in last 24 hours
+              const allRecentIssues = issuesCreated.data.filter(issue => !issue.pull_request);
+              
               const prsCreated = await github.rest.pulls.list({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -119,16 +353,14 @@ jobs:
               });
               
               const newPRs = prsCreated.data.filter(pr => 
-                new Date(pr.created_at) >= new Date(yesterday)
+                new Date(pr.created_at) >= new Date(startDate)
               );
               
-              // LMJ : Get PRs merged in last 24 hours
               const mergedPRs = prsCreated.data.filter(pr => 
                 pr.merged_at &&
-                new Date(pr.merged_at) >= new Date(yesterday)
+                new Date(pr.merged_at) >= new Date(startDate)
               );
               
-              // LMJ : Get active issues (in progress)
               const activeIssues = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -141,7 +373,10 @@ jobs:
                 issue.assignees.length > 0
               );
               
-              // LMJ : Calculate statistics by user
+              console.log('🤖 Generating AI summary with Gemini...');
+              const aiSummary = await generateGeminiSummary(allRecentIssues, prsCreated.data, dayOfWeek === 1);
+              console.log('✅ AI summary generated');
+              
               const userStats = {};
               
               for (const issue of inProgressIssues) {
@@ -184,8 +419,25 @@ jobs:
                 userStats[userName].prs++;
               }
               
-              // LMJ : Create Notion blocks
-              const blocks = [
+              const blocks = [];
+              
+              blocks.push({
+                object: 'block',
+                type: 'heading_2',
+                heading_2: {
+                  rich_text: [{ text: { content: '🤖 AI 요약' } }]
+                }
+              });
+              
+              const aiBlocks = parseAISummaryToBlocks(aiSummary);
+              blocks.push(...aiBlocks);
+              
+              blocks.push(
+                {
+                  object: 'block',
+                  type: 'divider',
+                  divider: {}
+                },
                 {
                   object: 'block',
                   type: 'heading_2',
@@ -211,7 +463,7 @@ jobs:
                   bulleted_list_item: {
                     rich_text: [
                       { text: { content: '생성된 Issue: ' } },
-                      { text: { content: `${newIssues.length}개`, annotations: { bold: true } } }
+                      { text: { content: newIssues.length + '개' }, annotations: { bold: true } }
                     ]
                   }
                 },
@@ -221,7 +473,7 @@ jobs:
                   bulleted_list_item: {
                     rich_text: [
                       { text: { content: '완료된 Issue: ' } },
-                      { text: { content: `${closedIssues.length}개`, annotations: { bold: true } } }
+                      { text: { content: closedIssues.length + '개' }, annotations: { bold: true } }
                     ]
                   }
                 },
@@ -231,7 +483,7 @@ jobs:
                   bulleted_list_item: {
                     rich_text: [
                       { text: { content: '생성된 PR: ' } },
-                      { text: { content: `${newPRs.length}개`, annotations: { bold: true } } }
+                      { text: { content: newPRs.length + '개' }, annotations: { bold: true } }
                     ]
                   }
                 },
@@ -241,7 +493,7 @@ jobs:
                   bulleted_list_item: {
                     rich_text: [
                       { text: { content: '머지된 PR: ' } },
-                      { text: { content: `${mergedPRs.length}개`, annotations: { bold: true } } }
+                      { text: { content: mergedPRs.length + '개' }, annotations: { bold: true } }
                     ]
                   }
                 },
@@ -251,13 +503,12 @@ jobs:
                   bulleted_list_item: {
                     rich_text: [
                       { text: { content: '진행 중인 Issue: ' } },
-                      { text: { content: `${inProgressIssues.length}개`, annotations: { bold: true } } }
+                      { text: { content: inProgressIssues.length + '개' }, annotations: { bold: true } }
                     ]
                   }
                 }
-              ];
+              );
               
-              // LMJ : Add user statistics
               if (Object.keys(userStats).length > 0) {
                 blocks.push(
                   {
@@ -280,19 +531,18 @@ jobs:
                     type: 'bulleted_list_item',
                     bulleted_list_item: {
                       rich_text: [
-                        { text: { content: `${userName}: `, annotations: { bold: true } } },
-                        { text: { content: `진행중 ${stats.inProgress}개 ` } },
-                        { text: { content: '/ ', annotations: { color: 'gray' } } },
-                        { text: { content: `완료 ${stats.completed}개 ` } },
-                        { text: { content: '/ ', annotations: { color: 'gray' } } },
-                        { text: { content: `PR ${stats.prs}개` } }
+                        { text: { content: userName + ': ' }, annotations: { bold: true } },
+                        { text: { content: '진행중 ' + stats.inProgress + '개 ' } },
+                        { text: { content: '/ ' }, annotations: { color: 'gray' } },
+                        { text: { content: '완료 ' + stats.completed + '개 ' } },
+                        { text: { content: '/ ' }, annotations: { color: 'gray' } },
+                        { text: { content: 'PR ' + stats.prs + '개' } }
                       ]
                     }
                   });
                 }
               }
               
-              // LMJ : Add new issues section
               if (newIssues.length > 0) {
                 blocks.push(
                   {
@@ -321,20 +571,19 @@ jobs:
                       rich_text: [
                         { 
                           text: { 
-                            content: `#${issue.number} `,
+                            content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
                           annotations: { bold: true }
                         },
-                        { text: { content: `${issue.title} ` } },
-                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                        { text: { content: issue.title + ' ' } },
+                        { text: { content: '(담당: ' + assigneeNames + ')' }, annotations: { color: 'gray' } }
                       ]
                     }
                   });
                 }
               }
               
-              // LMJ : Add closed issues section
               if (closedIssues.length > 0) {
                 blocks.push(
                   {
@@ -363,20 +612,19 @@ jobs:
                       rich_text: [
                         { 
                           text: { 
-                            content: `#${issue.number} `,
+                            content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
                           annotations: { bold: true, strikethrough: true }
                         },
-                        { text: { content: `${issue.title} `, annotations: { strikethrough: true } } },
-                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                        { text: { content: issue.title + ' ' }, annotations: { strikethrough: true } },
+                        { text: { content: '(담당: ' + assigneeNames + ')' }, annotations: { color: 'gray' } }
                       ]
                     }
                   });
                 }
               }
               
-              // LMJ : Add merged PRs section
               if (mergedPRs.length > 0) {
                 blocks.push(
                   {
@@ -403,20 +651,19 @@ jobs:
                       rich_text: [
                         { 
                           text: { 
-                            content: `#${pr.number} `,
+                            content: '#' + pr.number + ' ',
                             link: { url: pr.html_url }
                           },
                           annotations: { bold: true }
                         },
-                        { text: { content: `${pr.title} ` } },
-                        { text: { content: `(작성자: ${authorName})`, annotations: { color: 'gray' } } }
+                        { text: { content: pr.title + ' ' } },
+                        { text: { content: '(작성자: ' + authorName + ')' }, annotations: { color: 'gray' } }
                       ]
                     }
                   });
                 }
               }
               
-              // LMJ : Add in-progress issues section
               if (inProgressIssues.length > 0) {
                 blocks.push(
                   {
@@ -445,13 +692,13 @@ jobs:
                       rich_text: [
                         { 
                           text: { 
-                            content: `#${issue.number} `,
+                            content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
                           annotations: { bold: true }
                         },
-                        { text: { content: `${issue.title} ` } },
-                        { text: { content: `(담당: ${assigneeNames})`, annotations: { color: 'gray' } } }
+                        { text: { content: issue.title + ' ' } },
+                        { text: { content: '(담당: ' + assigneeNames + ')' }, annotations: { color: 'gray' } }
                       ]
                     }
                   });
@@ -463,14 +710,13 @@ jobs:
                     type: 'paragraph',
                     paragraph: {
                       rich_text: [
-                        { text: { content: `... 외 ${inProgressIssues.length - 20}개`, annotations: { italic: true, color: 'gray' } } }
+                        { text: { content: '... 외 ' + (inProgressIssues.length - 20) + '개' }, annotations: { italic: true, color: 'gray' } }
                       ]
                     }
                   });
                 }
               }
               
-              // LMJ : Add footer
               blocks.push(
                 {
                   object: 'block',
@@ -482,16 +728,25 @@ jobs:
                   type: 'paragraph',
                   paragraph: {
                     rich_text: [
-                      { text: { content: '🤖 이 리포트는 GitHub Actions에 의해 자동으로 생성되었습니다.', annotations: { italic: true, color: 'gray' } } }
+                      { text: { content: '🤖 이 리포트는 GitHub Actions에 의해 자동으로 생성되었습니다.' }, annotations: { italic: true, color: 'gray' } }
                     ]
                   }
                 }
               );
               
-              // LMJ : Add to Notion
-              await addToNotion(blocks);
-              console.log('✅ Daily report added to Notion');
+              console.log('📤 Creating Notion page...');
+              const page = await createNotionPage();
+              const pageId = page.id;
               
+              console.log('📝 Total blocks to add:', blocks.length);
+              
+              for (let i = 0; i < blocks.length; i += 100) {
+                const chunk = blocks.slice(i, i + 100);
+                console.log('📤 Adding blocks ' + (i + 1) + '-' + (i + chunk.length) + '...');
+                await appendBlocksToNotion(pageId, chunk);
+              }
+              
+              console.log('✅ Daily report added to Notion');
               console.log('✅ Daily report generation completed');
               
             } catch (error) {
