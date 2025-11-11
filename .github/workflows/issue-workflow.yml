@@ -3,17 +3,13 @@ name: Issue Workflow
 on:
   issues:
     types: [opened, assigned, reopened, labeled]
-  projects_v2_item:
-    types: [edited]
 
 permissions:
   contents: write
   issues: write
-  repository-projects: read
 
 jobs:
   handle-issue:
-    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -345,7 +341,7 @@ jobs:
                           type: 'header',
                           text: {
                             type: 'plain_text',
-                            text: '🌿 Branch Created (Ready)',
+                            text: '🌿 Branch Created',
                             emoji: true
                           }
                         },
@@ -374,7 +370,7 @@ jobs:
                           elements: [
                             {
                               type: 'mrkdwn',
-                              text: '💡 Issue status가 Ready로 변경되어 브랜치가 생성되었습니다.'
+                              text: '💡 Ready 상태로 변경되어 브랜치가 생성되었습니다.'
                             }
                           ]
                         },
@@ -503,240 +499,6 @@ jobs:
               }
               
               console.log('✅ Workflow completed');
-              
-            } catch (error) {
-              console.error('❌ Workflow failed:', error.message);
-              throw error;
-            }
-
-  handle-project-status:
-    if: github.event_name == 'projects_v2_item'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Handle Project Status Change
-        uses: actions/github-script@v7
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          script: |
-            const https = require('https');
-            const { execSync } = require('child_process');
-            
-            const userMapping = {
-              'leemjmorris': 'U09RR542WJ1',
-              'jaemoon23': 'U09RR5022KX',
-              'LeeChaeBin002': 'U09SP9SV37S',
-              'Kdwio': 'U09RCTQNJKZ',
-              'bigwaterplz': 'U09RY3FQE4C',
-              'kimjiw8698-crypto': 'U09RVE84DQS'
-            };
-            
-            function sanitizeForSlack(text) {
-              if (!text) return '';
-              return text
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim()
-                .substring(0, 2000);
-            }
-            
-            function sendToSlack(message) {
-              return new Promise((resolve, reject) => {
-                const data = JSON.stringify(message);
-                const url = new URL(process.env.SLACK_WEBHOOK_URL);
-                
-                const options = {
-                  hostname: url.hostname,
-                  path: url.pathname + url.search,
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                    'Content-Length': Buffer.byteLength(data)
-                  }
-                };
-                
-                const req = https.request(options, (res) => {
-                  let body = '';
-                  res.on('data', (chunk) => body += chunk);
-                  res.on('end', () => {
-                    if (res.statusCode === 200 && body === 'ok') {
-                      resolve(body);
-                    } else {
-                      reject(new Error('Slack: ' + res.statusCode + ' - ' + body));
-                    }
-                  });
-                });
-                
-                req.on('error', reject);
-                req.write(data);
-                req.end();
-              });
-            }
-            
-            try {
-              console.log('📋 Project item event detected');
-              console.log('Event payload:', JSON.stringify(context.payload, null, 2));
-              
-              const changes = context.payload.changes;
-              if (!changes || !changes.field_value) {
-                console.log('⚠️ No field value changes detected');
-                return;
-              }
-              
-              const fieldName = changes.field_value.field_name;
-              const fromValue = changes.field_value.from;
-              const toValue = changes.field_value.to;
-              
-              console.log(`Field changed: ${fieldName} from "${fromValue}" to "${toValue}"`);
-              
-              if (fieldName !== 'Status' || toValue !== 'Ready') {
-                console.log('⚠️ Not a status change to Ready, skipping');
-                return;
-              }
-              
-              console.log('✅ Status changed to Ready, fetching issue details...');
-              
-              const projectItemId = context.payload.projects_v2_item.id;
-              const contentNodeId = context.payload.projects_v2_item.content_node_id;
-              
-              const issueQuery = `
-                query($nodeId: ID!) {
-                  node(id: $nodeId) {
-                    ... on Issue {
-                      number
-                      title
-                      url
-                      assignees(first: 1) {
-                        nodes {
-                          login
-                        }
-                      }
-                    }
-                  }
-                }
-              `;
-              
-              const issueResult = await github.graphql(issueQuery, {
-                nodeId: contentNodeId
-              });
-              
-              const issue = issueResult.node;
-              if (!issue) {
-                console.log('❌ Could not fetch issue details');
-                return;
-              }
-              
-              const issueNumber = issue.number;
-              const issueTitle = issue.title;
-              const issueUrl = issue.url;
-              const assignee = issue.assignees.nodes.length > 0 ? issue.assignees.nodes[0].login : null;
-              
-              console.log(`Issue #${issueNumber}: ${issueTitle}`);
-              console.log(`Assignee: ${assignee || 'None'}`);
-              
-              if (!assignee) {
-                console.log('⚠️ No assignee found, skipping branch creation');
-                return;
-              }
-              
-              const branchName = `feature/issue-${issueNumber}-${assignee}`;
-              console.log(`🌿 Creating branch: ${branchName}`);
-              
-              try {
-                execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
-                execSync(`git push origin ${branchName}`, { stdio: 'inherit' });
-                console.log('✅ Branch created successfully');
-                
-                const slackUserId = userMapping[assignee];
-                const mention = slackUserId ? `<@${slackUserId}>` : assignee;
-                
-                await sendToSlack({
-                  text: `Branch created for Issue ${issueNumber}`,
-                  blocks: [
-                    {
-                      type: 'header',
-                      text: {
-                        type: 'plain_text',
-                        text: '🌿 Branch Created (Project Ready)',
-                        emoji: true
-                      }
-                    },
-                    {
-                      type: 'section',
-                      fields: [
-                        {
-                          type: 'mrkdwn',
-                          text: `*Branch*\n\`${branchName}\``
-                        },
-                        {
-                          type: 'mrkdwn',
-                          text: `*담당자*\n${mention}`
-                        }
-                      ]
-                    },
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: `*Issue*\n${sanitizeForSlack(issueTitle)}`
-                      }
-                    },
-                    {
-                      type: 'context',
-                      elements: [
-                        {
-                          type: 'mrkdwn',
-                          text: '💡 GitHub Project status가 Ready로 변경되어 브랜치가 생성되었습니다.'
-                        }
-                      ]
-                    },
-                    {
-                      type: 'actions',
-                      elements: [
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'View Issue'
-                          },
-                          url: issueUrl
-                        }
-                      ]
-                    }
-                  ]
-                });
-                console.log('✅ Slack notification sent');
-              } catch (error) {
-                console.log('❌ Branch creation failed:', error.message);
-                
-                await sendToSlack({
-                  text: `Failed to create branch for Issue ${issueNumber}`,
-                  blocks: [
-                    {
-                      type: 'header',
-                      text: {
-                        type: 'plain_text',
-                        text: '❌ Branch Creation Failed',
-                        emoji: true
-                      }
-                    },
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: `Issue #${issueNumber}의 브랜치 생성에 실패했습니다.\n\n*에러*: ${error.message}`
-                      }
-                    }
-                  ]
-                });
-              }
               
             } catch (error) {
               console.error('❌ Workflow failed:', error.message);
