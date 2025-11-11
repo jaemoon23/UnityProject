@@ -8,6 +8,7 @@ on:
 permissions:
   issues: write
   contents: read
+  repository-projects: write
 
 jobs:
   update-status:
@@ -18,6 +19,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const https = require('https');
             const branchName = context.ref.replace('refs/heads/', '');
@@ -92,43 +94,9 @@ jobs:
               
               const assignee = issue.assignees.length > 0 ? issue.assignees[0].login : null;
               
-              const query = `
-                query($owner: String!, $number: Int!, $issueNumber: Int!) {
-                  user(login: $owner) {
-                    projectV2(number: $number) {
-                      id
-                      items(first: 100) {
-                        nodes {
-                          id
-                          content {
-                            ... on Issue {
-                              number
-                            }
-                          }
-                        }
-                      }
-                      field(name: "Status") {
-                        ... on ProjectV2SingleSelectField {
-                          id
-                          options {
-                            id
-                            name
-                          }
-                        }
-                      }
-                    }
-                  }
-                  repository(owner: $owner, name: $issueNumber) {
-                    issue(number: $issueNumber) {
-                      id
-                    }
-                  }
-                }
-              `;
-              
               const projectQuery = `
-                query($owner: String!, $number: Int!) {
-                  user(login: $owner) {
+                query($login: String!, $number: Int!) {
+                  user(login: $login) {
                     projectV2(number: $number) {
                       id
                       items(first: 100) {
@@ -167,10 +135,18 @@ jobs:
                 }
               `;
               
+              console.log(`Querying project for user: ${context.repo.owner}, project: ${projectNumber}`);
+              
               const result = await github.graphql(projectQuery, {
-                owner: context.repo.owner,
+                login: context.repo.owner,
                 number: projectNumber
               });
+              
+              if (!result.user || !result.user.projectV2) {
+                console.log('❌ Project not found or not accessible');
+                console.log('Make sure the project exists and the workflow has proper permissions');
+                return;
+              }
               
               const project = result.user.projectV2;
               const projectItem = project.items.nodes.find(
@@ -201,7 +177,7 @@ jobs:
               );
               
               if (!inProgressOption) {
-                console.log('❌ In Progress status not found');
+                console.log('❌ In Progress status not found in project');
                 return;
               }
               
@@ -294,5 +270,8 @@ jobs:
               
             } catch (error) {
               console.error('❌ Error:', error.message);
+              if (error.errors) {
+                console.error('GraphQL errors:', JSON.stringify(error.errors, null, 2));
+              }
               throw error;
             }
