@@ -162,7 +162,7 @@ jobs:
               }
               
               const inProgressOption = statusField.options.find(
-                opt => opt.name === 'In Progress'
+                opt => opt.name.includes('In Progress')
               );
               
               if (!inProgressOption) {
@@ -170,6 +170,8 @@ jobs:
                 console.log('Available:', statusField.options.map(o => o.name).join(', '));
                 return;
               }
+              
+              console.log(`✅ Found status: ${inProgressOption.name}`);
               
               const mutation = `
                 mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $valueId: String!) {
@@ -195,7 +197,7 @@ jobs:
                 valueId: inProgressOption.id
               });
               
-              console.log('✅ Status updated to In Progress');
+              console.log(`✅ Status updated to ${inProgressOption.name}`);
               
               const slackUserId = assignee ? userMapping[assignee] : null;
               const mention = slackUserId ? `<@${slackUserId}>` : (assignee || '알 수 없음');
@@ -236,7 +238,7 @@ jobs:
                     elements: [
                       {
                         type: 'mrkdwn',
-                        text: '💡 브랜치가 생성되어 작업이 시작되었습니다. Status → In Progress'
+                        text: `💡 브랜치가 생성되어 작업이 시작되었습니다. Status → ${inProgressOption.name}`
                       }
                     ]
                   },
