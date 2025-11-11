@@ -1,4 +1,4 @@
-name: Rebase Fork Branches
+name: Rebase All Branches to Main
 
 on:
   workflow_dispatch:
@@ -13,8 +13,8 @@ on:
           - 'hotfix/*'
           - 'all'
         default: 'feature/*'
-      upstream_branch:
-        description: 'Upstream branch to rebase onto'
+      base_branch:
+        description: 'Base branch to rebase onto'
         required: true
         type: string
         default: 'main'
@@ -23,9 +23,6 @@ on:
         required: true
         type: boolean
         default: true
-
-env:
-  UPSTREAM_REPO: 'OWNER/REPO'  # LMJ : Change this to your upstream repo
 
 jobs:
   rebase-branches:
@@ -43,16 +40,16 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       
-      - name: Add upstream remote
+      - name: Fetch all branches
         run: |
-          git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git || true
-          git fetch upstream
           git fetch origin
       
       - name: Rebase branches
         id: rebase
         run: |
           echo "## 🔄 Rebase Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Base Branch:** \`origin/${{ github.event.inputs.base_branch }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # LMJ : Initialize result arrays
@@ -62,7 +59,7 @@ jobs:
           
           # LMJ : Get branches based on pattern
           if [ "${{ github.event.inputs.branch_pattern }}" = "all" ]; then
-            BRANCHES=$(git branch -r | grep 'origin/' | grep -v 'HEAD' | grep -v 'origin/${{ github.event.inputs.upstream_branch }}' | sed 's/origin\///')
+            BRANCHES=$(git branch -r | grep 'origin/' | grep -v 'HEAD' | grep -v 'origin/${{ github.event.inputs.base_branch }}' | sed 's/origin\///')
           else
             BRANCHES=$(git branch -r | grep "origin/${{ github.event.inputs.branch_pattern }}" | sed 's/origin\///')
           fi
@@ -92,7 +89,7 @@ jobs:
             fi
             
             # LMJ : Attempt rebase
-            if git rebase upstream/${{ github.event.inputs.upstream_branch }}; then
+            if git rebase origin/${{ github.event.inputs.base_branch }}; then
               # LMJ : Push if force_push enabled
               if [ "${{ github.event.inputs.force_push }}" = "true" ]; then
                 if git push origin "$BRANCH" --force-with-lease; then
@@ -113,7 +110,7 @@ jobs:
               git rebase --abort
             fi
             
-            git checkout ${{ github.event.inputs.upstream_branch }} 2>/dev/null || git checkout main
+            git checkout ${{ github.event.inputs.base_branch }} 2>/dev/null || git checkout main
           done
           
           # LMJ : Save results to environment
@@ -189,7 +186,7 @@ jobs:
               \"attachments\": [
                 {
                   \"color\": \"${COLOR}\",
-                  \"title\": \"${STATUS_EMOJI} Fork Branch Rebase Results\",
+                  \"title\": \"${STATUS_EMOJI} Branch Rebase Results\",
                   \"fields\": [
                     {
                       \"title\": \"Pattern\",
@@ -197,8 +194,8 @@ jobs:
                       \"short\": true
                     },
                     {
-                      \"title\": \"Upstream Branch\",
-                      \"value\": \"\`upstream/${{ github.event.inputs.upstream_branch }}\`\",
+                      \"title\": \"Base Branch\",
+                      \"value\": \"\`origin/${{ github.event.inputs.base_branch }}\`\",
                       \"short\": true
                     },
                     {
