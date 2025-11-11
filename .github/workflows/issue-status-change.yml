@@ -52,7 +52,7 @@ jobs:
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Content-Length': data.length
+                    'Content-Length': Buffer.byteLength(data)
                   }
                 };
                 
@@ -145,58 +145,10 @@ jobs:
             }
             
             try {
-              if (isClosed) {
-                let prInfo = null;
-                
-                try {
-                  const prs = await github.rest.pulls.list({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    state: 'all',
-                    per_page: 100
-                  });
-                  
-                  const relatedPR = prs.data.find(pr => 
-                    pr.body && pr.body.includes(`#${issueNumber}`) ||
-                    pr.title.includes(`#${issueNumber}`)
-                  );
-                  
-                  if (relatedPR) {
-                    prInfo = {
-                      number: relatedPR.number,
-                      url: relatedPR.html_url,
-                      merged: relatedPR.merged_at !== null
-                    };
-                  }
-                } catch (error) {
-                  console.log('PR 정보를 가져오지 못했습니다:', error.message);
-                }
-                
-                await updateNotion(issueNumber, 'Done');
-                
-                const slackUserId = assignee ? userMapping[assignee] : null;
-                const mentionText = slackUserId ? `<@${slackUserId}>` : (assignee || '미지정');
-                
-                const prText = prInfo 
-                  ? `\n*연결된 PR:* <${prInfo.url}|#${prInfo.number}> ${prInfo.merged ? ':white_check_mark: Merged' : ''}`
-                  : '';
-                
-                const slackMessage = {
-                  text: 'Issue가 완료되었습니다',
-                  blocks: [
-                    {
-                      type: 'section',
-                      text: {
-                        type: 'mrkdwn',
-                        text: `:white_check_mark: *Issue 완료* #${issueNumber}\n*제목:* ${issueTitle}\n*담당자:* ${mentionText}${prText}\n<${issueUrl}|Issue 보기>`
-                      }
-                    }
-                  ]
-                };
-                
-                await sendToSlack(slackMessage);
-              }
-              
+              // Issue closed notification is now integrated into PR merge notification
+              // No separate notification needed here
+              console.log('Issue status change detected - no action needed');
+
             } catch (error) {
               console.error('Error:', error);
               throw error;

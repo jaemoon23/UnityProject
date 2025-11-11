@@ -20,6 +20,7 @@ jobs:
           NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
           NOTION_REPORT_PAGE_ID: ${{ secrets.NOTION_REPORT_PAGE_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
           script: |
             const https = require('https');
@@ -52,6 +53,45 @@ jobs:
               'bigwaterplz': '김민휘',
               'kimjiw8698-crypto': '김지원'
             };
+
+            function sendToSlack(message) {
+              return new Promise((resolve, reject) => {
+                if (!process.env.SLACK_WEBHOOK_URL) {
+                  console.log('⚠️ SLACK_WEBHOOK_URL not set, skipping Slack notification');
+                  resolve('skipped');
+                  return;
+                }
+
+                const data = JSON.stringify(message);
+                const url = new URL(process.env.SLACK_WEBHOOK_URL);
+
+                const options = {
+                  hostname: url.hostname,
+                  path: url.pathname + url.search,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(data)
+                  }
+                };
+
+                const req = https.request(options, (res) => {
+                  let body = '';
+                  res.on('data', (chunk) => body += chunk);
+                  res.on('end', () => {
+                    if (res.statusCode === 200 && body === 'ok') {
+                      resolve(body);
+                    } else {
+                      reject(new Error('Slack API error: ' + res.statusCode));
+                    }
+                  });
+                });
+
+                req.on('error', reject);
+                req.write(data);
+                req.end();
+              });
+            }
             
             function parseAISummaryToBlocks(summary) {
               const blocks = [];
@@ -748,8 +788,126 @@ jobs:
               
               console.log('✅ Daily report added to Notion');
               console.log('✅ Daily report generation completed');
-              
+
+              console.log('📨 Sending Slack notification...');
+              try {
+                const notionPageUrl = page.url;
+
+                const slackMessage = {
+                  text: '일간 보고서 생성 완료',
+                  blocks: [
+                    {
+                      type: 'header',
+                      text: {
+                        type: 'plain_text',
+                        text: '📊 일간 보고서 생성 완료',
+                        emoji: true
+                      }
+                    },
+                    {
+                      type: 'section',
+                      fields: [
+                        {
+                          type: 'mrkdwn',
+                          text: '*날짜*\n' + dateStr + ' ' + periodStr
+                        },
+                        {
+                          type: 'mrkdwn',
+                          text: '*생성 시간*\n' + new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+                        }
+                      ]
+                    },
+                    {
+                      type: 'section',
+                      fields: [
+                        {
+                          type: 'mrkdwn',
+                          text: '*새 이슈*\n' + newIssues.length + '개'
+                        },
+                        {
+                          type: 'mrkdwn',
+                          text: '*완료 이슈*\n' + closedIssues.length + '개'
+                        },
+                        {
+                          type: 'mrkdwn',
+                          text: '*새 PR*\n' + newPRs.length + '개'
+                        },
+                        {
+                          type: 'mrkdwn',
+                          text: '*머지 PR*\n' + mergedPRs.length + '개'
+                        }
+                      ]
+                    },
+                    {
+                      type: 'divider'
+                    },
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: '📄 *상세 보고서*\nNotion에서 확인하세요'
+                      }
+                    },
+                    {
+                      type: 'actions',
+                      elements: [
+                        {
+                          type: 'button',
+                          text: {
+                            type: 'plain_text',
+                            text: 'Notion에서 보기',
+                            emoji: true
+                          },
+                          url: notionPageUrl,
+                          style: 'primary'
+                        }
+                      ]
+                    }
+                  ]
+                };
+
+                await sendToSlack(slackMessage);
+                console.log('✅ Slack notification sent');
+              } catch (slackError) {
+                console.error('⚠️ Failed to send Slack notification:', slackError.message);
+              }
+
             } catch (error) {
               console.error('❌ Error:', error);
+
+              try {
+                const errorMessage = {
+                  text: '일간 보고서 생성 실패',
+                  blocks: [
+                    {
+                      type: 'header',
+                      text: {
+                        type: 'plain_text',
+                        text: '❌ 일간 보고서 생성 실패',
+                        emoji: true
+                      }
+                    },
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: '*날짜*\n' + dateStr
+                      }
+                    },
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: '*오류 메시지*\n```' + error.message + '```'
+                      }
+                    }
+                  ]
+                };
+
+                await sendToSlack(errorMessage);
+              } catch (slackError) {
+                console.error('⚠️ Failed to send error notification to Slack:', slackError.message);
+              }
+
               throw error;
             }

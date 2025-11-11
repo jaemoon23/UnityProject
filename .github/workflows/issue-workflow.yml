@@ -2,7 +2,7 @@ name: Issue Workflow
 
 on:
   issues:
-    types: [opened, assigned, reopened, labeled]
+    types: [opened, assigned, labeled, reopened]
 
 permissions:
   issues: write
@@ -43,9 +43,12 @@ jobs:
             function removeMarkdown(text) {
               if (!text) return '';
               let result = text;
+              result = result.replace(/```[\s\S]*?```/g, '');
               result = result.replace(/^#{1,6}\s+/gm, '');
+              result = result.replace(/^\s*[-*+]\s*\[[ xX]\]\s*/gm, '');
               result = result.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
               result = result.replace(/\*\*(.+?)\*\*\*/g, '$1');
+              result = result.replace(/\*\*(.+?)\*\*/g, '$1');
               result = result.replace(/\*(.+?)\*/g, '$1');
               result = result.replace(/___(.+?)___/g, '$1');
               result = result.replace(/__(.+?)__/g, '$1');
@@ -57,7 +60,6 @@ jobs:
               result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
               result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
               result = result.replace(/>\s+/gm, '');
-              result = result.replace(/```[\s\S]*?```/g, '');
               result = result.replace(/`([^`]+)`/g, '$1');
               result = result.replace(/^\s*[-=]{3,}\s*$/gm, '');
               result = result.replace(/\|/g, '');
@@ -199,7 +201,7 @@ jobs:
                 let summary = null;
                 if (issueBody && issueBody.trim().length > 0) {
                   console.log('📨 Calling Gemini API...');
-                  const prompt = '아래 GitHub Issue를 읽고 핵심 내용만 추려서 5-7문장으로 요약해주세요.\n\n중요 규칙:\n1. 절대로 원본 텍스트를 복사하지 마세요. 반드시 당신의 언어로 다시 작성하세요.\n2. 마크다운 문법(#, -, *, **, ##, ###, 등)을 절대 사용하지 마세요.\n3. 평범한 문장으로만 작성하세요. 불렛 포인트나 섹션 헤더 없이.\n4. 하나의 자연스러운 문단으로 작성하세요.\n5. "이 이슈는..." 또는 "이 작업은..."으로 시작하세요.\n\n예시 형식:\n이 이슈는 [핵심 목적]을 위한 작업입니다. [주요 내용 1]과 [주요 내용 2]를 포함하며, [중요 제약사항]이 있습니다.\n\n이슈 제목: ' + issueTitle + '\n\n이슈 내용:\n' + issueBody.substring(0, 3000) + '\n\n위 규칙을 반드시 지켜서 요약해주세요.';
+                  const prompt = '아래 GitHub Issue를 읽고 핵심 내용만 추려서 3-5문장으로 간결하게 요약해주세요.\n\n🚨 절대 지켜야 할 규칙:\n1. 순수한 평문(plain text)으로만 작성하세요.\n2. 마크다운 문법을 절대 사용하지 마세요: #, ##, -, *, **, __, `, [], (), ~~ 등 모두 금지\n3. 체크박스 표시를 절대 사용하지 마세요: [ ], [x] 금지\n4. 불렛 포인트, 번호 매기기, 섹션 헤더를 사용하지 마세요.\n5. 하나의 자연스러운 문단으로 작성하세요.\n6. "이 이슈는..." 또는 "이 작업은..."으로 시작하세요.\n7. 원본 텍스트를 그대로 복사하지 말고, 당신의 언어로 다시 작성하세요.\n\n✅ 올바른 예시:\n이 이슈는 스테이지 타이머 시스템을 구현하는 작업입니다. 남은 시간을 계산하고 콘솔에 출력하는 기능을 추가하며, 타이머가 0이 되면 게임 오버 처리를 수행합니다. 타이머는 UI에도 표시되어야 합니다.\n\n❌ 잘못된 예시 (마크다운 사용):\nStage Timer Sys 구현 - [ ] 남은 시간 계산\n\n이슈 제목: ' + issueTitle + '\n\n이슈 내용:\n' + issueBody.substring(0, 3000) + '\n\n위 규칙을 반드시 지켜서 순수한 평문으로만 요약해주세요. 마크다운, 체크박스, 기호를 절대 사용하지 마세요.';
                   
                   const rawSummary = await callGeminiAPI(prompt);
                   
@@ -306,59 +308,14 @@ jobs:
                 });
               }
               
-              if (action === 'reopened') {
-                const slackUserId = assignee ? userMapping[assignee] : null;
-                const assigneeName = slackUserId ? '<@' + slackUserId + '>' : (assignee || '미지정');
-                
-                await sendToSlack({
-                  text: 'Issue ' + issueNumber + ' reopened',
-                  blocks: [
-                    {
-                      type: 'header',
-                      text: {
-                        type: 'plain_text',
-                        text: '🔄 Issue Reopened',
-                        emoji: true
-                      }
-                    },
-                    {
-                      type: 'section',
-                      fields: [
-                        {
-                          type: 'mrkdwn',
-                          text: '*Issue #' + issueNumber + '*\n' + sanitizeForSlack(issueTitle)
-                        },
-                        {
-                          type: 'mrkdwn',
-                          text: '*담당자*\n' + assigneeName
-                        }
-                      ]
-                    },
-                    {
-                      type: 'actions',
-                      elements: [
-                        {
-                          type: 'button',
-                          text: {
-                            type: 'plain_text',
-                            text: 'View Issue'
-                          },
-                          url: issueUrl
-                        }
-                      ]
-                    }
-                  ]
-                });
-              }
-              
-              const hasImportantLabel = labels.some(label => 
+              const hasImportantLabel = labels.some(label =>
                 ['urgent', 'critical', 'bug', 'hotfix'].includes(label.toLowerCase())
               );
-              
+
               if (hasImportantLabel && assignee) {
                 const slackUserId = userMapping[assignee];
                 const mention = slackUserId ? '<@' + slackUserId + '>' : assignee;
-                
+
                 await sendToSlack({
                   text: 'Important Issue ' + issueNumber,
                   blocks: [
@@ -407,7 +364,60 @@ jobs:
                   ]
                 });
               }
-              
+
+              if (action === 'reopened') {
+                const slackUserId = assignee ? userMapping[assignee] : null;
+                const mention = slackUserId ? '<@' + slackUserId + '>' : (assignee || '미지정');
+
+                await sendToSlack({
+                  text: 'Issue Reopened #' + issueNumber,
+                  blocks: [
+                    {
+                      type: 'header',
+                      text: {
+                        type: 'plain_text',
+                        text: '🔄 Issue 재오픈',
+                        emoji: true
+                      }
+                    },
+                    {
+                      type: 'section',
+                      fields: [
+                        {
+                          type: 'mrkdwn',
+                          text: '*Issue #' + issueNumber + '*\n' + sanitizeForSlack(issueTitle)
+                        },
+                        {
+                          type: 'mrkdwn',
+                          text: '*담당자*\n' + mention
+                        }
+                      ]
+                    },
+                    {
+                      type: 'section',
+                      text: {
+                        type: 'mrkdwn',
+                        text: '⚠️ 완료된 Issue가 재오픈되었습니다. 추가 작업이 필요합니다.'
+                      }
+                    },
+                    {
+                      type: 'actions',
+                      elements: [
+                        {
+                          type: 'button',
+                          text: {
+                            type: 'plain_text',
+                            text: 'View Issue'
+                          },
+                          url: issueUrl,
+                          style: 'primary'
+                        }
+                      ]
+                    }
+                  ]
+                });
+              }
+
               console.log('✅ Workflow completed');
               
             } catch (error) {
