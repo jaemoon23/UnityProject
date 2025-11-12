@@ -26,12 +26,17 @@ namespace NovelianMagicLibraryDefense.Managers
         [Header("UI References - Barrier HP")]
         [SerializeField] private Slider barrierHPSlider;
         [SerializeField] private TextMeshProUGUI barrierHPText;
+        [Header("UI References - Exp Slider")]
+        [SerializeField] private Slider expSlider;
 
         [Header("UI References - Panels")]
         [SerializeField] private GameObject cardPanel;
 
+        [Header("UI References - SpeedButtonText")]
+        [SerializeField] private TextMeshProUGUI speedButtonText;
+
         [Header("UI References - Buttons")]
-        [SerializeField] private Button pauseButton;
+        [SerializeField] private Button speedButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button skillButton1;
         [SerializeField] private Button skillButton2;
@@ -85,8 +90,10 @@ namespace NovelianMagicLibraryDefense.Managers
                 waveTimerText,
                 barrierHPSlider,
                 barrierHPText,
+                expSlider,
                 cardPanel,
-                pauseButton,
+                speedButton,
+                speedButtonText,
                 settingsButton,
                 skillButton1,
                 skillButton2,

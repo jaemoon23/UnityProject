@@ -62,7 +62,7 @@ namespace NovelianMagicLibraryDefense.Managers
             Monster.OnMonsterDied += AddExp;
 
             // LMJ: Initialize wave manager with hardcoded values (can be loaded from CSV later)
-            waveManager.Initialize(totalEnemies: 5, bossCount: 0);
+            waveManager.Initialize(totalEnemies: 1000, bossCount: 0);
             waveManager.WaveLoop().Forget();
 
             // LMJ: Start stage timer using UniTask (no MonoBehaviour required!)
@@ -91,6 +91,7 @@ namespace NovelianMagicLibraryDefense.Managers
             RemainingTime = stageDuration;
             isStageCleared = false;
             CurrentStageId = 0;
+            Time.timeScale = 1f;
         }
 
         protected override void OnDispose()
@@ -104,6 +105,9 @@ namespace NovelianMagicLibraryDefense.Managers
 
             // LMJ: Unsubscribe events
             Monster.OnMonsterDied -= AddExp;
+
+            // JML: Ensure time scale reset
+            Time.timeScale = 1f;
         }
 
         /// <summary>
@@ -159,8 +163,7 @@ namespace NovelianMagicLibraryDefense.Managers
         private void AddExp(Monster monster)
         {
             currentExp += monster.Exp;
-            Debug.Log($"[StageManager] Add {monster.Exp} EXP. CurrentExp: {currentExp}/{maxExp}");
-
+            uiManager.UpdateExperience(currentExp, maxExp);
             if (currentExp >= maxExp)
             {
                 LevelUp().Forget();
@@ -177,16 +180,17 @@ namespace NovelianMagicLibraryDefense.Managers
                 currentExp -= maxExp;
                 maxExp += NEXT_EXP;
                 level++;
-                Debug.Log($"[StageManager] Level Up! New Level: {level}, CurrentExp: {currentExp}, MaxExp: {maxExp}");
-
+                uiManager.UpdateExperience(currentExp, maxExp);
+                
                 // TODO: LMJ: Level Up Rewards (card selection UI)
+                var previousTimeScale = Time.timeScale;
                 Time.timeScale = 0f; // Pause the game for level up
 
                 // TODO: LMJ: Wait for card selection or 5 second timeout
                 // ex) await WaitForCardSelectionOrTimeout();
                 await UniTask.Delay(5000, ignoreTimeScale: true); // Simulate wait with 5 second delay
 
-                Time.timeScale = 1f; // Resume game
+                Time.timeScale = previousTimeScale; // Resume game
             }
         }
 

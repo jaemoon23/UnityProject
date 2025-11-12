@@ -17,10 +17,11 @@ namespace NovelianMagicLibraryDefense.Managers
         private readonly TextMeshProUGUI monsterCountText;
         private readonly TextMeshProUGUI waveTimerText;
         private readonly Slider barrierHPSlider;
+        private readonly Slider expSlider;
         private readonly TextMeshProUGUI barrierHPText;
         private readonly GameObject cardPanel;
-
-        private readonly Button pauseButton;
+        private readonly TextMeshProUGUI speedButtonText;
+        private readonly Button speedButton;
         private readonly Button settingsButton;
         private readonly Button skillButton1;
         private readonly Button skillButton2;
@@ -35,8 +36,10 @@ namespace NovelianMagicLibraryDefense.Managers
             TextMeshProUGUI waveTimer,
             Slider barrierSlider,
             TextMeshProUGUI barrierText,
+            Slider expSlider,
             GameObject cardPanelRef,
-            Button pause,
+            Button speed,
+            TextMeshProUGUI speedButtonText,
             Button settings,
             Button skill1,
             Button skill2,
@@ -47,8 +50,10 @@ namespace NovelianMagicLibraryDefense.Managers
             waveTimerText = waveTimer;
             barrierHPSlider = barrierSlider;
             barrierHPText = barrierText;
+            this.expSlider = expSlider;
             cardPanel = cardPanelRef;
-            pauseButton = pause;
+            speedButton = speed;
+            this.speedButtonText = speedButtonText;
             settingsButton = settings;
             skillButton1 = skill1;
             skillButton2 = skill2;
@@ -59,7 +64,7 @@ namespace NovelianMagicLibraryDefense.Managers
         protected override void OnInitialize()
         {
             Debug.Log("[UIManager] Initializing UI");
-
+            speedButtonText.text = "X1";
             // Activate card panel at initialization
             if (cardPanel != null)
             {
@@ -81,6 +86,8 @@ namespace NovelianMagicLibraryDefense.Managers
             Debug.Log("[UIManager] Resetting UI");
             UpdateMonsterCount(0);
             UpdateWaveTimer(0f);
+            expSlider.value = 0f;
+            speedButtonText.text = "X1";
         }
 
         protected override void OnDispose()
@@ -98,8 +105,8 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void SetupButtonListeners()
         {
-            if (pauseButton != null)
-                pauseButton.onClick.AddListener(OnPauseButtonClicked);
+            if (speedButton != null)
+                speedButton.onClick.AddListener(OnSpeedButtonClicked);
 
             if (settingsButton != null)
                 settingsButton.onClick.AddListener(OnSettingsButtonClicked);
@@ -121,8 +128,8 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void RemoveButtonListeners()
         {
-            if (pauseButton != null)
-                pauseButton.onClick.RemoveListener(OnPauseButtonClicked);
+            if (speedButton != null)
+                speedButton.onClick.RemoveListener(OnSpeedButtonClicked);
 
             if (settingsButton != null)
                 settingsButton.onClick.RemoveListener(OnSettingsButtonClicked);
@@ -146,22 +153,38 @@ namespace NovelianMagicLibraryDefense.Managers
 
         #region Button Callbacks
 
-        private void OnPauseButtonClicked()
+        private void OnSpeedButtonClicked()
         {
-            Debug.Log("[UIManager] Pause button clicked - Logic to be implemented");
-            //TODO: Implement pause/resume game logic
+            Debug.Log("[UIManager] Speed button clicked - Logic to be implemented");
+            switch (Time.timeScale)
+            {
+                case 1f:
+                    Time.timeScale = 1.5f;
+                    speedButtonText.text = "X1.5";
+                    break;
+                case 1.5f:
+                    Time.timeScale = 2f;
+                    speedButtonText.text = "X2";
+                    break;
+                case 2f:
+                    Time.timeScale = 1f;
+                    speedButtonText.text = "X1";
+                    break;
+            }
         }
 
         private void OnSettingsButtonClicked()
         {
             Debug.Log("[UIManager] Settings button clicked - Logic to be implemented");
-            //TODO: Implement settings menu logic
+            var previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f; //JML: Pause the game when settings is opened
+
+            Time.timeScale = previousTimeScale; //JML: Resume the game when settings is closed
         }
 
         private void OnSkillButtonClicked(int skillIndex)
         {
             Debug.Log($"[UIManager] Skill button {skillIndex} clicked - Logic to be implemented");
-            //TODO: Implement skill activation logic
         }
 
         #endregion
@@ -225,6 +248,18 @@ namespace NovelianMagicLibraryDefense.Managers
             if (barrierHPText != null)
             {
                 barrierHPText.text = $"결계 HP: {currentHP:F0}/{maxHP:F0}";
+            }
+        }
+
+        #endregion
+
+        #region Experience Display
+
+        public void UpdateExperience(float currentExp, float maxExp)
+        {
+            if (expSlider != null)
+            {
+                expSlider.value = currentExp / maxExp;
             }
         }
 
