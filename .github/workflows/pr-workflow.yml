@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   issues: write
 
 jobs:
@@ -84,6 +84,47 @@ jobs:
             }
             
             try {
+              // Auto-update PR title from Issue (when PR is opened)
+              if (action === 'opened') {
+                const issueMatch = headBranch.match(/issue-(\d+)/i);
+
+                if (issueMatch) {
+                  const issueNumber = parseInt(issueMatch[1]);
+                  console.log(`🔍 Found issue number in branch: ${issueNumber}`);
+
+                  try {
+                    const { data: issue } = await github.rest.issues.get({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issueNumber
+                    });
+
+                    const issueTitle = issue.title;
+                    console.log(`📌 Issue #${issueNumber} title: ${issueTitle}`);
+
+                    if (prTitle !== issueTitle) {
+                      await github.rest.pulls.update({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        pull_number: prNumber,
+                        title: issueTitle
+                      });
+
+                      console.log(`✅ Updated PR #${prNumber} title to: ${issueTitle}`);
+
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: prNumber,
+                        body: `🤖 **Auto-updated PR title**\n\nPR title has been automatically updated to match Issue #${issueNumber}:\n> ${issueTitle}`
+                      });
+                    }
+                  } catch (error) {
+                    console.error(`⚠️ Failed to update PR title from issue #${issueNumber}:`, error.message);
+                  }
+                }
+              }
+
               if (action === 'opened') {
                 const slackUserId = userMapping[author];
                 const mentionText = slackUserId ? `<@${slackUserId}>` : author;
