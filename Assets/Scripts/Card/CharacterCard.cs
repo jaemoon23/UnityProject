@@ -8,9 +8,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public class CharacterCard : MonoBehaviour
 {
-    public Image characterImage; // 캐릭터 이미지
-    public TextMeshProUGUI characterNameText; // 캐릭터 이름 텍스트
-    public GenreType genreType;  // 현재 장르
+    public Image characterImage;
+    public TextMeshProUGUI characterNameText;
+    public GenreType genreType;
 
     private Button button;
     private CardSelectionManager manager;
@@ -23,8 +23,7 @@ public class CharacterCard : MonoBehaviour
 
     void Start()
     {
-        manager = FindFirstObjectByType<CardSelectionManager>();
-
+        manager = GameObject.FindWithTag("Manager").GetComponent<CardSelectionManager>();
         if (characterImage == null)
         {
             characterImage = GetComponentInChildren<Image>();
@@ -32,7 +31,7 @@ public class CharacterCard : MonoBehaviour
     }
 
     /// <summary>
-    /// 캐릭터 정보 업데이트
+    /// characterCard info update
     /// </summary>
     public void UpdateCharacter(Sprite sprite, string characterName, GenreType genre)
     {
