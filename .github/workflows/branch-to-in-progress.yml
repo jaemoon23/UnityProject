@@ -3,7 +3,11 @@ name: Branch to In Progress
 on:
   push:
     branches:
-      - 'feature/**'
+      - '**'
+    branches-ignore:
+      - 'main'
+      - 'master'
+      - 'develop'
 
 permissions:
   issues: write
@@ -32,7 +36,7 @@ jobs:
             const https = require('https');
             const branchName = context.ref.replace('refs/heads/', '');
 
-            console.log(`Branch created: ${branchName}`);
+            console.log(`Push detected on branch: ${branchName}`);
 
             const match = branchName.match(/issue-(\d+)/i);
             if (!match) {
@@ -42,6 +46,24 @@ jobs:
 
             const issueNumber = parseInt(match[1]);
             console.log(`📌 Found issue number: ${issueNumber}`);
+
+            // Check if this is the first push to the branch
+            const { data: commits } = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: branchName,
+              per_page: 100
+            });
+
+            console.log(`📊 Total commits in branch: ${commits.length}`);
+
+            // If there are more than 1 commits, this is not the first push
+            if (commits.length > 1) {
+              console.log('⏭️ Skipping: Not the first push to this branch');
+              return;
+            }
+
+            console.log('✅ First push detected - proceeding with status update');
 
             // Load user mapping from JSON file
             const userMappingData = JSON.parse(fs.readFileSync('.github/scripts/user-mapping.json', 'utf8'));
