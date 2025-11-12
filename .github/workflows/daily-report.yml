@@ -222,21 +222,45 @@ jobs:
               }).join('\n');
               
               const periodInfo = isMonday ? '금요일부터 월요일까지 (주말 포함 3일간)' : '전일';
-              
+
+              // Filter only developers (exclude planners)
+              const developers = ['leemjmorris', 'jaemoon23', 'LeeChaeBin002'];
+              const developerNames = ['이명진', '이재문', '이채빈'];
+
+              const filteredIssues = issues.filter(issue =>
+                issue.assignees.some(assignee => developers.includes(assignee.login))
+              );
+
+              const filteredPRs = prs.filter(pr =>
+                developers.includes(pr.user.login)
+              );
+
+              const filteredIssuesList = filteredIssues.map(issue => {
+                const assignees = issue.assignees
+                  .filter(a => developers.includes(a.login))
+                  .map(a => userNames[a.login] || a.login)
+                  .join(', ') || '미배정';
+                const labels = issue.labels.map(l => l.name).join(', ');
+                return '- #' + issue.number + ' ' + issue.title + ' (담당: ' + assignees + ') [' + labels + '] - ' + issue.state;
+              }).join('\n');
+
+              const filteredPRsList = filteredPRs.map(pr => {
+                const author = userNames[pr.user.login] || pr.user.login;
+                return '- #' + pr.number + ' ' + pr.title + ' (작성: ' + author + ') - ' + (pr.merged_at ? '머지됨' : pr.state);
+              }).join('\n');
+
               const prompt = '당신은 Unity 게임 개발 팀의 일일 보고서를 작성하는 AI입니다.\n' +
                 '아래의 GitHub Issues와 Pull Requests를 분석하여, 팀원별 작업 내용을 요약해주세요.\n' +
                 '**기간: ' + periodInfo + '의 작업 내용**\n\n' +
-                '**팀원 목록:**\n' +
+                '**개발 팀원 목록 (보고 대상):**\n' +
                 '- 이명진 (팀장, 프로그래머)\n' +
                 '- 이재문 (프로그래머)\n' +
-                '- 이채빈 (프로그래머/디자이너)\n' +
-                '- 김동욱 (기획자)\n' +
-                '- 김민휘 (기획자)\n' +
-                '- 김지원 (기획자)\n\n' +
+                '- 이채빈 (프로그래머/디자이너)\n\n' +
+                '**중요: 위 3명의 개발자 작업만 보고서에 포함해주세요.**\n\n' +
                 '**GitHub Issues (' + periodInfo + '):**\n' +
-                (issuesList || '없음') + '\n\n' +
+                (filteredIssuesList || '없음') + '\n\n' +
                 '**Pull Requests (' + periodInfo + '):**\n' +
-                (prsList || '없음') + '\n\n' +
+                (filteredPRsList || '없음') + '\n\n' +
                 '**중요: 다음 형식을 정확히 따라주세요. 이슈 목록은 포함하지 마세요:**\n\n' +
                 '# 전일 보고\n' +
                 '## 완료\n' +
@@ -473,14 +497,20 @@ jobs:
 
               const allRecentIssues = allIssues;
               
+              // Filter only developers for AI summary
+              const developers = ['leemjmorris', 'jaemoon23', 'LeeChaeBin002'];
+
               console.log('🤖 Generating AI summary with Gemini...');
               const aiSummary = await generateGeminiSummary(allRecentIssues, allPRsResponse.data, dayOfWeek === 1);
               console.log('✅ AI summary generated');
-              
+
               const userStats = {};
-              
+
               for (const issue of inProgressIssues) {
                 for (const assignee of issue.assignees) {
+                  // Only count developers
+                  if (!developers.includes(assignee.login)) continue;
+
                   const userName = userNames[assignee.login] || assignee.login;
                   if (!userStats[userName]) {
                     userStats[userName] = {
@@ -492,9 +522,12 @@ jobs:
                   userStats[userName].inProgress++;
                 }
               }
-              
+
               for (const issue of closedIssues) {
                 for (const assignee of issue.assignees) {
+                  // Only count developers
+                  if (!developers.includes(assignee.login)) continue;
+
                   const userName = userNames[assignee.login] || assignee.login;
                   if (!userStats[userName]) {
                     userStats[userName] = {
@@ -506,8 +539,11 @@ jobs:
                   userStats[userName].completed++;
                 }
               }
-              
+
               for (const pr of mergedPRs) {
+                // Only count developers
+                if (!developers.includes(pr.user.login)) continue;
+
                 const userName = userNames[pr.user.login] || pr.user.login;
                 if (!userStats[userName]) {
                   userStats[userName] = {
@@ -643,7 +679,12 @@ jobs:
                 }
               }
               
-              if (newIssues.length > 0) {
+              // Filter new issues for developers only
+              const developerNewIssues = newIssues.filter(issue =>
+                issue.assignees.some(a => developers.includes(a.login))
+              );
+
+              if (developerNewIssues.length > 0) {
                 blocks.push(
                   {
                     object: 'block',
@@ -658,19 +699,20 @@ jobs:
                     }
                   }
                 );
-                
-                for (const issue of newIssues) {
-                  const assigneeNames = issue.assignees.map(a => 
-                    userNames[a.login] || a.login
-                  ).join(', ') || '미배정';
-                  
+
+                for (const issue of developerNewIssues) {
+                  const assigneeNames = issue.assignees
+                    .filter(a => developers.includes(a.login))
+                    .map(a => userNames[a.login] || a.login)
+                    .join(', ') || '미배정';
+
                   blocks.push({
                     object: 'block',
                     type: 'bulleted_list_item',
                     bulleted_list_item: {
                       rich_text: [
-                        { 
-                          text: { 
+                        {
+                          text: {
                             content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
@@ -684,7 +726,12 @@ jobs:
                 }
               }
               
-              if (closedIssues.length > 0) {
+              // Filter closed issues for developers only
+              const developerClosedIssues = closedIssues.filter(issue =>
+                issue.assignees.some(a => developers.includes(a.login))
+              );
+
+              if (developerClosedIssues.length > 0) {
                 blocks.push(
                   {
                     object: 'block',
@@ -699,19 +746,20 @@ jobs:
                     }
                   }
                 );
-                
-                for (const issue of closedIssues) {
-                  const assigneeNames = issue.assignees.map(a => 
-                    userNames[a.login] || a.login
-                  ).join(', ') || '미배정';
-                  
+
+                for (const issue of developerClosedIssues) {
+                  const assigneeNames = issue.assignees
+                    .filter(a => developers.includes(a.login))
+                    .map(a => userNames[a.login] || a.login)
+                    .join(', ') || '미배정';
+
                   blocks.push({
                     object: 'block',
                     type: 'bulleted_list_item',
                     bulleted_list_item: {
                       rich_text: [
-                        { 
-                          text: { 
+                        {
+                          text: {
                             content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
@@ -725,7 +773,12 @@ jobs:
                 }
               }
               
-              if (mergedPRs.length > 0) {
+              // Filter merged PRs for developers only
+              const developerMergedPRs = mergedPRs.filter(pr =>
+                developers.includes(pr.user.login)
+              );
+
+              if (developerMergedPRs.length > 0) {
                 blocks.push(
                   {
                     object: 'block',
@@ -740,17 +793,17 @@ jobs:
                     }
                   }
                 );
-                
-                for (const pr of mergedPRs) {
+
+                for (const pr of developerMergedPRs) {
                   const authorName = userNames[pr.user.login] || pr.user.login;
-                  
+
                   blocks.push({
                     object: 'block',
                     type: 'bulleted_list_item',
                     bulleted_list_item: {
                       rich_text: [
-                        { 
-                          text: { 
+                        {
+                          text: {
                             content: '#' + pr.number + ' ',
                             link: { url: pr.html_url }
                           },
@@ -764,7 +817,12 @@ jobs:
                 }
               }
               
-              if (inProgressIssues.length > 0) {
+              // Filter in-progress issues for developers only
+              const developerInProgressIssues = inProgressIssues.filter(issue =>
+                issue.assignees.some(a => developers.includes(a.login))
+              );
+
+              if (developerInProgressIssues.length > 0) {
                 blocks.push(
                   {
                     object: 'block',
@@ -779,19 +837,20 @@ jobs:
                     }
                   }
                 );
-                
-                for (const issue of inProgressIssues.slice(0, 20)) {
-                  const assigneeNames = issue.assignees.map(a => 
-                    userNames[a.login] || a.login
-                  ).join(', ');
-                  
+
+                for (const issue of developerInProgressIssues.slice(0, 20)) {
+                  const assigneeNames = issue.assignees
+                    .filter(a => developers.includes(a.login))
+                    .map(a => userNames[a.login] || a.login)
+                    .join(', ');
+
                   blocks.push({
                     object: 'block',
                     type: 'bulleted_list_item',
                     bulleted_list_item: {
                       rich_text: [
-                        { 
-                          text: { 
+                        {
+                          text: {
                             content: '#' + issue.number + ' ',
                             link: { url: issue.html_url }
                           },
@@ -803,14 +862,14 @@ jobs:
                     }
                   });
                 }
-                
-                if (inProgressIssues.length > 20) {
+
+                if (developerInProgressIssues.length > 20) {
                   blocks.push({
                     object: 'block',
                     type: 'paragraph',
                     paragraph: {
                       rich_text: [
-                        { text: { content: '... 외 ' + (inProgressIssues.length - 20) + '개' }, annotations: { italic: true, color: 'gray' } }
+                        { text: { content: '... 외 ' + (developerInProgressIssues.length - 20) + '개' }, annotations: { italic: true, color: 'gray' } }
                       ]
                     }
                   });
@@ -904,19 +963,19 @@ jobs:
                       fields: [
                         {
                           type: 'mrkdwn',
-                          text: '*새 이슈*\n' + newIssues.length + '개'
+                          text: '*새 이슈*\n' + developerNewIssues.length + '개'
                         },
                         {
                           type: 'mrkdwn',
-                          text: '*완료 이슈*\n' + closedIssues.length + '개'
+                          text: '*완료 이슈*\n' + developerClosedIssues.length + '개'
                         },
                         {
                           type: 'mrkdwn',
-                          text: '*새 PR*\n' + newPRs.length + '개'
+                          text: '*새 PR*\n' + newPRs.filter(pr => developers.includes(pr.user.login)).length + '개'
                         },
                         {
                           type: 'mrkdwn',
-                          text: '*머지 PR*\n' + mergedPRs.length + '개'
+                          text: '*머지 PR*\n' + developerMergedPRs.length + '개'
                         }
                       ]
                     },
