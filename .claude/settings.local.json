@@ -5,7 +5,8 @@
       "Bash(timeout /t 3)",
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
