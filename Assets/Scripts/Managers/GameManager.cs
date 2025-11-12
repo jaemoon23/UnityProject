@@ -16,6 +16,7 @@ namespace NovelianMagicLibraryDefense.Managers
 
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI monsterCountText;
+        [SerializeField] private GameObject cardPanel; //LCB: Card panel reference for activation
 
         // LMJ: Explicit manager references for type-safe access
         private ObjectPoolManager poolManager;
@@ -31,6 +32,15 @@ namespace NovelianMagicLibraryDefense.Managers
         public StageManager Stage => stageManager;
         public TextMeshProUGUI MonsterCountText => monsterCountText;
 
+        
+        private void Start()
+        {   //LCB: Ensure card panel is active at runtime
+            if (cardPanel != null)
+            {
+                cardPanel.SetActive(true);
+                //Debug.Log("[GameManager] Card panel activated at runtime");
+            }
+        }
         private void Awake()
         {
             if (instance != null && instance != this)
