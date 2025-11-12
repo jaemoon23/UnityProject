@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class Wall : MonoBehaviour, IEntity
@@ -35,6 +36,6 @@ public class Wall : MonoBehaviour, IEntity
     private void GameOver()
     {
         Debug.Log("Game Over!");
-        Time.timeScale = 0f; // JML: Stop the game
+        OnWallDestroyed?.Invoke();
     }
 }
