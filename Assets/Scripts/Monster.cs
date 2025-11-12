@@ -81,7 +81,8 @@ public class Monster : MonoBehaviour, IPoolable, ITargetable
     private void Die()
     {
         OnMonsterDied?.Invoke(this);
-        ObjectPoolManager.Instance.Despawn(this);
+        // LMJ: Changed from ObjectPoolManager.Instance to GameManager.Instance.Pool
+        NovelianMagicLibraryDefense.Managers.GameManager.Instance.Pool.Despawn(this);
     }
     
     private void OnTriggerEnter2D(Collider2D collision)

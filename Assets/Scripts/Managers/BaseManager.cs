@@ -1,10 +1,10 @@
-using UnityEngine;
-
 namespace NovelianMagicLibraryDefense.Core
 {
     /// <summary>
     /// LMJ : Abstract base class providing common functionality for all managers
+    /// This is NOT a MonoBehaviour - it's a plain C# class managed by GameManager
     /// </summary>
+    [System.Serializable]  // LMJ: Prevents Unity inspector warnings
     public abstract class BaseManager : IManager
     {
         protected bool isInitialized;
@@ -16,7 +16,7 @@ namespace NovelianMagicLibraryDefense.Core
         {
             if (isInitialized)
             {
-                Debug.LogWarning($"{GetType().Name} is already initialized.");
+                UnityEngine.Debug.LogWarning($"{GetType().Name} is already initialized.");
                 return;
             }
 
@@ -31,7 +31,7 @@ namespace NovelianMagicLibraryDefense.Core
         {
             if (!isInitialized)
             {
-                Debug.LogWarning($"{GetType().Name} is not initialized yet.");
+                UnityEngine.Debug.LogWarning($"{GetType().Name} is not initialized yet.");
                 return;
             }
 
