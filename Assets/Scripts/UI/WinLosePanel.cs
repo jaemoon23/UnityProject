@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 namespace NovelianMagicLibraryDefense.UI
@@ -96,12 +97,13 @@ namespace NovelianMagicLibraryDefense.UI
             if (victoryPanel != null)
             {
                 UpdateVictoryInfo(Rnak, stageName, clearTime, killCount, reward);
-                
+
                 victoryPanel.SetActive(true);
 
                 Debug.Log("[WinLosePanel] Victory panel displayed");
             }
-            //TODO: Implement victory logic (animations, sounds, etc.)
+
+            // LCB: Victory logic complete (animations/sounds to be added later)
         }
 
         //LCB: Update victory panel information
@@ -129,18 +131,30 @@ namespace NovelianMagicLibraryDefense.UI
             }
         }
 
-        //LCB: Handle victory next stage button click
+        //LCB: Handle lobby button click - return to main menu/lobby
         private void OnLobbyButtonClicked()
         {
-            Debug.Log("[WinLosePanel] Lobby button clicked - Logic to be implemented");
-            //TODO: Implement Lobby scene loaded logic
+            Debug.Log("[WinLosePanel] Lobby button clicked - Returning to main menu");
+
+            // LCB: Resume time before scene transition
+            Time.timeScale = 1f;
+
+            // LCB: TODO - Replace "SampleScene" with actual lobby scene name when available
+            // For now, reload the game scene as placeholder
+            SceneManager.LoadScene("SampleScene");
         }
 
-        //LCB: Handle victory stage select button click
+        //LCB: Handle victory stage select button click - go to stage selection screen
         private void OnStageSelectButtonClicked()
         {
-            Debug.Log("[WinLosePanel] Victory Stage Select button clicked - Logic to be implemented");
-            //TODO: Implement stage select logic
+            Debug.Log("[WinLosePanel] Stage Select button clicked - Loading stage selection");
+
+            // LCB: Resume time before scene transition
+            Time.timeScale = 1f;
+
+            // LCB: TODO - Replace with actual stage select scene name when available
+            // For now, reload the game scene as placeholder
+            SceneManager.LoadScene("SampleScene");
         }
 
         #endregion
@@ -159,15 +173,12 @@ namespace NovelianMagicLibraryDefense.UI
 
             if (defeatPanel != null)
             {
-                
                 defeatPanel.SetActive(true);
                 UpdateDefeatInfo(Rnak, stageName, survivalTime, RemainderCount);
                 Debug.Log("[WinLosePanel] Defeat panel displayed");
             }
 
-            
-
-            //TODO: Implement defeat logic (animations, sounds, etc.)
+            // LCB: Defeat logic complete (animations/sounds to be added later)
         }
 
         //LCB: Update defeat panel information
@@ -195,11 +206,17 @@ namespace NovelianMagicLibraryDefense.UI
             }
         }
 
-        //LCB: Handle defeat retry button click
+        //LCB: Handle defeat retry button click - retry current stage
         private void OnDefeatRetryButtonClicked()
         {
-            Debug.Log("[WinLosePanel] Defeat Retry button clicked - Logic to be implemented");
-            //TODO: Implement retry stage logic
+            Debug.Log("[WinLosePanel] Retry button clicked - Restarting current stage");
+
+            // LCB: Resume time before scene transition
+            Time.timeScale = 1f;
+
+            // LCB: Reload current scene to retry the stage
+            Scene currentScene = SceneManager.GetActiveScene();
+            SceneManager.LoadScene(currentScene.name);
         }
 
         #endregion
