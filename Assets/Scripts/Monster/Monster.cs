@@ -1,22 +1,31 @@
 ﻿using UnityEngine;
 using UnityEngine.Pool;
-public class Monster : BaseEntity, ITargetable
+//JML: Monster entity with movement and wall attack behavior
+public class Monster : BaseEntity, ITargetable, IMovable
 {
     public static event System.Action<Monster> OnMonsterDied;
-    [SerializeField] new Collider2D collider2D;
+
+
+    [Header("References")]
+    [SerializeField] private MonsterMove monsterMove;
     [SerializeField] private Rigidbody2D rb;
+    [SerializeField] new Collider2D collider2D;
+    private Wall wall;
+    
+    [Header("Stats")]
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private float damage = 10f;
     [SerializeField] private float attackInterval = 0.7f;
+
     public int Exp { get; private set; } = 11; // JML: Example exp amount
 
     private float attackTimer = 0f;
-    private Wall wall;
     private bool isWallHit = false;
+    public bool IsWallHit => isWallHit;
 
-    // JML: ITargetable implementation
     public float Weight { get; private set; } = 1f; // Example weight value
-    //--------------------------------
+
+
     private void OnEnable()
     {
         collider2D.enabled = true;
@@ -33,32 +42,25 @@ public class Monster : BaseEntity, ITargetable
         
     }
 
+    //JML: Physics-based movement in FixedUpdate
+    private void FixedUpdate()
+    {
+        monsterMove.Move(this, moveSpeed);
+    }
+
+    //JML: Game logic in Update
     private void Update()
     {
-        Move();
-
         if (isWallHit)
         {
             attackTimer += Time.deltaTime;
             if (attackInterval <= attackTimer)
             {
-                wall.TakeDamage(damage);
+                //wall.TakeDamage(damage);
                 attackTimer = 0f;
             }
         }
         Weight += 1f;
-    }
-
-    private void Move()
-    {
-        if (!isWallHit)
-        {
-            rb.linearVelocity = Vector2.down * moveSpeed;
-        }
-        else
-        {
-            rb.linearVelocity = Vector2.zero;
-        }
     }
 
     public override void TakeDamage(float damage)
@@ -103,6 +105,7 @@ public class Monster : BaseEntity, ITargetable
         wall = null;
         attackTimer = 0f;
         Weight = 1f;
+
         TargetRegistry.Instance.UnregisterTarget(this);
     }
 }

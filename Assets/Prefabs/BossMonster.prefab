@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8622064179404266496}
   - component: {fileID: 528289534611804493}
   - component: {fileID: -2723367168236445072}
+  - component: {fileID: -1892451599838364719}
   - component: {fileID: 416387417718891683}
   - component: {fileID: 7319673926598786759}
   - component: {fileID: -1949463785857218058}
@@ -103,12 +104,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cf95e2960f043041b7e97a34b5c3e86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
   collider2D: {fileID: 416387417718891683}
   rb: {fileID: -1949463785857218058}
   moveSpeed: 0.5
   damage: 10
   attackInterval: 0.7
-  maxHealth: 100
+  monsterMove: {fileID: -1892451599838364719}
+--- !u!114 &-1892451599838364719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8808809208899240087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 068ef2c38d6093243aa0dd5c99c86450, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  monster: {fileID: 0}
+  rb: {fileID: 0}
 --- !u!61 &416387417718891683
 BoxCollider2D:
   m_ObjectHideFlags: 0
