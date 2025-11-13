@@ -6,7 +6,9 @@
       "Bash(powershell.exe -NoProfile -Command \"$env:PATH += '';C:\\Program Files\\GitHub CLI''; gh issue edit 146 --title ''[Feature] Manager Scene + Additive Scene 아키텍처 전환 (CSV/Firebase 데이터 영속성 확보)'' --body-file C:\\Users\\LMJ\\AppData\\Local\\Temp\\issue_body.txt\")",
       "Bash(powershell.exe -Command:*)",
       "Bash(\"/c/Program Files (x86)/GitHub CLI/gh.exe\" issue edit 146 --title \"[Feature] Manager Scene + Additive Scene 아키텍처 전환 (CSV/Firebase 데이터 영속성 확보)\" --body-file /tmp/issue_body.txt)",
-      "Bash(\"/c/Program Files (x86)/GitHub CLI/gh.exe\" issue edit 146 --title \"[Feature] Manager Scene + Additive Scene 아키텍처 + Service Locator 패턴 도입\" --body-file /tmp/issue_body_updated.txt)"
+      "Bash(\"/c/Program Files (x86)/GitHub CLI/gh.exe\" issue edit 146 --title \"[Feature] Manager Scene + Additive Scene 아키텍처 + Service Locator 패턴 도입\" --body-file /tmp/issue_body_updated.txt)",
+      "Bash(git checkout:*)",
+      "Bash(\"/c/Program Files (x86)/GitHub CLI/gh.exe\" issue view 146 --json title,body,labels,state)"
     ],
     "deny": [],
     "ask": []
