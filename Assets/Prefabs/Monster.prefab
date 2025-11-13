@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8622064179404266496}
   - component: {fileID: 528289534611804493}
   - component: {fileID: -1616248077205067460}
+  - component: {fileID: -5706105081744924382}
   - component: {fileID: 416387417718891683}
   - component: {fileID: -1949463785857218058}
   - component: {fileID: 8837783605962146668}
@@ -103,12 +104,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c576b41f553cc940bc62d646ea94e16, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  collider2D: {fileID: 416387417718891683}
+  maxHealth: 100
+  monsterMove: {fileID: -5706105081744924382}
   rb: {fileID: -1949463785857218058}
+  collider2D: {fileID: 416387417718891683}
   moveSpeed: 0.5
   damage: 10
   attackInterval: 0.7
-  maxHealth: 100
+--- !u!114 &-5706105081744924382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8808809208899240087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 068ef2c38d6093243aa0dd5c99c86450, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rb: {fileID: -1949463785857218058}
 --- !u!61 &416387417718891683
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -178,7 +193,7 @@ Rigidbody2D:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
