@@ -265,6 +265,11 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1742101148280069312, guid: 31d158047417c094090b62a2d42718db, type: 3}
   m_PrefabInstance: {fileID: 160505234}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &69764283 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2608162257359807488, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &83451778
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,7 +288,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!50 &83451779
 Rigidbody2D:
   serializedVersion: 5
@@ -323,10 +328,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 0}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
   attackInterval: 0.1
   attackRange: 5
+  characterImage: {fileID: 0}
 --- !u!212 &83451782
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1396,7 +1403,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7705903463619980805, guid: 31d158047417c094090b62a2d42718db, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7904780975100227720, guid: 31d158047417c094090b62a2d42718db, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1472,7 +1479,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7962161812395593798, guid: 31d158047417c094090b62a2d42718db, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7962161812395593798, guid: 31d158047417c094090b62a2d42718db, type: 3}
       propertyPath: m_TagString
@@ -1714,7 +1721,7 @@ PrefabInstance:
       addedObject: {fileID: 1897604177}
     - targetCorrespondingSourceObject: {fileID: 4624706636109284272, guid: 31d158047417c094090b62a2d42718db, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1202348576}
+      addedObject: {fileID: 1202348580}
     - targetCorrespondingSourceObject: {fileID: 6346162033066421271, guid: 31d158047417c094090b62a2d42718db, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1796660550}
@@ -1775,7 +1782,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!50 &227840824
 Rigidbody2D:
   serializedVersion: 5
@@ -1815,10 +1822,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 0}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
   attackInterval: 0.1
   attackRange: 5
+  characterImage: {fileID: 0}
 --- !u!212 &227840827
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2363,7 +2372,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &390104979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2376,10 +2385,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 0}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
   attackInterval: 0.1
   attackRange: 5
+  characterImage: {fileID: 0}
 --- !u!212 &390104981
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2495,7 +2506,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!50 &404393817
 Rigidbody2D:
   serializedVersion: 5
@@ -2535,10 +2546,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 0}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
   attackInterval: 0.1
   attackRange: 5
+  characterImage: {fileID: 0}
 --- !u!212 &404393820
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -3011,6 +3024,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &891731925 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2839049474586304752, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &948314253 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7768336544072859564, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &951814353 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9147629802814496981, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3347,10 +3370,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1496255695}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!114 &1142157144 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2020885747925548429, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3373,7 +3398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab9c1c9b43f7a794f83e8c1b4764cbca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1202348576
+--- !u!114 &1202348580
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3385,10 +3410,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1978394774}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!1 &1210719477 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4140672520945548267, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3433,10 +3460,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1871725236}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!114 &1344291818 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7611472541059647462, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3460,10 +3489,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1774255829}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!1 &1396383601 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1230144241171485685, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3552,6 +3583,11 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1496255695 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3938435496446084253, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1516339229
 GameObject:
   m_ObjectHideFlags: 0
@@ -3653,6 +3689,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab9c1c9b43f7a794f83e8c1b4764cbca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1543423017 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9097852039436950921, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1594402576 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5111097920982203055, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3670,10 +3711,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 2048325328}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!1 &1606687381
 GameObject:
   m_ObjectHideFlags: 0
@@ -3772,10 +3815,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1758642764}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
+--- !u!1 &1758642764 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1107173396130705727, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1774255829 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5966307876429994651, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1796660546 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6346162033066421271, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3793,10 +3848,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 891731925}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!114 &1834463360 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6489816158718566271, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3894,6 +3951,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1846313551}
   m_CullTransparentMesh: 1
+--- !u!1 &1871725236 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1987774332336338721, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1894392436 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1493752687867638603, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -3922,10 +3984,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 948314253}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!1 &1902241266
 GameObject:
   m_ObjectHideFlags: 0
@@ -4045,10 +4109,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 69764283}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
+--- !u!1 &1978394774 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4564977547395780439, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2037184068
 GameObject:
   m_ObjectHideFlags: 0
@@ -4067,7 +4138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!50 &2037184069
 Rigidbody2D:
   serializedVersion: 5
@@ -4107,10 +4178,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 0}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
   attackInterval: 0.1
   attackRange: 5
+  characterImage: {fileID: 0}
 --- !u!212 &2037184072
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4181,6 +4254,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2048325328 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4150639562137728584, guid: 31d158047417c094090b62a2d42718db, type: 3}
+  m_PrefabInstance: {fileID: 160505234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &2141949549 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4985454756232839412, guid: 31d158047417c094090b62a2d42718db, type: 3}
@@ -4204,10 +4282,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 585bd659646639943b9bd997745c93f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterObj: {fileID: 1543423017}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 1
-  attackRange: 5
+  attackInterval: 0.1
+  attackRange: 1000
+  characterImage: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
