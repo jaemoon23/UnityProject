@@ -1,0 +1,279 @@
+
+Flower_Pink_Magician(2).png
+size: 109,205
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Clown_Magician_Weapon
+  rotate: false
+  xy: 76, 62
+  size: 29, 29
+  orig: 29, 29
+  offset: 0, 0
+  index: -1
+Emoji_Angel_Ring
+  rotate: false
+  xy: 50, 25
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Bad
+  rotate: false
+  xy: 34, 10
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Bomb
+  rotate: false
+  xy: 2, 40
+  size: 14, 19
+  orig: 14, 19
+  offset: 0, 0
+  index: -1
+Emoji_Coin
+  rotate: false
+  xy: 95, 49
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Emoji_Deadly
+  rotate: false
+  xy: 18, 32
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: -1
+Emoji_Devil_Ring
+  rotate: false
+  xy: 70, 25
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Heart
+  rotate: false
+  xy: 18, 7
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Note
+  rotate: false
+  xy: 92, 35
+  size: 13, 12
+  orig: 13, 12
+  offset: 0, 0
+  index: -1
+Emoji_Sad
+  rotate: false
+  xy: 2, 2
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Smile
+  rotate: false
+  xy: 63, 13
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Star
+  rotate: false
+  xy: 50, 12
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Face_1
+  rotate: false
+  xy: 2, 14
+  size: 14, 10
+  orig: 14, 10
+  offset: 0, 0
+  index: -1
+Face_2
+  rotate: false
+  xy: 2, 26
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: -1
+Face_3
+  rotate: false
+  xy: 34, 22
+  size: 14, 11
+  orig: 14, 11
+  offset: 0, 0
+  index: -1
+Face_4
+  rotate: false
+  xy: 18, 19
+  size: 14, 11
+  orig: 14, 11
+  offset: 0, 0
+  index: -1
+Face_5
+  rotate: false
+  xy: 18, 46
+  size: 14, 13
+  orig: 14, 13
+  offset: 0, 0
+  index: -1
+Fairy_Green_Magician_Weapon
+  rotate: false
+  xy: 2, 124
+  size: 39, 37
+  orig: 39, 37
+  offset: 0, 0
+  index: -1
+Flame_Magician_Weapon
+  rotate: false
+  xy: 43, 165
+  size: 38, 38
+  orig: 38, 38
+  offset: 0, 0
+  index: -1
+Flower_Pink_Magician_Weapon
+  rotate: false
+  xy: 77, 93
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Frozen_Witch_Weapon
+  rotate: false
+  xy: 2, 163
+  size: 39, 40
+  orig: 39, 40
+  offset: 0, 0
+  index: -1
+Maestro_Magician_Weapon
+  rotate: false
+  xy: 79, 125
+  size: 27, 33
+  orig: 27, 33
+  offset: 0, 0
+  index: -1
+Mushroom_Witch_Weapon
+  rotate: false
+  xy: 2, 61
+  size: 31, 27
+  orig: 31, 27
+  offset: 0, 0
+  index: -1
+Royal_Magician_Weapon
+  rotate: false
+  xy: 43, 94
+  size: 32, 33
+  orig: 32, 33
+  offset: 0, 0
+  index: -1
+Science_Wizard_Weapon
+  rotate: false
+  xy: 36, 62
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon
+  rotate: false
+  xy: 43, 129
+  size: 34, 34
+  orig: 34, 34
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon_2
+  rotate: false
+  xy: 2, 90
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(1)_B_Hair_2
+  rotate: false
+  xy: 70, 49
+  size: 23, 11
+  orig: 23, 11
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(1)_F_Hair_2
+  rotate: false
+  xy: 90, 24
+  size: 14, 9
+  orig: 14, 9
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(1)_M_Hair
+  rotate: false
+  xy: 83, 182
+  size: 24, 21
+  orig: 24, 21
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(1)_Skin
+  rotate: false
+  xy: 83, 160
+  size: 19, 20
+  orig: 19, 20
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_B_Hair_1
+  rotate: false
+  xy: 35, 35
+  size: 33, 25
+  orig: 33, 25
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_Body
+  rotate: false
+  xy: 90, 11
+  size: 8, 11
+  orig: 8, 11
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_Head_1
+  rotate: false
+  xy: 70, 35
+  size: 20, 12
+  orig: 20, 12
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_L_Hand
+  rotate: false
+  xy: 68, 83
+  size: 6, 9
+  orig: 6, 9
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_L_Leg
+  rotate: false
+  xy: 36, 115
+  size: 4, 7
+  orig: 4, 7
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_R_Leg
+  rotate: false
+  xy: 36, 115
+  size: 4, 7
+  orig: 4, 7
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_Neck_F
+  rotate: false
+  xy: 76, 15
+  size: 12, 8
+  orig: 12, 8
+  offset: 0, 0
+  index: -1
+flower_Pink_Magician(2)_R_Hand
+  rotate: false
+  xy: 68, 72
+  size: 6, 9
+  orig: 6, 9
+  offset: 0, 0
+  index: -1

@@ -16,7 +16,12 @@
       "Bash(if exist Library rmdir /s /q Library)",
       "Bash(if exist Temp rmdir /s /q Temp)",
       "Bash(if exist obj rmdir /s /q obj)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: GitHub Actions workflow syntax error\n\n- Fix ''branches'' and ''branches-ignore'' conflict\n- Use negation pattern (!main, !master, !develop) instead\n- Workflow now triggers on all branches except main/master/develop\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: GitHub Actions workflow syntax error\n\n- Fix ''branches'' and ''branches-ignore'' conflict\n- Use negation pattern (!main, !master, !develop) instead\n- Workflow now triggers on all branches except main/master/develop\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(winget install:*)",
+      "Bash(gh --version:*)",
+      "Bash(powershell -Command \"$env:Path = [System.Environment]::GetEnvironmentVariable(''Path'',''Machine'') + '';'' + [System.Environment]::GetEnvironmentVariable(''Path'',''User''); gh --version\")",
+      "Bash(powershell -Command \"gh --version\")",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

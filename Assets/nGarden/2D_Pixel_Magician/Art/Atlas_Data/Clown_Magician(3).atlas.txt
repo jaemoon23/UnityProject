@@ -1,0 +1,314 @@
+
+Clown_Magician(3).png
+size: 93,267
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Back_2
+  rotate: false
+  xy: 2, 233
+  size: 48, 32
+  orig: 48, 32
+  offset: 0, 0
+  index: -1
+Clown_Magician(1)_F_Hair_2
+  rotate: false
+  xy: 65, 48
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+Clown_Magician(1)_Face_MU_B
+  rotate: false
+  xy: 64, 2
+  size: 8, 9
+  orig: 8, 9
+  offset: 0, 0
+  index: -1
+Clown_Magician(1)_M_ Hair
+  rotate: false
+  xy: 36, 39
+  size: 27, 21
+  orig: 27, 21
+  offset: 0, 0
+  index: -1
+Clown_Magician(1)_Skin
+  rotate: false
+  xy: 36, 17
+  size: 19, 20
+  orig: 19, 20
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_Body
+  rotate: false
+  xy: 69, 113
+  size: 8, 11
+  orig: 8, 11
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_L_Hand
+  rotate: false
+  xy: 84, 77
+  size: 5, 9
+  orig: 5, 9
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_L_Leg
+  rotate: false
+  xy: 85, 88
+  size: 6, 7
+  orig: 6, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_L_Side
+  rotate: false
+  xy: 84, 161
+  size: 7, 7
+  orig: 7, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_R_Hand
+  rotate: false
+  xy: 84, 66
+  size: 5, 9
+  orig: 5, 9
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_R_Leg
+  rotate: false
+  xy: 85, 57
+  size: 6, 7
+  orig: 6, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(2)_R_Side
+  rotate: false
+  xy: 82, 106
+  size: 9, 7
+  orig: 9, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(3)_Back_F
+  rotate: false
+  xy: 2, 2
+  size: 30, 13
+  orig: 30, 13
+  offset: 0, 0
+  index: -1
+Clown_Magician(3)_Head_1
+  rotate: false
+  xy: 2, 122
+  size: 40, 30
+  orig: 40, 30
+  offset: 0, 0
+  index: -1
+Clown_Magician(3)_L_Shoulder
+  rotate: false
+  xy: 84, 97
+  size: 7, 7
+  orig: 7, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(3)_Neck_F
+  rotate: false
+  xy: 65, 39
+  size: 18, 7
+  orig: 18, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician(3)_R_SHoulder
+  rotate: false
+  xy: 69, 91
+  size: 10, 7
+  orig: 10, 7
+  offset: 0, 0
+  index: -1
+Clown_Magician_Weapon
+  rotate: false
+  xy: 38, 91
+  size: 29, 29
+  orig: 29, 29
+  offset: 0, 0
+  index: -1
+Emoji_Angel_Ring
+  rotate: false
+  xy: 71, 180
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Bad
+  rotate: false
+  xy: 71, 158
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Bomb
+  rotate: false
+  xy: 75, 204
+  size: 14, 19
+  orig: 14, 19
+  offset: 0, 0
+  index: -1
+Emoji_Coin
+  rotate: false
+  xy: 79, 115
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Emoji_Deadly
+  rotate: false
+  xy: 75, 190
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: -1
+Emoji_Devil_Ring
+  rotate: false
+  xy: 71, 170
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Heart
+  rotate: false
+  xy: 71, 79
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Note
+  rotate: false
+  xy: 72, 25
+  size: 13, 12
+  orig: 13, 12
+  offset: 0, 0
+  index: -1
+Emoji_Sad
+  rotate: false
+  xy: 71, 67
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Smile
+  rotate: false
+  xy: 72, 13
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Star
+  rotate: false
+  xy: 69, 100
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Face_1
+  rotate: false
+  xy: 34, 2
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Face_2
+  rotate: false
+  xy: 49, 2
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Face_3
+  rotate: false
+  xy: 57, 24
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Face_4
+  rotate: false
+  xy: 76, 143
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Face_5
+  rotate: false
+  xy: 76, 128
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Fairy_Green_Magician_Weapon
+  rotate: false
+  xy: 2, 194
+  size: 39, 37
+  orig: 39, 37
+  offset: 0, 0
+  index: -1
+Flame_Magician_Weapon
+  rotate: false
+  xy: 2, 154
+  size: 38, 38
+  orig: 38, 38
+  offset: 0, 0
+  index: -1
+Flower_Pink_Magician_Weapon
+  rotate: false
+  xy: 43, 193
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Frozen_Witch_Weapon
+  rotate: false
+  xy: 52, 225
+  size: 39, 40
+  orig: 39, 40
+  offset: 0, 0
+  index: -1
+Maestro_Magician_Weapon
+  rotate: false
+  xy: 42, 158
+  size: 27, 33
+  orig: 27, 33
+  offset: 0, 0
+  index: -1
+Mushroom_Witch_Weapon
+  rotate: false
+  xy: 38, 62
+  size: 31, 27
+  orig: 31, 27
+  offset: 0, 0
+  index: -1
+Royal_Magician_Weapon
+  rotate: false
+  xy: 2, 51
+  size: 32, 33
+  orig: 32, 33
+  offset: 0, 0
+  index: -1
+Science_Wizard_Weapon
+  rotate: false
+  xy: 44, 126
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon
+  rotate: false
+  xy: 2, 86
+  size: 34, 34
+  orig: 34, 34
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon_2
+  rotate: false
+  xy: 2, 17
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1

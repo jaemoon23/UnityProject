@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5a6d7ef4170bc6f45816360d6d1601f1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 186371
+  packageName: 2D Pixel Character Magician
+  packageVersion: 1.0
+  assetPath: Assets/nGarden/2D_Pixel_Magician/Script/UI_Manager.cs
+  uploadId: 414363

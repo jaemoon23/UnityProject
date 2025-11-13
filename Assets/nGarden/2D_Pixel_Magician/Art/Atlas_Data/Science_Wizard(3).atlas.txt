@@ -1,0 +1,300 @@
+
+Science_Wizard(3).png
+size: 304,78
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Back_2
+  rotate: false
+  xy: 2, 8
+  size: 44, 26
+  orig: 44, 26
+  offset: 0, 0
+  index: -1
+Clown_Magician_Weapon
+  rotate: false
+  xy: 156, 47
+  size: 29, 29
+  orig: 29, 29
+  offset: 0, 0
+  index: -1
+Emoji_Angel_Ring
+  rotate: false
+  xy: 152, 4
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Bad
+  rotate: false
+  xy: 276, 43
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Bomb
+  rotate: false
+  xy: 244, 5
+  size: 14, 19
+  orig: 14, 19
+  offset: 0, 0
+  index: -1
+Emoji_Coin
+  rotate: false
+  xy: 271, 30
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Emoji_Deadly
+  rotate: false
+  xy: 207, 4
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: -1
+Emoji_Devil_Ring
+  rotate: false
+  xy: 172, 4
+  size: 18, 8
+  orig: 18, 8
+  offset: 0, 0
+  index: -1
+Emoji_Heart
+  rotate: false
+  xy: 291, 66
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Note
+  rotate: false
+  xy: 246, 64
+  size: 13, 12
+  orig: 13, 12
+  offset: 0, 0
+  index: -1
+Emoji_Sad
+  rotate: false
+  xy: 284, 31
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Smile
+  rotate: false
+  xy: 289, 43
+  size: 11, 10
+  orig: 11, 10
+  offset: 0, 0
+  index: -1
+Emoji_Star
+  rotate: false
+  xy: 275, 17
+  size: 11, 11
+  orig: 11, 11
+  offset: 0, 0
+  index: -1
+Face_1
+  rotate: false
+  xy: 276, 66
+  size: 13, 10
+  orig: 13, 10
+  offset: 0, 0
+  index: -1
+Face_2
+  rotate: false
+  xy: 246, 51
+  size: 13, 11
+  orig: 13, 11
+  offset: 0, 0
+  index: -1
+Face_3
+  rotate: false
+  xy: 261, 65
+  size: 13, 11
+  orig: 13, 11
+  offset: 0, 0
+  index: -1
+Face_4
+  rotate: false
+  xy: 261, 43
+  size: 13, 10
+  orig: 13, 10
+  offset: 0, 0
+  index: -1
+Face_5
+  rotate: false
+  xy: 192, 3
+  size: 13, 13
+  orig: 13, 13
+  offset: 0, 0
+  index: -1
+Fairy_Green_Magician_Weapon
+  rotate: false
+  xy: 83, 39
+  size: 39, 37
+  orig: 39, 37
+  offset: 0, 0
+  index: -1
+Flame_Magician_Weapon
+  rotate: false
+  xy: 43, 38
+  size: 38, 38
+  orig: 38, 38
+  offset: 0, 0
+  index: -1
+Flower_Pink_Magician_Weapon
+  rotate: false
+  xy: 124, 46
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Frozen_Witch_Weapon
+  rotate: false
+  xy: 2, 36
+  size: 39, 40
+  orig: 39, 40
+  offset: 0, 0
+  index: -1
+Maestro_Magician_Weapon
+  rotate: false
+  xy: 217, 43
+  size: 27, 33
+  orig: 27, 33
+  offset: 0, 0
+  index: -1
+Mushroom_Witch_Weapon
+  rotate: false
+  xy: 184, 18
+  size: 31, 27
+  orig: 31, 27
+  offset: 0, 0
+  index: -1
+Royal_Magician_Weapon
+  rotate: false
+  xy: 84, 4
+  size: 32, 33
+  orig: 32, 33
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_F_Hair_2
+  rotate: false
+  xy: 287, 4
+  size: 8, 11
+  orig: 8, 11
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_Face_MU_F_2
+  rotate: false
+  xy: 261, 55
+  size: 17, 8
+  orig: 17, 8
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_L_Leg
+  rotate: false
+  xy: 296, 57
+  size: 4, 7
+  orig: 4, 7
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_R_Leg
+  rotate: false
+  xy: 296, 57
+  size: 4, 7
+  orig: 4, 7
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_M_Hair
+  rotate: false
+  xy: 187, 52
+  size: 28, 24
+  orig: 28, 24
+  offset: 0, 0
+  index: -1
+Science_Wizard(1)_Skin
+  rotate: false
+  xy: 223, 2
+  size: 19, 20
+  orig: 19, 20
+  offset: 0, 0
+  index: -1
+Science_Wizard(2)_L_Side
+  rotate: false
+  xy: 255, 43
+  size: 4, 6
+  orig: 4, 6
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_Back_B
+  rotate: false
+  xy: 260, 7
+  size: 13, 17
+  orig: 13, 17
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_Body
+  rotate: false
+  xy: 275, 3
+  size: 10, 12
+  orig: 10, 12
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_Head_1
+  rotate: false
+  xy: 244, 26
+  size: 25, 15
+  orig: 25, 15
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_Head_2
+  rotate: false
+  xy: 217, 24
+  size: 25, 17
+  orig: 25, 17
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_L_Hand
+  rotate: false
+  xy: 280, 55
+  size: 6, 9
+  orig: 6, 9
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_R_Hand
+  rotate: false
+  xy: 288, 55
+  size: 6, 9
+  orig: 6, 9
+  offset: 0, 0
+  index: -1
+Science_Wizard(3)_R_Shoulder
+  rotate: false
+  xy: 246, 43
+  size: 7, 6
+  orig: 7, 6
+  offset: 0, 0
+  index: -1
+Science_Wizard_Weapon
+  rotate: false
+  xy: 152, 14
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon
+  rotate: false
+  xy: 48, 2
+  size: 34, 34
+  orig: 34, 34
+  offset: 0, 0
+  index: -1
+Star_Magician_Weapon_2
+  rotate: false
+  xy: 118, 5
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
