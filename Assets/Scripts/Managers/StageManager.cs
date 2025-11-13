@@ -55,12 +55,12 @@ namespace NovelianMagicLibraryDefense.Managers
         public void SetStageDuration(float duration)
         {
             stageDuration = duration;
-            Debug.Log($"[StageManager] Stage duration set to {duration} seconds");
+            // Debug.Log($"[StageManager] Stage duration set to {duration} seconds");
         }
 
         protected override void OnInitialize()
         {
-            Debug.Log("[StageManager] Initializing stage");
+            // Debug.Log("[StageManager] Initializing stage");
 
             StageName = $"Stage 1-1"; //TODO JML: CSV Loaded
 
@@ -75,12 +75,12 @@ namespace NovelianMagicLibraryDefense.Managers
             timerCts = new CancellationTokenSource();
             StageTimer(timerCts.Token).Forget();
 
-            Debug.Log("[StageManager] Initialized");
+            // Debug.Log("[StageManager] Initialized");
         }
 
         protected override void OnReset()
         {
-            Debug.Log("[StageManager] Resetting stage");
+            // Debug.Log("[StageManager] Resetting stage");
 
             // LMJ: Cancel and dispose timer
             timerCts?.Cancel();
@@ -102,7 +102,7 @@ namespace NovelianMagicLibraryDefense.Managers
 
         protected override void OnDispose()
         {
-            Debug.Log("[StageManager] Disposing stage");
+            // Debug.Log("[StageManager] Disposing stage");
 
             // LMJ: Cancel timer
             timerCts?.Cancel();
@@ -151,13 +151,13 @@ namespace NovelianMagicLibraryDefense.Managers
             }
             catch (OperationCanceledException)
             {
-                Debug.Log("[StageManager] Timer cancelled");
+                // Debug.Log("[StageManager] Timer cancelled");
             }
         }
 
         public void HandleTimeUp()
         {
-            Debug.Log("[StageManager] Time's Up! Stage Failed");
+            // Debug.Log("[StageManager] Time's Up! Stage Failed");
             waveManager.WaveClear();
             OnTimeUp?.Invoke();
         }

@@ -91,7 +91,7 @@ namespace NovelianMagicLibraryDefense.Managers
             // Load saved volume settings
             LoadAudioSettings();
 
-            Debug.Log("[AudioManager] Initialized successfully");
+            // Debug.Log("[AudioManager] Initialized successfully");
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 sfxPool.Add(sfxSource);
             }
 
-            Debug.Log($"[AudioManager] Created SFX pool with {sfxPoolSize} AudioSources");
+            // Debug.Log($"[AudioManager] Created SFX pool with {sfxPoolSize} AudioSources");
         }
 
         #region BGM Control
@@ -140,7 +140,7 @@ namespace NovelianMagicLibraryDefense.Managers
             {
                 bgmSource.clip = clip;
                 bgmSource.Play();
-                Debug.Log($"[AudioManager] Playing BGM: {clipName}");
+                // Debug.Log($"[AudioManager] Playing BGM: {clipName}");
             }
         }
 
@@ -164,7 +164,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 bgmSource.Play();
 
                 bgmFadeCoroutine = StartCoroutine(FadeIn(bgmSource, fadeDuration));
-                Debug.Log($"[AudioManager] Playing BGM with fade in: {clipName}");
+                // Debug.Log($"[AudioManager] Playing BGM with fade in: {clipName}");
             }
         }
 
@@ -180,7 +180,7 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             bgmSource.Stop();
-            Debug.Log("[AudioManager] BGM stopped");
+            // Debug.Log("[AudioManager] BGM stopped");
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             bgmFadeCoroutine = StartCoroutine(FadeOutAndStop(bgmSource, fadeDuration));
-            Debug.Log("[AudioManager] Stopping BGM with fade out");
+            // Debug.Log("[AudioManager] Stopping BGM with fade out");
         }
 
         /// <summary>
@@ -212,7 +212,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 }
 
                 bgmFadeCoroutine = StartCoroutine(CrossfadeCoroutine(clip, fadeDuration));
-                Debug.Log($"[AudioManager] Crossfading to BGM: {clipName}");
+                // Debug.Log($"[AudioManager] Crossfading to BGM: {clipName}");
             }
         }
 
@@ -235,7 +235,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 if (availableSource != null)
                 {
                     availableSource.PlayOneShot(clip);
-                    Debug.Log($"[AudioManager] Playing SFX: {clipName}");
+                    // Debug.Log($"[AudioManager] Playing SFX: {clipName}");
                 }
                 else
                 {
@@ -258,7 +258,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 if (availableSource != null)
                 {
                     availableSource.PlayOneShot(clip, volumeScale);
-                    Debug.Log($"[AudioManager] Playing SFX: {clipName} with volume: {volumeScale}");
+                    // Debug.Log($"[AudioManager] Playing SFX: {clipName} with volume: {volumeScale}");
                 }
             }
         }
@@ -298,7 +298,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 audioMixer.SetFloat(MASTER_VOLUME_PARAM, db);
             }
 
-            Debug.Log($"[AudioManager] Master volume set to: {masterVolume}");
+            // Debug.Log($"[AudioManager] Master volume set to: {masterVolume}");
         }
 
         /// <summary>
@@ -314,7 +314,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 audioMixer.SetFloat(BGM_VOLUME_PARAM, db);
             }
 
-            Debug.Log($"[AudioManager] BGM volume set to: {bgmVolume}");
+            // Debug.Log($"[AudioManager] BGM volume set to: {bgmVolume}");
         }
 
         /// <summary>
@@ -330,7 +330,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 audioMixer.SetFloat(SFX_VOLUME_PARAM, db);
             }
 
-            Debug.Log($"[AudioManager] SFX volume set to: {sfxVolume}");
+            // Debug.Log($"[AudioManager] SFX volume set to: {sfxVolume}");
         }
 
         /// <summary>
@@ -362,7 +362,7 @@ namespace NovelianMagicLibraryDefense.Managers
             PlayerPrefs.SetFloat(SFX_VOLUME_KEY, sfxVolume);
             PlayerPrefs.Save();
 
-            Debug.Log("[AudioManager] Audio settings saved");
+            // Debug.Log("[AudioManager] Audio settings saved");
         }
 
         /// <summary>
@@ -379,7 +379,7 @@ namespace NovelianMagicLibraryDefense.Managers
             SetBGMVolume(bgmVolume);
             SetSFXVolume(sfxVolume);
 
-            Debug.Log("[AudioManager] Audio settings loaded");
+            // Debug.Log("[AudioManager] Audio settings loaded");
         }
 
         #endregion
@@ -415,7 +415,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 if (handle.Status == AsyncOperationStatus.Succeeded)
                 {
                     loadedClips[clipName] = handle.Result;
-                    Debug.Log($"[AudioManager] Loaded audio clip: {clipName}");
+                    // Debug.Log($"[AudioManager] Loaded audio clip: {clipName}");
                     return handle.Result;
                 }
                 else
@@ -520,7 +520,7 @@ namespace NovelianMagicLibraryDefense.Managers
             loadedClips.Clear();
             loadingHandles.Clear();
 
-            Debug.Log("[AudioManager] Cleaned up and released resources");
+            // Debug.Log("[AudioManager] Cleaned up and released resources");
         }
 
         #endregion
