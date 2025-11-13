@@ -56,7 +56,7 @@ public class Monster : BaseEntity, ITargetable, IMovable
             attackTimer += Time.deltaTime;
             if (attackInterval <= attackTimer)
             {
-                //wall.TakeDamage(damage);
+                wall.TakeDamage(damage);
                 attackTimer = 0f;
             }
         }
