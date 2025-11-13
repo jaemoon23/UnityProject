@@ -67,7 +67,8 @@ public class TargetRegistry
 
         foreach (var target in targets)
         {
-            if (!target.IsAlive()) continue;
+            // JML: Check for null or destroyed objects before calling methods
+            if (target == null || !target.IsAlive()) continue;
 
             float distance = Vector3.Distance(position, target.GetPosition());
 
@@ -86,21 +87,24 @@ public class TargetRegistry
     public ITargetable FindSkillTarget(Vector3 position, float range)
     {
         List<ITargetable> validTargets = GetAllTargets();
-    
+
         ITargetable bestTarget = null;
         float bestWeight = float.MinValue;  // JML: Start with the lowest possible weight
         float closestDistance = float.MaxValue; // JML: To break weight ties by distance
-        
+
         foreach (var target in validTargets)
         {
+            // JML: Additional null check for safety
+            if (target == null) continue;
+
             float distance = Vector3.Distance(position, target.GetPosition());
-            
+
             if (distance <= range)
             {
                 float weight = target.Weight;
-                
+
                 // JML: 1st priority: highest weight, 2nd priority: closest distance
-                if (weight > bestWeight || 
+                if (weight > bestWeight ||
                     (weight == bestWeight && distance < closestDistance))
                 {
                     bestTarget = target;

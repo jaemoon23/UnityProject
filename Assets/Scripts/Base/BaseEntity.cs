@@ -22,7 +22,14 @@ public abstract class BaseEntity : MonoBehaviour, IEntity, IPoolable
 
     public float GetHealth() => currentHealth;
     public float GetMaxHealth() => maxHealth;
-    public virtual bool IsAlive() => gameObject.activeInHierarchy && currentHealth > 0;
+    public virtual bool IsAlive()
+    {
+        // JML: Check if Unity object is destroyed before accessing properties
+        if (this == null || gameObject == null)
+            return false;
+
+        return gameObject.activeInHierarchy && currentHealth > 0;
+    }
     public Vector3 GetPosition() => transform.position;
     public Transform GetTransform() => transform;
     public abstract void Die();

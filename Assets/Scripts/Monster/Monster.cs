@@ -73,6 +73,10 @@ public class Monster : BaseEntity, ITargetable, IMovable
     public override void Die()
     {
         Debug.Log($"[Monster] Die() called! Exp={Exp}"); // LCB: Debug monster death
+
+        // JML: Unregister BEFORE despawning to prevent accessing destroyed object
+        TargetRegistry.Instance.UnregisterTarget(this);
+
         OnMonsterDied?.Invoke(this);
         // LMJ: Changed from ObjectPoolManager.Instance to GameManager.Instance.Pool
         NovelianMagicLibraryDefense.Managers.GameManager.Instance.Pool.Despawn(this);
@@ -106,6 +110,8 @@ public class Monster : BaseEntity, ITargetable, IMovable
         attackTimer = 0f;
         Weight = 1f;
 
+        // JML: Redundant safety check - should already be unregistered in Die()
+        // But kept as failsafe for edge cases
         TargetRegistry.Instance.UnregisterTarget(this);
     }
 }
