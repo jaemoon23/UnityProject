@@ -3,6 +3,7 @@ using NovelianMagicLibraryDefense.Core;
 using NovelianMagicLibraryDefense.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace NovelianMagicLibraryDefense.Managers
@@ -77,6 +78,9 @@ namespace NovelianMagicLibraryDefense.Managers
             instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // LMJ: Subscribe to scene unload event to clean up pools on scene transition
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+
             InitializeManagers();
         }
 
@@ -115,11 +119,25 @@ namespace NovelianMagicLibraryDefense.Managers
         }
 
         /// <summary>
-        /// LMJ: Register manager to the list while maintaining explicit reference
+        /// LMJ: Register manager to the list and ServiceLocator
         /// </summary>
         private void RegisterManager(IManager manager)
         {
             managers.Add(manager);
+
+            // LMJ: Register to ServiceLocator for decoupled access
+            if (manager is UIManager ui)
+                ServiceLocator.Register(ui);
+            else if (manager is ObjectPoolManager pool)
+                ServiceLocator.Register(pool);
+            else if (manager is WaveManager wave)
+                ServiceLocator.Register(wave);
+            else if (manager is StageManager stage)
+                ServiceLocator.Register(stage);
+            else if (manager is StageStateManager stageState)
+                ServiceLocator.Register(stageState);
+            else if (manager is DataManager data)
+                ServiceLocator.Register(data);
         }
 
         /// <summary>
@@ -148,11 +166,29 @@ namespace NovelianMagicLibraryDefense.Managers
         }
 
         /// <summary>
+        /// LMJ: Handle scene unload event - clean up object pools to prevent memory leaks
+        /// Called automatically when any scene is unloaded
+        /// </summary>
+        private void OnSceneUnloaded(Scene scene)
+        {
+            Debug.Log($"[GameManager] Scene unloaded: {scene.name}, cleaning up object pools");
+
+            // LMJ: Clear all pooled objects to prevent zombie objects in DontDestroyOnLoad
+            if (poolManager != null)
+            {
+                poolManager.ClearAll();
+            }
+        }
+
+        /// <summary>
         /// LMJ: Clean up all managers in reverse order (safe dependency cleanup)
         /// </summary>
         private void OnDestroy()
         {
             if (instance != this) return;
+
+            // LMJ: Unsubscribe from scene events to prevent memory leaks
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
             Debug.Log("[GameManager] Disposing all managers");
             for (int i = managers.Count - 1; i >= 0; i--)
@@ -161,6 +197,9 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             managers.Clear();
+
+            // LMJ: Clear ServiceLocator to prevent dangling references
+            ServiceLocator.Clear();
         }
     }
 }
