@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Pool;
-public class BossMonster : BaseEntity, ITargetable
+//JML: Boss monster entity with enhanced stats and wall attack behavior
+public class BossMonster : BaseEntity, ITargetable, IMovable
 {
     public static event System.Action<BossMonster> OnBossDied;
     [SerializeField] new Collider2D collider2D;
@@ -8,10 +9,12 @@ public class BossMonster : BaseEntity, ITargetable
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private float damage = 10f;
     [SerializeField] private float attackInterval = 0.7f;
+    [SerializeField] private MonsterMove monsterMove;
 
     private float attackTimer = 0f;
     private Wall wall;
     private bool isWallHit = false;
+    public bool IsWallHit => isWallHit;
 
     // JML: ITargetable implementation
     public float Weight { get; private set; } = 5f; // Example weight value
@@ -19,12 +22,10 @@ public class BossMonster : BaseEntity, ITargetable
     private void OnEnable()
     {
         collider2D.enabled = true;
-        Debug.Log("Collider Enabled");
     }
     private void OnDisable()
     {
         collider2D.enabled = false;
-        Debug.Log("Collider Disabled");
     }
 
     void Start()
@@ -33,10 +34,15 @@ public class BossMonster : BaseEntity, ITargetable
         transform.position = new Vector3(randomX, 2, -7.5f);
     }
 
+    //JML: Physics-based movement in FixedUpdate
+    private void FixedUpdate()
+    {
+        monsterMove.Move(this, moveSpeed);
+    }
+
+    //JML: Game logic in Update
     private void Update()
     {
-        Move();
-
         if (isWallHit)
         {
             attackTimer += Time.deltaTime;
@@ -47,18 +53,6 @@ public class BossMonster : BaseEntity, ITargetable
             }
         }
         Weight += 1f;
-    }
-
-    private void Move()
-    {
-        if (!isWallHit)
-        {
-            rb.linearVelocity = Vector2.down * moveSpeed;
-        }
-        else
-        {
-            rb.linearVelocity = Vector2.zero;
-        }
     }
 
     public override void TakeDamage(float damage)
@@ -93,8 +87,9 @@ public class BossMonster : BaseEntity, ITargetable
         wall = null;
         attackTimer = 0f;
         Weight = 5f;
+
         TargetRegistry.Instance.RegisterTarget(this);
-        Debug.Log("Monster spawned");
+
     }
 
     public override void OnDespawn()
@@ -104,6 +99,5 @@ public class BossMonster : BaseEntity, ITargetable
         attackTimer = 0f;
         Weight = 5f;
         TargetRegistry.Instance.UnregisterTarget(this);
-        Debug.Log("Monster despawned");
     }
 }
