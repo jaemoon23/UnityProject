@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Pool;
 //JML: Boss monster entity with enhanced stats and wall attack behavior
 public class BossMonster : BaseEntity, ITargetable, IMovable
 {

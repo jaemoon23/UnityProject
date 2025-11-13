@@ -1,18 +1,24 @@
 using UnityEngine;
 using NovelianMagicLibraryDefense.Managers;
+using UnityEngine.InputSystem;
+
 public class TestObj : MonoBehaviour
 {
     public GameManager gameManager;
+
 #if UNITY_EDITOR
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Keyboard.current != null)
         {
-            gameManager.StageState.SetStageState(StageState.Cleared);
-        }
-        else if (Input.GetKeyDown(KeyCode.W))
-        {
-            gameManager.StageState.SetStageState(StageState.Failed);
+            if (Keyboard.current.qKey.wasPressedThisFrame)
+            {
+                gameManager.StageState.SetStageState(StageState.Cleared);
+            }
+            else if (Keyboard.current.wKey.wasPressedThisFrame)
+            {
+                gameManager.StageState.SetStageState(StageState.Failed);
+            }
         }
     }
 #endif

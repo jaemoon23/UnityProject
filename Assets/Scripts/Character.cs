@@ -1,5 +1,4 @@
 using NovelianMagicLibraryDefense.Managers;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Character : MonoBehaviour
@@ -38,14 +37,7 @@ public class Character : MonoBehaviour
     {
         if (currentTarget == null || !currentTarget.IsAlive())
         {
-            if (Input.GetKeyDown(KeyCode.S))
-            {
-                currentTarget = TargetRegistry.Instance.FindSkillTarget(transform.position, attackRange);
-            }
-            else
-            {
-                currentTarget = TargetRegistry.Instance.FindTarget(transform.position, attackRange);
-            }
+            currentTarget = TargetRegistry.Instance.FindTarget(transform.position, attackRange);
         }
 
         if (currentTarget != null)
