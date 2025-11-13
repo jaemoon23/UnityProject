@@ -51,12 +51,12 @@ public class Monster : BaseEntity, ITargetable, IMovable
     //JML: Game logic in Update
     private void Update()
     {
-        if (isWallHit)
+        if (isWallHit && wall != null)
         {
             attackTimer += Time.deltaTime;
             if (attackInterval <= attackTimer)
             {
-                //wall.TakeDamage(damage);
+                wall.TakeDamage(damage);
                 attackTimer = 0f;
             }
         }
