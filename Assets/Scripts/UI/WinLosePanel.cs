@@ -120,12 +120,12 @@ namespace NovelianMagicLibraryDefense.UI
             {
                 int minutes = Mathf.FloorToInt(clearTime / 60f);
                 int seconds = Mathf.FloorToInt(clearTime % 60f);
-                victoryTimeText.text = $"진행시간 : {minutes:00}:{seconds:00}\n처치 몬스터 : {killCount}마리";
+                victoryTimeText.text = $"Clear Time: {minutes:00}:{seconds:00}\nMonsters Killed: {killCount}";
             }
 
             if (victoryRewardText != null)
             {
-                victoryRewardText.text = $"보상: {reward}G";
+                victoryRewardText.text = $"Reward: {reward}G";
             }
         }
 
@@ -186,12 +186,12 @@ namespace NovelianMagicLibraryDefense.UI
             {
                 int minutes = Mathf.FloorToInt(survivalTime / 60f);
                 int seconds = Mathf.FloorToInt(survivalTime % 60f);
-                defeatTimeText.text = $"전투시간 : {minutes:00}:{seconds:00}";
+                defeatTimeText.text = $"Battle Time: {minutes:00}:{seconds:00}";
             }
 
             if (defeatRankText != null)
             {
-                remainderText.text = $"남은 몬스터 : {RemainderCount}마리";
+                remainderText.text = $"Monsters Remaining: {RemainderCount}";
             }
         }
 

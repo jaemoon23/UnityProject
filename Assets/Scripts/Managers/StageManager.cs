@@ -75,7 +75,37 @@ namespace NovelianMagicLibraryDefense.Managers
             timerCts = new CancellationTokenSource();
             StageTimer(timerCts.Token).Forget();
 
+            // LCB: Show start card selection before starting the game
+            ShowStartCardSelection().Forget();
+
             Debug.Log("[StageManager] Initialized");
+        }
+
+        /// <summary>
+        /// LCB: Show start card selection and pause the game
+        /// </summary>
+        private async UniTaskVoid ShowStartCardSelection()
+        {
+            // 1. Pause the game
+            Time.timeScale = 0f;//LCB: pause
+            Debug.Log("[StageManager] Game paused for start card selection");
+
+            // 2. Find and show start card selection UI
+            GameObject cardUIObj = GameObject.FindWithTag("Manager");
+            CardSelectionManager cardManager = cardUIObj != null ? cardUIObj.GetComponent<CardSelectionManager>() : null;
+
+            if (cardManager != null)
+            {
+                await cardManager.ShowStartCards();
+            }
+            else
+            {
+                Debug.LogWarning("[StageManager]Manager not found! Skipping start card selection.");
+            }
+
+            // 3. Resume the game
+            Time.timeScale = 1f;
+            Debug.Log("[StageManager] Game resumed after start card selection");
         }
 
         protected override void OnReset()
@@ -177,26 +207,33 @@ namespace NovelianMagicLibraryDefense.Managers
 
         /// <summary>
         /// LMJ: Handle level up with UniTask
+        /// LCB: Integrate level-up card system (Issue 139)
         /// </summary>
         private async UniTaskVoid LevelUp()
         {
+            var previousTimeScale = Time.timeScale;
+            Debug.Log($"타임 스케일 {previousTimeScale}"); // LCB: Debug previous time scale
             while (currentExp >= maxExp)
             {
                 currentExp -= maxExp;
                 maxExp += NEXT_EXP;
                 level++;
                 uiManager.UpdateExperience(currentExp, maxExp);
-                
-                // TODO: LMJ: Level Up Rewards (card selection UI)
-                var previousTimeScale = Time.timeScale;
+
+                // LCB: Call level-up card system
+
                 Time.timeScale = 0f; // Pause the game for level up
 
-                // TODO: LMJ: Wait for card selection or 5 second timeout
-                // ex) await WaitForCardSelectionOrTimeout();
-                await UniTask.Delay(5000, ignoreTimeScale: true); // Simulate wait with 5 second delay
-
-                Time.timeScale = previousTimeScale; // Resume game
+                // LCB: Display card selection UI (pass level to determine first level-up)
+                GameObject cardUIObj = GameObject.FindWithTag("CardUI");
+                LevelUpCardUI cardUI = cardUIObj != null ? cardUIObj.GetComponent<LevelUpCardUI>() : null;
+                if (cardUI != null)
+                {
+                    await cardUI.ShowCards(level); // level 1 means first level-up
+                }
             }
+            Time.timeScale = previousTimeScale; // Resume game
+            Debug.Log($"타임 스케일{Time.timeScale}"); // LCB: Debug resumed time scale
         }
 
         /// <summary>

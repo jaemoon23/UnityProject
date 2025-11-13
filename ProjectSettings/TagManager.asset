@@ -9,6 +9,8 @@ TagManager:
   - Monster
   - BossMonster
   - Manager
+  - CardUI
+  - CardSelectionManager
   layers:
   - Default
   - TransparentFX
