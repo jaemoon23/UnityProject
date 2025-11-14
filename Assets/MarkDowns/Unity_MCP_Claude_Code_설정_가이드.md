@@ -362,9 +362,3 @@ Unity 콘솔의 에러 메시지를 확인하고 해결 방법을 알려줘
 - [uv 공식 문서](https://docs.astral.sh/uv/)
 
 ---
-
-## 라이선스 및 기여
-
-이 가이드는 Novelian Magic Library Defense 프로젝트의 일부입니다.
-
-문제가 발생하거나 개선 사항이 있다면 GitHub 이슈로 제보해주세요!
