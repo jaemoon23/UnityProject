@@ -6,10 +6,8 @@ public class SpawnArea : MonoBehaviour
 
      public Vector3 GetRandomPosition()
     {
-        // Transform의 position을 중심으로 사용
         Vector3 center = transform.position;
         
-        // Transform의 scale을 영역 크기로 사용
         Vector3 scale = transform.localScale;
         
         float randomX = Random.Range(
