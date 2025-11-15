@@ -37,13 +37,6 @@ public class Monster : BaseEntity, ITargetable, IMovable
         collider2D.enabled = false;
     }
 
-    void Start()
-    {
-        float randomX = Random.Range(-0.4f, 0.4f);
-        transform.position = new Vector3(randomX, 2, -7.5f);
-        
-    }
-
     //JML: Physics-based movement in FixedUpdate
     private void FixedUpdate()
     {

@@ -42,8 +42,6 @@ public class Projectile : MonoBehaviour, IPoolable
         {
             Vector3 targetPosition = target.position;
 
-            Debug.Log($"[Projectile] SetTarget - Projectile Pos: {transform.position}, Target Pos: {targetPosition}");
-
             // Try to predict target's future position based on velocity
             Rigidbody2D targetRb = target.GetComponent<Rigidbody2D>();
             if (targetRb != null && targetRb.linearVelocity.sqrMagnitude > 0.01f)
@@ -59,15 +57,12 @@ public class Projectile : MonoBehaviour, IPoolable
 
                 // Aim at predicted position for better accuracy
                 direction = (predictedPosition - transform.position).normalized;
-
-                Debug.Log($"[Projectile] Prediction - Velocity: {targetVelocity}, Time: {timeToReach:F2}s, Predicted: {predictedPosition}, Direction: {direction}");
             }
             else
             {
                 // Fallback: direct aim if target has no Rigidbody2D or is stationary
                 direction = (targetPosition - transform.position).normalized;
 
-                Debug.Log($"[Projectile] Direct aim - Direction: {direction}");
             }
         }
     }

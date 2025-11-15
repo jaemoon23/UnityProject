@@ -89,6 +89,8 @@ namespace NovelianMagicLibraryDefense.Managers
             {
                 Debug.Log("[StageManager] LevelUpCardUI found and cached via FindWithTag");
             }
+            // LCB: Show start card selection before starting the game
+            ShowStartCardSelection().Forget();
 
             // LMJ: Initialize wave manager with hardcoded values (can be loaded from CSV later)
             waveManager.Initialize(totalEnemies: 20, bossCount: 0);
@@ -97,9 +99,6 @@ namespace NovelianMagicLibraryDefense.Managers
             // LMJ: Start stage timer using UniTask (no MonoBehaviour required!)
             timerCts = new CancellationTokenSource();
             StageTimer(timerCts.Token).Forget();
-
-            // LCB: Show start card selection before starting the game
-            ShowStartCardSelection().Forget();
 
             Debug.Log("[StageManager] Initialized");
         }
