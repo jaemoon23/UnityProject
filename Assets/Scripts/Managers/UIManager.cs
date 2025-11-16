@@ -1,101 +1,114 @@
+using NovelianMagicLibraryDefense.Core;
+using NovelianMagicLibraryDefense.Events;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using NovelianMagicLibraryDefense.Core;
 
 namespace NovelianMagicLibraryDefense.Managers
 {
     /// <summary>
     /// LCB/LMJ: Central UI manager that handles all UI elements and button interactions
-    /// Refactored to BaseManager pattern for consistency with other managers
+    /// Converted to MonoBehaviour for Inspector integration and event system compatibility
     /// Manages monster count, wave timer, barrier HP, and button interactions
     /// </summary>
-    [System.Serializable]
     public class UIManager : BaseManager
     {
-        // UI References injected from GameManager
-        private readonly TextMeshProUGUI monsterCountText;
-        private readonly TextMeshProUGUI waveTimerText;
-        private readonly Slider barrierHPSlider;
-        private readonly Slider expSlider;
-        private readonly TextMeshProUGUI barrierHPText;
-        private readonly GameObject cardPanel;
-        private readonly TextMeshProUGUI speedButtonText;
-        private readonly Button speedButton;
-        private readonly Button settingsButton;
-        private readonly Button skillButton1;
-        private readonly Button skillButton2;
-        private readonly Button skillButton3;
-        private readonly Button skillButton4;
+        [Header("Event Channels")]
+        [SerializeField] private WallEvents wallEvents;
+
+        [Header("UI References - Monster Display")]
+        [SerializeField] private TextMeshProUGUI monsterCountText;
+
+        [Header("UI References - Timer Display")]
+        [SerializeField] private TextMeshProUGUI waveTimerText;
+
+        [Header("UI References - Barrier HP")]
+        [SerializeField] private Slider barrierHPSlider;
+        [SerializeField] private TextMeshProUGUI barrierHPText;
+
+        [Header("UI References - Exp Slider")]
+        [SerializeField] private Slider expSlider;
+
+        [Header("UI References - Panels")]
+        [SerializeField] private GameObject cardPanel;
+
+        [Header("UI References - SpeedButtonText")]
+        [SerializeField] private TextMeshProUGUI speedButtonText;
+
+        [Header("UI References - Buttons")]
+        [SerializeField] private Button speedButton;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private Button skillButton1;
+        [SerializeField] private Button skillButton2;
+        [SerializeField] private Button skillButton3;
+        [SerializeField] private Button skillButton4;
 
         /// <summary>
-        /// LMJ: Constructor injection for UI dependencies
+        /// LMJ: Initialize UI elements and setup button listeners
         /// </summary>
-        public UIManager(
-            TextMeshProUGUI monsterCount,
-            TextMeshProUGUI waveTimer,
-            Slider barrierSlider,
-            TextMeshProUGUI barrierText,
-            Slider expSlider,
-            GameObject cardPanelRef,
-            Button speed,
-            TextMeshProUGUI speedButtonText,
-            Button settings,
-            Button skill1,
-            Button skill2,
-            Button skill3,
-            Button skill4)
-        {
-            monsterCountText = monsterCount;
-            waveTimerText = waveTimer;
-            barrierHPSlider = barrierSlider;
-            barrierHPText = barrierText;
-            this.expSlider = expSlider;
-            cardPanel = cardPanelRef;
-            speedButton = speed;
-            this.speedButtonText = speedButtonText;
-            settingsButton = settings;
-            skillButton1 = skill1;
-            skillButton2 = skill2;
-            skillButton3 = skill3;
-            skillButton4 = skill4;
-        }
-
         protected override void OnInitialize()
         {
-            expSlider.value = 0f;
-            barrierHPSlider.value = 1f;
-            Debug.Log("[UIManager] Initializing UI");
-            speedButtonText.text = "X1";
+            if (expSlider != null)
+                expSlider.value = 0f;
+            if (barrierHPSlider != null)
+            {
+                barrierHPSlider.value = 1f;
+                Debug.Log($"[UIManager] OnInitialize - barrierHPSlider assigned: {barrierHPSlider != null}");
+            }
+            else
+            {
+                Debug.LogError("[UIManager] OnInitialize - barrierHPSlider is null! Inspector 할당 확인 필요!");
+            }
 
-            // LMJ: Card panel activation is now handled by game logic (StartSelectionManager)
-            // No longer managing card panel activation here
+            if (speedButton != null)
+            {
+                Debug.Log($"[UIManager] OnInitialize - speedButton assigned: {speedButton != null}");
+            }
+            else
+            {
+                Debug.LogError("[UIManager] OnInitialize - speedButton is null! Inspector 할당 확인 필요!");
+            }
+
+            if (speedButtonText != null)
+                speedButtonText.text = "X1";
 
             // Setup button listeners
             SetupButtonListeners();
 
-            // Subscribe to Wall HP changes (event-based, not Update loop)
-            Wall.OnHealthChanged += UpdateBarrierHP;
-
-            Debug.Log("[UIManager] Initialized");
+            // LMJ: Subscribe to Wall HP changes via EventChannel
+            if (wallEvents != null)
+            {
+                wallEvents.AddHealthChangedListener(UpdateBarrierHP);
+                Debug.Log("[UIManager] WallEvents listener 등록 완료");
+            }
+            else
+            {
+                Debug.LogError("[UIManager] wallEvents is null! Inspector에서 할당해주세요.");
+            }
         }
 
+        /// <summary>
+        /// LMJ: Reset UI to initial state
+        /// </summary>
         protected override void OnReset()
         {
-            Debug.Log("[UIManager] Resetting UI");
             UpdateMonsterCount(0);
             UpdateWaveTimer(0f);
-            expSlider.value = 0f;
-            barrierHPSlider.value = 1f;
-            speedButtonText.text = "X1";
+            if (expSlider != null)
+                expSlider.value = 0f;
+            if (barrierHPSlider != null)
+                barrierHPSlider.value = 1f;
+            if (speedButtonText != null)
+                speedButtonText.text = "X1";
         }
 
         protected override void OnDispose()
         {
-            Debug.Log("[UIManager] Disposing UI");
-
-            // Unsubscribe from events
-            Wall.OnHealthChanged -= UpdateBarrierHP;
+            // LMJ: Unsubscribe from EventChannel
+            if (wallEvents != null)
+            {
+                wallEvents.RemoveHealthChangedListener(UpdateBarrierHP);
+            }
 
             // Remove button listeners
             RemoveButtonListeners();
@@ -106,7 +119,14 @@ namespace NovelianMagicLibraryDefense.Managers
         private void SetupButtonListeners()
         {
             if (speedButton != null)
+            {
                 speedButton.onClick.AddListener(OnSpeedButtonClicked);
+                Debug.Log("[UIManager] Speed button listener 등록 완료");
+            }
+            else
+            {
+                Debug.LogError("[UIManager] speedButton is null! Inspector에서 할당해주세요.");
+            }
 
             if (settingsButton != null)
                 settingsButton.onClick.AddListener(OnSettingsButtonClicked);
@@ -122,8 +142,6 @@ namespace NovelianMagicLibraryDefense.Managers
 
             if (skillButton4 != null)
                 skillButton4.onClick.AddListener(() => OnSkillButtonClicked(4));
-
-            Debug.Log("[UIManager] Button listeners setup complete");
         }
 
         private void RemoveButtonListeners()
@@ -145,8 +163,6 @@ namespace NovelianMagicLibraryDefense.Managers
 
             if (skillButton4 != null)
                 skillButton4.onClick.RemoveAllListeners();
-
-            Debug.Log("[UIManager] Button listeners removed");
         }
 
         #endregion
@@ -155,27 +171,35 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void OnSpeedButtonClicked()
         {
-            Debug.Log("[UIManager] Speed button clicked - Logic to be implemented");
+            Debug.Log($"[UIManager] Speed button clicked! Current Time.timeScale: {Time.timeScale}");
+
             switch (Time.timeScale)
             {
                 case 1f:
                     Time.timeScale = 1.5f;
-                    speedButtonText.text = "X1.5";
+                    if (speedButtonText != null) speedButtonText.text = "X1.5";
+                    Debug.Log("[UIManager] Speed changed to X1.5");
                     break;
                 case 1.5f:
                     Time.timeScale = 2f;
-                    speedButtonText.text = "X2";
+                    if (speedButtonText != null) speedButtonText.text = "X2";
+                    Debug.Log("[UIManager] Speed changed to X2");
                     break;
                 case 2f:
                     Time.timeScale = 1f;
-                    speedButtonText.text = "X1";
+                    if (speedButtonText != null) speedButtonText.text = "X1";
+                    Debug.Log("[UIManager] Speed changed to X1");
+                    break;
+                default:
+                    Time.timeScale = 1f;
+                    if (speedButtonText != null) speedButtonText.text = "X1";
+                    Debug.Log($"[UIManager] Unexpected timeScale {Time.timeScale}, reset to X1");
                     break;
             }
         }
 
         private void OnSettingsButtonClicked()
         {
-            Debug.Log("[UIManager] Settings button clicked - Logic to be implemented");
             var previousTimeScale = Time.timeScale;
             Time.timeScale = 0f; //JML: Pause the game when settings is opened
 
@@ -184,7 +208,7 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void OnSkillButtonClicked(int skillIndex)
         {
-            Debug.Log($"[UIManager] Skill button {skillIndex} clicked - Logic to be implemented");
+            // TODO: Implement skill logic
         }
 
         #endregion
@@ -229,9 +253,17 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         private void UpdateBarrierHP(float currentHP, float maxHP)
         {
+            float sliderValue = currentHP / maxHP;
+            Debug.Log($"[UIManager] UpdateBarrierHP 호출! currentHP={currentHP}, maxHP={maxHP}, sliderValue={sliderValue}, barrierHPSlider null? {barrierHPSlider == null}");
+
             if (barrierHPSlider != null)
             {
-                barrierHPSlider.value = currentHP / maxHP;
+                barrierHPSlider.value = sliderValue;
+                Debug.Log($"[UIManager] Slider value 설정 완료: {barrierHPSlider.value}");
+            }
+            else
+            {
+                Debug.LogError("[UIManager] barrierHPSlider is null! Inspector에서 할당해주세요.");
             }
 
             if (barrierHPText != null)

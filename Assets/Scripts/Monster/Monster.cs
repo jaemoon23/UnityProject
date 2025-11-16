@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using NovelianMagicLibraryDefense.Events;
+using UnityEngine;
 
 //JML: Monster entity with movement and wall attack behavior
 public class Monster : BaseEntity, ITargetable, IMovable
 {
-    public static event System.Action<Monster> OnMonsterDied;
+    [Header("Event Channels")]
+    [SerializeField] private MonsterEvents monsterEvents;
 
 
     [Header("References")]
@@ -35,13 +37,6 @@ public class Monster : BaseEntity, ITargetable, IMovable
         collider2D.enabled = false;
     }
 
-    void Start()
-    {
-        float randomX = Random.Range(-0.4f, 0.4f);
-        transform.position = new Vector3(randomX, 2, -7.5f);
-        
-    }
-
     //JML: Physics-based movement in FixedUpdate
     private void FixedUpdate()
     {
@@ -65,19 +60,24 @@ public class Monster : BaseEntity, ITargetable, IMovable
 
     public override void TakeDamage(float damage)
     {
-        Debug.Log($"[Monster] TakeDamage({damage}) - HP: {currentHealth}/{maxHealth}"); // LCB: Debug damage
+        // Debug.Log($"[Monster] TakeDamage({damage}) - HP: {currentHealth}/{maxHealth}"); // LCB: Debug damage
         base.TakeDamage(damage);
-        Debug.Log($"[Monster] After damage - HP: {currentHealth}/{maxHealth}"); // LCB: Debug HP after damage
+        // Debug.Log($"[Monster] After damage - HP: {currentHealth}/{maxHealth}"); // LCB: Debug HP after damage
     }
 
     public override void Die()
     {
-        Debug.Log($"[Monster] Die() called! Exp={Exp}"); // LCB: Debug monster death
+        // Debug.Log($"[Monster] Die() called! Exp={Exp}"); // LCB: Debug monster death
 
         // JML: Unregister BEFORE despawning to prevent accessing destroyed object
         TargetRegistry.Instance.UnregisterTarget(this);
 
-        OnMonsterDied?.Invoke(this);
+        // LMJ: Use EventChannel instead of static event
+        if (monsterEvents != null)
+        {
+            monsterEvents.RaiseMonsterDied(this);
+        }
+
         // LMJ: Changed from ObjectPoolManager.Instance to GameManager.Instance.Pool
         NovelianMagicLibraryDefense.Managers.GameManager.Instance.Pool.Despawn(this);
     }

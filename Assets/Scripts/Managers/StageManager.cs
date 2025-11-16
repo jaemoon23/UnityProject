@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using NovelianMagicLibraryDefense.Core;
+using NovelianMagicLibraryDefense.Events;
+using NovelianMagicLibraryDefense.Settings;
 using NovelianMagicLibraryDefense.UI;
 using UnityEngine;
 
@@ -9,24 +11,25 @@ namespace NovelianMagicLibraryDefense.Managers
 {
     /// <summary>
     /// LMJ: Manages stage progression, player leveling, and stage timer
-    /// Refactored from MonoBehaviour to BaseManager
-    /// Timer can be configured via CSV data in the future
+    /// MonoBehaviour 기반 Manager
     /// </summary>
-    [System.Serializable]  // LMJ: Prevents Unity from treating this as a Component
     public class StageManager : BaseManager
     {
-        
-        private WaveManager waveManager;
-        private UIManager uiManager;
-        private LevelUpCardUI levelUpCardUI; // LCB: Cache LevelUpCardUI reference to avoid FindWithTag on inactive objects
-        private CardSelectionManager cardSelectionManager; // LMJ: Direct reference to CardSelectionManager
+        [Header("Dependencies")]
+        [SerializeField] private WaveManager waveManager;
+        [SerializeField] private UIManager uiManager;
+        [SerializeField] private MonsterEvents monsterEvents;
+        [SerializeField] private StageEvents stageEvents;
+        [SerializeField] private CardSelectionManager cardSelectionManager; // LMJ: Direct reference to CardSelectionManager
+        [SerializeField] private LevelUpCardUI levelUpCardUI; // LCB: Direct reference to LevelUpCardUI
+
+        [Header("Settings")]
+        [SerializeField] private StageSettings stageSettings;
 
         public int CurrentStageId { get; private set; }
         public string StageName { get; private set; }
 
         #region PlayerStageLevel
-        private int maxExp = 100;
-        private const int NEXT_EXP = 100;
         private int currentExp = 0;
         private int level = 0;
 
@@ -34,54 +37,39 @@ namespace NovelianMagicLibraryDefense.Managers
         #endregion
 
         #region Timer
-        // LMJ: Stage duration can be loaded from CSV in the future
-        private float stageDuration = 600; // Default: 10 minutes
         private float RemainingTime { get; set; }
         private bool isStageCleared = false;
         private CancellationTokenSource timerCts;
-
-        public static event Action OnTimeUp;
         #endregion
-
-        /// <summary>
-        /// LMJ: Constructor injection for dependencies
-        /// </summary>
-        public StageManager(WaveManager wave, UIManager ui, CardSelectionManager cardSelection = null)
-        {
-            waveManager = wave;
-            cardSelectionManager = cardSelection;
-            uiManager = ui;
-        }
 
         /// <summary>
         /// LMJ: Set stage duration (useful for CSV data loading in the future)
         /// </summary>
         public void SetStageDuration(float duration)
         {
-            stageDuration = duration;
-            Debug.Log($"[StageManager] Stage duration set to {duration} seconds");
+            if (stageSettings != null)
+            {
+                stageSettings.stageDuration = duration;
+            }
+            // Debug.Log($"[StageManager] Stage duration set to {duration} seconds");
         }
 
         protected override void OnInitialize()
         {
-            Debug.Log("[StageManager] Initializing stage");
+            // Debug.Log("[StageManager] Initializing stage");
 
             StageName = $"Stage 1-1"; //TODO JML: CSV Loaded
 
-            // LMJ: Subscribe to monster death event for exp
-            Monster.OnMonsterDied += AddExp;
+            // LMJ: Subscribe to monster death event for exp via EventChannel
+            if (monsterEvents != null)
+            {
+                monsterEvents.AddMonsterDiedListener(AddExp);
+            }
 
-            // LCB: Find and cache LevelUpCardUI using FindWithTag (faster than FindFirstObjectByType)
-            // LCB: Now works because LevelUpPanel stays active with CanvasGroup controlling visibility
-            GameObject cardUIObj = GameObject.FindWithTag("CardUI");
-            levelUpCardUI = cardUIObj != null ? cardUIObj.GetComponent<LevelUpCardUI>() : null;
+            // LCB: Validate LevelUpCardUI reference
             if (levelUpCardUI == null)
             {
-                Debug.LogError("[StageManager] LevelUpCardUI not found! Make sure 'CardUI' tag is assigned.");
-            }
-            else
-            {
-                Debug.Log("[StageManager] LevelUpCardUI found and cached via FindWithTag");
+                Debug.LogError("[StageManager] LevelUpCardUI가 할당되지 않았습니다! Inspector에서 할당해주세요.");
             }
 
             // LMJ: Initialize wave manager with hardcoded values (can be loaded from CSV later)
@@ -95,7 +83,7 @@ namespace NovelianMagicLibraryDefense.Managers
             // LCB: Show start card selection before starting the game
             ShowStartCardSelection().Forget();
 
-            Debug.Log("[StageManager] Initialized");
+            // Debug.Log("[StageManager] Initialized");
         }
 
         /// <summary>
@@ -105,13 +93,13 @@ namespace NovelianMagicLibraryDefense.Managers
         {
             // 1. Pause the game
             Time.timeScale = 0f;//LCB: pause
-            Debug.Log("[StageManager] Game paused for start card selection");
+            // Debug.Log("[StageManager] Game paused for start card selection");
 
             // 2. Show start card selection UI using direct reference
             if (cardSelectionManager != null)
             {
                 await cardSelectionManager.ShowStartCards();
-                Debug.Log("[StageManager] Start card selection completed");
+                // Debug.Log("[StageManager] Start card selection completed");
             }
             else
             {
@@ -120,26 +108,28 @@ namespace NovelianMagicLibraryDefense.Managers
 
             // 3. Resume the game
             Time.timeScale = 1f;
-            Debug.Log("[StageManager] Game resumed after start card selection");
+            // Debug.Log("[StageManager] Game resumed after start card selection");
         }
 
         protected override void OnReset()
         {
-            Debug.Log("[StageManager] Resetting stage");
+            // Debug.Log("[StageManager] Resetting stage");
 
             // LMJ: Cancel and dispose timer
             timerCts?.Cancel();
             timerCts?.Dispose();
             timerCts = null;
 
-            // LMJ: Unsubscribe events
-            Monster.OnMonsterDied -= AddExp;
+            // LMJ: Unsubscribe events via EventChannel
+            if (monsterEvents != null)
+            {
+                monsterEvents.RemoveMonsterDiedListener(AddExp);
+            }
 
             // LMJ: Reset stage data
             currentExp = 0;
             level = 0;
-            maxExp = 100;
-            RemainingTime = stageDuration;
+            RemainingTime = stageSettings != null ? stageSettings.stageDuration : 600f;
             isStageCleared = false;
             CurrentStageId = 0;
             Time.timeScale = 1f;
@@ -147,15 +137,18 @@ namespace NovelianMagicLibraryDefense.Managers
 
         protected override void OnDispose()
         {
-            Debug.Log("[StageManager] Disposing stage");
+            // Debug.Log("[StageManager] Disposing stage");
 
             // LMJ: Cancel timer
             timerCts?.Cancel();
             timerCts?.Dispose();
             timerCts = null;
 
-            // LMJ: Unsubscribe events
-            Monster.OnMonsterDied -= AddExp;
+            // LMJ: Unsubscribe events via EventChannel
+            if (monsterEvents != null)
+            {
+                monsterEvents.RemoveMonsterDiedListener(AddExp);
+            }
 
             // JML: Ensure time scale reset
             Time.timeScale = 1f;
@@ -167,9 +160,10 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         private async UniTaskVoid StageTimer(CancellationToken ct)
         {
-            RemainingTime = stageDuration;
+            float duration = stageSettings != null ? stageSettings.stageDuration : 600f;
+            RemainingTime = duration;
             float startTime = Time.time;
-            float endTime = startTime + stageDuration;
+            float endTime = startTime + duration;
 
             try
             {
@@ -196,15 +190,20 @@ namespace NovelianMagicLibraryDefense.Managers
             }
             catch (OperationCanceledException)
             {
-                Debug.Log("[StageManager] Timer cancelled");
+                // Debug.Log("[StageManager] Timer cancelled");
             }
         }
 
         public void HandleTimeUp()
         {
-            Debug.Log("[StageManager] Time's Up! Stage Failed");
+            // Debug.Log("[StageManager] Time's Up! Stage Failed");
             waveManager.WaveClear();
-            OnTimeUp?.Invoke();
+
+            // LMJ: Use EventChannel instead of static event
+            if (stageEvents != null)
+            {
+                stageEvents.RaiseTimeUp();
+            }
         }
 
         /// <summary>
@@ -212,12 +211,13 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         private void AddExp(Monster monster)
         {
+            int maxExp = stageSettings != null ? stageSettings.expPerLevel : 100;
             currentExp += monster.Exp;
-            Debug.Log($"[StageManager] Exp +{monster.Exp} -> {currentExp}/{maxExp}"); // LCB: Debug exp gain
+            // Debug.Log($"[StageManager] Exp +{monster.Exp} -> {currentExp}/{maxExp}"); // LCB: Debug exp gain
             uiManager.UpdateExperience(currentExp, maxExp);
             if (currentExp >= maxExp)
             {
-                Debug.Log($"[StageManager] Level up triggered! currentExp={currentExp}, maxExp={maxExp}"); // LCB: Debug level up trigger
+                // Debug.Log($"[StageManager] Level up triggered! currentExp={currentExp}, maxExp={maxExp}"); // LCB: Debug level up trigger
                 LevelUp().Forget();
             }
         }
@@ -229,11 +229,11 @@ namespace NovelianMagicLibraryDefense.Managers
         private async UniTaskVoid LevelUp()
         {
             var previousTimeScale = Time.timeScale;
-            Debug.Log($"타임 스케일 {previousTimeScale}"); // LCB: Debug previous time scale
+            // Debug.Log($"타임 스케일 {previousTimeScale}"); // LCB: Debug previous time scale
+            int maxExp = stageSettings != null ? stageSettings.expPerLevel : 100;
             while (currentExp >= maxExp)
             {
                 currentExp -= maxExp;
-                maxExp += NEXT_EXP;
                 level++;
                 uiManager.UpdateExperience(currentExp, maxExp);
 
@@ -242,10 +242,10 @@ namespace NovelianMagicLibraryDefense.Managers
                 Time.timeScale = 0f; // Pause the game for level up
 
                 // LCB: Display card selection UI using cached reference (works even if object is inactive)
-                Debug.Log($"[StageManager] Level up to {level}, using cached LevelUpCardUI...");
+                // Debug.Log($"[StageManager] Level up to {level}, using cached LevelUpCardUI...");
                 if (levelUpCardUI != null)
                 {
-                    Debug.Log($"[StageManager] Calling ShowCards(level={level})");
+                    // Debug.Log($"[StageManager] Calling ShowCards(level={level})");
                     await levelUpCardUI.ShowCards(level); // level 1 means first level-up
                 }
                 else
@@ -254,7 +254,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 }
             }
             Time.timeScale = previousTimeScale; // Resume game
-            Debug.Log($"타임 스케일{Time.timeScale}"); // LCB: Debug resumed time scale
+            // Debug.Log($"타임 스케일{Time.timeScale}"); // LCB: Debug resumed time scale
         }
 
         /// <summary>
@@ -262,7 +262,8 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         public float GetStageProgress()
         {
-            return 1f - (RemainingTime / stageDuration);
+            float duration = stageSettings != null ? stageSettings.stageDuration : 600f;
+            return 1f - (RemainingTime / duration);
         }
 
         /// <summary>
@@ -286,6 +287,7 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         public float GetExpProgress()
         {
+            int maxExp = stageSettings != null ? stageSettings.expPerLevel : 100;
             return (float)currentExp / maxExp;
         }
 
@@ -302,14 +304,16 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         public float GetProgressTime()
         {
-            return stageDuration - RemainingTime;
+            float duration = stageSettings != null ? stageSettings.stageDuration : 600f;
+            return duration - RemainingTime;
         }
 
         public int GetReward()
         {
             // JML: Example reward calculation based on level and time
+            float duration = stageSettings != null ? stageSettings.stageDuration : 600f;
             int baseReward = 100;
-            int timeBonus = (int)(stageDuration - RemainingTime) / 10;
+            int timeBonus = (int)(duration - RemainingTime) / 10;
             return baseReward + (level * 50) + timeBonus;
         }
     }

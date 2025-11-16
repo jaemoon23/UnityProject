@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using NovelianMagicLibraryDefense.Core;
+using NovelianMagicLibraryDefense.Events;
+using NovelianMagicLibraryDefense.Settings;
 using TMPro;
 using UnityEngine;
 
@@ -8,24 +10,26 @@ namespace NovelianMagicLibraryDefense.Managers
 {
     /// <summary>
     /// LMJ: Manages enemy wave spawning and spawn logic
-    /// Refactored from MonoBehaviour to BaseManager
+    /// MonoBehaviour 기반 Manager
     /// </summary>
-    [System.Serializable]  // LMJ: Prevents Unity from treating this as a Component
     public class WaveManager : BaseManager
     {
-        private ObjectPoolManager poolManager;
-        private UIManager uiManager;
-        private bool isPoolReady = false;
+        [Header("Dependencies")]
+        [SerializeField] private ObjectPoolManager poolManager;
+        [SerializeField] private UIManager uiManager;
+        [SerializeField] private MonsterEvents monsterEvents;
+        [SerializeField] private StageEvents stageEvents;
 
-        public static event System.Action OnAllMonstersDefeated;
-        public static event System.Action OnBossDefeated;
+        [Header("Settings")]
+        [SerializeField] private WaveSettings waveSettings;
+
+        private bool isPoolReady = false;
 
         #region WaveData
         // private int waveId;  // LMJ: Reserved for future use
         private int enemyCount;
         private int initialEnemyCount;
         private int bossCount;
-        private float spawnInterval = 2f;
 
         // LMJ: RushSpawn feature disabled
         // private float rushSpawnInterval = 0.5f;
@@ -34,22 +38,16 @@ namespace NovelianMagicLibraryDefense.Managers
         // private List<float> rushProgressPoints = new List<float>();
         #endregion
 
-        /// <summary>
-        /// LMJ: Constructor injection for dependencies
-        /// </summary>
-        public WaveManager(ObjectPoolManager pool, UIManager ui)
-        {
-            poolManager = pool;
-            uiManager = ui;
-        }
-
         protected override void OnInitialize()
         {
-            Debug.Log("[WaveManager] Initializing pools and warm up");
+            // Debug.Log("[WaveManager] Initializing pools and warm up");
 
-            // LMJ: Subscribe to events first
-            Monster.OnMonsterDied += HandleMonsterDied;
-            BossMonster.OnBossDied += HandleBossDied;
+            // LMJ: Subscribe to EventChannels
+            if (monsterEvents != null)
+            {
+                monsterEvents.AddMonsterDiedListener(HandleMonsterDied);
+                monsterEvents.AddBossDiedListener(HandleBossDied);
+            }
 
             // LMJ: Initialize pools asynchronously
             InitializePoolsAsync().Forget();
@@ -62,19 +60,20 @@ namespace NovelianMagicLibraryDefense.Managers
         {
             // LMJ: Create pools for enemies
             await poolManager.CreatePoolAsync<Monster>(AddressableKey.Monster, defaultCapacity: 20, maxSize: 500);
-            await poolManager.CreatePoolAsync<BossMonster>(AddressableKey.BossMonster, defaultCapacity: 1, maxSize: 1);
+            // TODO: Re-enable when BossMonster prefab is created and registered in Addressables
+            // await poolManager.CreatePoolAsync<BossMonster>(AddressableKey.BossMonster, defaultCapacity: 1, maxSize: 1);
 
             // LMJ: Warm up pools to avoid runtime spikes
             poolManager.WarmUp<Monster>(50);
-            poolManager.WarmUp<BossMonster>(1);
+            // poolManager.WarmUp<BossMonster>(1);
 
             isPoolReady = true;
-            Debug.Log("[WaveManager] Pools initialized and ready");
+            // Debug.Log("[WaveManager] Pools initialized and ready");
         }
 
         protected override void OnReset()
         {
-            Debug.Log("[WaveManager] Resetting wave data");
+            // Debug.Log("[WaveManager] Resetting wave data");
             isPoolReady = false;
             enemyCount = 0;
             bossCount = 0;
@@ -84,11 +83,14 @@ namespace NovelianMagicLibraryDefense.Managers
 
         protected override void OnDispose()
         {
-            Debug.Log("[WaveManager] Disposing and unsubscribing events");
+            // Debug.Log("[WaveManager] Disposing and unsubscribing events");
 
-            // LMJ: Unsubscribe from events
-            Monster.OnMonsterDied -= HandleMonsterDied;
-            BossMonster.OnBossDied -= HandleBossDied;
+            // LMJ: Unsubscribe from EventChannels
+            if (monsterEvents != null)
+            {
+                monsterEvents.RemoveMonsterDiedListener(HandleMonsterDied);
+                monsterEvents.RemoveBossDiedListener(HandleBossDied);
+            }
         }
 
         /// <summary>
@@ -118,7 +120,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 uiManager.UpdateMonsterCount(enemyCount);
             }
 
-            Debug.Log($"[WaveManager] Wave initialized - Enemies: {totalEnemies}, Bosses: {bossCount}");
+            // Debug.Log($"[WaveManager] Wave initialized - Enemies: {totalEnemies}, Bosses: {bossCount}");
         }
 
         /// <summary>
@@ -128,7 +130,7 @@ namespace NovelianMagicLibraryDefense.Managers
         {
             // LMJ: Wait for pools to be ready before spawning
             await UniTask.WaitUntil(() => isPoolReady);
-            Debug.Log("[WaveManager] Starting wave spawn loop");
+            // Debug.Log("[WaveManager] Starting wave spawn loop");
             SpawnEnemy().Forget();
         }
 
@@ -145,9 +147,14 @@ namespace NovelianMagicLibraryDefense.Managers
 
             if (enemyCount == 0 && bossCount == 0)
             {
-                Debug.Log("[WaveManager] All monsters defeated!");
+                // Debug.Log("[WaveManager] All monsters defeated!");
                 WaveClear();
-                OnAllMonstersDefeated?.Invoke();
+
+                // LMJ: Use EventChannel instead of static event
+                if (stageEvents != null)
+                {
+                    stageEvents.RaiseAllMonstersDefeated();
+                }
             }
         }
 
@@ -155,12 +162,23 @@ namespace NovelianMagicLibraryDefense.Managers
         {
             bossCount--;
 
-            Debug.Log("[WaveManager] Boss defeated!");
-            OnBossDefeated?.Invoke();
+            // Debug.Log("[WaveManager] Boss defeated!");
+
+            // LMJ: Use EventChannel instead of static event
+            if (stageEvents != null)
+            {
+                stageEvents.RaiseBossDefeated();
+            }
         }
 
         private async UniTaskVoid SpawnEnemy()
         {
+            // LMJ: Wait for pools to be ready before spawning
+            while (!isPoolReady)
+            {
+                await UniTask.Yield();
+            }
+
             int totalMonsters = enemyCount;
             int spawnedCount = 0;
 
@@ -180,12 +198,11 @@ namespace NovelianMagicLibraryDefense.Managers
                 */
 
                 // LMJ: Normal spawn
-                float randomX = Random.Range(-0.4f, 0.4f);
-                Vector3 spawnPos = new Vector3(randomX, 3f, -7.5f);
+                Vector3 spawnPos = waveSettings.GetRandomSpawnPosition();
                 poolManager.Spawn<Monster>(spawnPos);
 
                 spawnedCount++;
-                await UniTask.Delay((int)(spawnInterval * 1000));
+                await UniTask.Delay((int)(waveSettings.spawnInterval * 1000));
             }
 
             // LMJ: Spawn boss after all normal enemies
@@ -197,10 +214,10 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void SpawnBoss()
         {
-            Vector3 bossSpawnPos = new Vector3(0f, 2f, -7.5f);
+            Vector3 bossSpawnPos = waveSettings.GetBossSpawnPosition();
             poolManager.Spawn<BossMonster>(bossSpawnPos);
 
-            Debug.Log("[WaveManager] Boss spawned");
+            // Debug.Log("[WaveManager] Boss spawned");
         }
 
         // LMJ: RushSpawn feature disabled - kept as reference
