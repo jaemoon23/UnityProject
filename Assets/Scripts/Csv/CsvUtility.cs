@@ -8,7 +8,7 @@ using System.Linq;
 public class CsvUtility
 {
     /// <summary>
-    /// JML: CSV Loader
+    /// Load CSV from file path
     /// </summary>
     /// <typeparam name="T">Data Class Type</typeparam>
     /// <param name="filePath">CSV File Path</param>
