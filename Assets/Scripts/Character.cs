@@ -1,7 +1,7 @@
 using NovelianMagicLibraryDefense.Managers;
 using UnityEngine;
 
-public class Character : MonoBehaviour
+public class Character : MonoBehaviour, IPoolable
 {
     [Header("Character Obj")]
     [SerializeField] private GameObject characterObj;
@@ -59,8 +59,21 @@ public class Character : MonoBehaviour
         if (!characterObj.activeSelf)
             return;
 
-        // 월드 좌표 캐릭터: Transform 직접 사용
         Vector3 spawnPosition = transform.position;
         GameManager.Instance.Pool.Spawn<Projectile>(spawnPosition).SetTarget(target.GetTransform());
+    }
+
+    public void OnSpawn()
+    {
+        currentTarget = null;
+        timer = 0.0f;
+        characterObj.SetActive(true);
+    }
+
+    public void OnDespawn()
+    {
+        currentTarget = null;
+        timer = 0.0f;
+        characterObj.SetActive(false);
     }
 }

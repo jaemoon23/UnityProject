@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using NovelianMagicLibraryDefense.Managers;
 using UnityEngine;
 
@@ -21,11 +22,11 @@ public class CharacterPlacementManager : MonoBehaviour
     [SerializeField] private float gridSpacingY = 1.5f;  // Y spacing
     [SerializeField] private Vector3 gridStartPosition = new Vector3(-3f, 0.75f, 0f); // Start position
 
-    [Header("Character Settings")]
-    [SerializeField] private GameObject characterPrefab; // Character prefab (SpriteRenderer only)
-
     // Grid slot list
     private List<GridSlot> gridSlots = new List<GridSlot>();
+
+    // Character pool initialized flag
+    private bool isCharacterPoolReady = false;
 
     // Drag state management
     private GameObject draggingCharacter;
@@ -37,10 +38,51 @@ public class CharacterPlacementManager : MonoBehaviour
         mainCamera = Camera.main;
     }
 
-    private void Start()
+    private async void Start()
     {
         // Create grid
         CreateGrid();
+
+        // Initialize Character pool
+        await InitializeCharacterPool();
+    }
+
+    /// <summary>
+    /// Initialize Character object pool
+    /// </summary>
+    private async UniTask InitializeCharacterPool()
+    {
+        if (GameManager.Instance == null || GameManager.Instance.Pool == null)
+        {
+            Debug.LogError("[CharacterPlacementManager] GameManager or Pool is not available!");
+            return;
+        }
+
+        // Create Character pool if it doesn't exist
+        if (!GameManager.Instance.Pool.HasPool<Character>())
+        {
+            bool success = await GameManager.Instance.Pool.CreatePoolAsync<Character>(
+                AddressableKey.CharacterObject,
+                defaultCapacity: 10,
+                maxSize: 20
+            );
+
+            if (success)
+            {
+                GameManager.Instance.Pool.WarmUp<Character>(10);
+                isCharacterPoolReady = true;
+                Debug.Log("[CharacterPlacementManager] Character pool initialized successfully");
+            }
+            else
+            {
+                Debug.LogError("[CharacterPlacementManager] Failed to initialize Character pool");
+            }
+        }
+        else
+        {
+            isCharacterPoolReady = true;
+            Debug.Log("[CharacterPlacementManager] Character pool already exists");
+        }
     }
 
     private void OnEnable()
@@ -121,6 +163,12 @@ public class CharacterPlacementManager : MonoBehaviour
             return;
         }
 
+        if (!isCharacterPoolReady)
+        {
+            Debug.LogError("[CharacterPlacementManager] Character pool is not ready yet!");
+            return;
+        }
+
         // Find empty slots
         List<GridSlot> emptySlots = GetEmptySlots();
         if (emptySlots.Count == 0)
@@ -133,8 +181,9 @@ public class CharacterPlacementManager : MonoBehaviour
         int randomIndex = Random.Range(0, emptySlots.Count);
         GridSlot targetSlot = emptySlots[randomIndex];
 
-        // Create character
-        GameObject character = Instantiate(characterPrefab, targetSlot.GetWorldPosition(), Quaternion.identity, gridParent);
+        // Spawn character from pool
+        Character character = GameManager.Instance.Pool.Spawn<Character>(targetSlot.GetWorldPosition());
+        character.transform.SetParent(gridParent);
         character.name = $"Character_{targetSlot.GetSlotIndex()}";
 
         // Set sprite
@@ -145,9 +194,9 @@ public class CharacterPlacementManager : MonoBehaviour
         }
 
         // Place in slot
-        targetSlot.PlaceCharacter(character);
+        targetSlot.PlaceCharacter(character.gameObject);
 
-        Debug.Log($"[CharacterPlacementManager] Character placed in slot {targetSlot.GetSlotIndex()} (random)");
+        Debug.Log($"[CharacterPlacementManager] Character placed in slot {targetSlot.GetSlotIndex()} (random) - pooled");
     }
 
     /// <summary>
@@ -317,14 +366,23 @@ public class CharacterPlacementManager : MonoBehaviour
     {
         foreach (GridSlot slot in gridSlots)
         {
-            GameObject character = slot.GetCurrentCharacter();
-            if (character != null)
+            GameObject characterObj = slot.GetCurrentCharacter();
+            if (characterObj != null)
             {
-                Destroy(character);
+                if (characterObj.TryGetComponent<Character>(out Character character))
+                {
+                    // Return to pool instead of destroying
+                    GameManager.Instance.Pool.Despawn(character);
+                }
+                else
+                {
+                    // Fallback: destroy if not a pooled object
+                    Destroy(characterObj);
+                }
             }
             slot.RemoveCharacter();
         }
 
-        Debug.Log("[CharacterPlacementManager] All slots cleared");
+        Debug.Log("[CharacterPlacementManager] All slots cleared (characters returned to pool)");
     }
 }
