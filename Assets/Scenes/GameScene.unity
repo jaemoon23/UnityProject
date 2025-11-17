@@ -2142,15 +2142,15 @@ PrefabInstance:
       objectReference: {fileID: 1195163669}
     - target: {fileID: 7981962845986285653, guid: 8804f94b8f8438d45b9990d9c8851633, type: 3}
       propertyPath: gridSpacingX
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7981962845986285653, guid: 8804f94b8f8438d45b9990d9c8851633, type: 3}
       propertyPath: gridSpacingY
-      value: 0.4
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7981962845986285653, guid: 8804f94b8f8438d45b9990d9c8851633, type: 3}
       propertyPath: gridStartPosition.x
-      value: -0.45
+      value: -2
       objectReference: {fileID: 0}
     - target: {fileID: 7981962845986285653, guid: 8804f94b8f8438d45b9990d9c8851633, type: 3}
       propertyPath: gridStartPosition.y
