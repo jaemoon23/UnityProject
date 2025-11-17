@@ -1,9 +1,7 @@
 using UnityEngine;
 
-/// <summary>
-/// World coordinate-based 2D Sprite grid slot
-/// Represents a position where characters can be placed
-/// </summary>
+//JML: World coordinate-based 2D Sprite grid slot
+//     Represents a position where characters can be placed
 public class GridSlot : MonoBehaviour
 {
     [Header("Slot Info")]
@@ -23,18 +21,14 @@ public class GridSlot : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Initialize slot (called from CharacterPlacementManager)
-    /// </summary>
+    //JML: Initialize slot (called from CharacterPlacementManager)
     public void Initialize(int index)
     {
         slotIndex = index;
         HideGrid();
     }
 
-    /// <summary>
-    /// Show grid
-    /// </summary>
+    //JML: Show grid
     public void ShowGrid()
     {
         if (spriteRenderer != null)
@@ -43,9 +37,7 @@ public class GridSlot : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Hide grid
-    /// </summary>
+    //JML: Hide grid
     public void HideGrid()
     {
         if (spriteRenderer != null)
@@ -54,9 +46,7 @@ public class GridSlot : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Place character
-    /// </summary>
+    //JML: Place character
     public void PlaceCharacter(GameObject character)
     {
         if (character == null) return;
@@ -70,9 +60,7 @@ public class GridSlot : MonoBehaviour
         Debug.Log($"[GridSlot {slotIndex}] Character placed");
     }
 
-    /// <summary>
-    /// Remove character
-    /// </summary>
+    //JML: Remove character
     public void RemoveCharacter()
     {
         currentCharacter = null;
@@ -81,33 +69,25 @@ public class GridSlot : MonoBehaviour
         Debug.Log($"[GridSlot {slotIndex}] Character removed");
     }
 
-    /// <summary>
-    /// Check if slot is empty
-    /// </summary>
+    //JML: Check if slot is empty
     public bool IsEmpty()
     {
         return !isOccupied;
     }
 
-    /// <summary>
-    /// Get currently placed character
-    /// </summary>
+    //JML: Get currently placed character
     public GameObject GetCurrentCharacter()
     {
         return currentCharacter;
     }
 
-    /// <summary>
-    /// Get slot index
-    /// </summary>
+    //JML: Get slot index
     public int GetSlotIndex()
     {
         return slotIndex;
     }
 
-    /// <summary>
-    /// Get slot's world position
-    /// </summary>
+    //JML: Get slot's world position
     public Vector3 GetWorldPosition()
     {
         return transform.position;

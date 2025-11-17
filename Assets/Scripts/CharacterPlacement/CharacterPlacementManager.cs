@@ -3,12 +3,10 @@ using Cysharp.Threading.Tasks;
 using NovelianMagicLibraryDefense.Managers;
 using UnityEngine;
 
-/// <summary>
-/// World coordinate-based character placement system manager
-/// - Creates and manages 5x2 grid
-/// - Places characters in random slots
-/// - Moves characters via drag and drop
-/// </summary>
+//JML: World coordinate-based character placement system manager
+//     - Creates and manages 5x2 grid
+//     - Places characters in random slots
+//     - Moves characters via drag and drop
 public class CharacterPlacementManager : MonoBehaviour
 {
     [Header("Grid Settings")]
@@ -47,9 +45,7 @@ public class CharacterPlacementManager : MonoBehaviour
         await InitializeCharacterPool();
     }
 
-    /// <summary>
-    /// Initialize Character object pool
-    /// </summary>
+    //JML: Initialize Character object pool
     private async UniTask InitializeCharacterPool()
     {
         if (GameManager.Instance == null || GameManager.Instance.Pool == null)
@@ -103,9 +99,7 @@ public class CharacterPlacementManager : MonoBehaviour
         InputManager.OnDrop -= HandleDrop;
     }
 
-    /// <summary>
-    /// Create 5x2 grid
-    /// </summary>
+    //JML: Create 5x2 grid
     private void CreateGrid()
     {
         if (gridSlotPrefab == null)
@@ -152,9 +146,7 @@ public class CharacterPlacementManager : MonoBehaviour
         Debug.Log($"[CharacterPlacementManager] {gridSlots.Count} grids created");
     }
 
-    /// <summary>
-    /// Place character in random empty slot (called from CardSelectionManager)
-    /// </summary>
+    //JML: Place character in random empty slot (called from CardSelectionManager)
     public void SpawnCharacterAtRandomSlot(Sprite characterSprite)
     {
         if (characterSprite == null)
@@ -199,9 +191,7 @@ public class CharacterPlacementManager : MonoBehaviour
         Debug.Log($"[CharacterPlacementManager] Character placed in slot {targetSlot.GetSlotIndex()} (random) - pooled");
     }
 
-    /// <summary>
-    /// Get list of empty slots
-    /// </summary>
+    //JML: Get list of empty slots
     private List<GridSlot> GetEmptySlots()
     {
         List<GridSlot> emptySlots = new List<GridSlot>();
@@ -215,9 +205,7 @@ public class CharacterPlacementManager : MonoBehaviour
         return emptySlots;
     }
 
-    /// <summary>
-    /// Long press started (2 second hold)
-    /// </summary>
+    //JML: Long press started (2 second hold)
     private void HandleLongPressStart(Vector2 screenPosition)
     {
         Debug.Log($"[CharacterPlacementManager] HandleLongPressStart called! screenPosition={screenPosition}");
@@ -254,9 +242,7 @@ public class CharacterPlacementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Dragging (position update)
-    /// </summary>
+    //JML: Dragging (position update)
     private void HandleDragUpdate(Vector2 screenPosition)
     {
         if (draggingCharacter == null) return;
@@ -269,9 +255,7 @@ public class CharacterPlacementManager : MonoBehaviour
         draggingCharacter.transform.position = worldPosition;
     }
 
-    /// <summary>
-    /// Drop (finger/mouse released)
-    /// </summary>
+    //JML: Drop (finger/mouse released)
     private void HandleDrop(Vector2 screenPosition)
     {
         if (draggingCharacter == null) return;
@@ -306,9 +290,7 @@ public class CharacterPlacementManager : MonoBehaviour
         HideAllGrids();
     }
 
-    /// <summary>
-    /// Find GridSlot at specific position
-    /// </summary>
+    //JML: Find GridSlot at specific position
     private GridSlot FindSlotAtPosition(Vector3 worldPosition)
     {
         foreach (GridSlot slot in gridSlots)
@@ -322,9 +304,7 @@ public class CharacterPlacementManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Find slot that contains the character
-    /// </summary>
+    //JML: Find slot that contains the character
     private GridSlot FindSlotByCharacter(GameObject character)
     {
         foreach (GridSlot slot in gridSlots)
@@ -337,9 +317,7 @@ public class CharacterPlacementManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Show all grids
-    /// </summary>
+    //JML: Show all grids
     private void ShowAllGrids()
     {
         foreach (GridSlot slot in gridSlots)
@@ -348,9 +326,7 @@ public class CharacterPlacementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Hide all grids
-    /// </summary>
+    //JML: Hide all grids
     private void HideAllGrids()
     {
         foreach (GridSlot slot in gridSlots)
@@ -359,9 +335,7 @@ public class CharacterPlacementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Clear all slots
-    /// </summary>
+    //JML: Clear all slots
     public void ClearAllSlots()
     {
         foreach (GridSlot slot in gridSlots)

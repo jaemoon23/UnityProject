@@ -104,8 +104,8 @@ MonoBehaviour:
   characterObj: {fileID: 177582735987937845}
   projectilePrefab: {fileID: 9176730954497834366, guid: 3d425aa73cf2f724894d96bf932bc160, type: 3}
   target: {fileID: 0}
-  attackInterval: 0.1
-  attackRange: 1000
+  attackInterval: 0.5
+  attackRange: 5
   characterImage: {fileID: 0}
 --- !u!61 &3874390314330427649
 BoxCollider2D:
