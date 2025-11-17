@@ -50,6 +50,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 775599a294bab2f4ab5142ff90e1eb3e
+    m_Address: CharacterObject
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9949bdb2593211243ae8ebd82ba2e6f2
     m_Address: Assets/Image/Romance.png
     m_ReadOnly: 0

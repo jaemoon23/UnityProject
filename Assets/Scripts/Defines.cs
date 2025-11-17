@@ -12,4 +12,5 @@ public static class AddressableKey
     public static readonly string BossMonster = "BossMonster";
     public static readonly string Projectile = "Projectile";
     public static readonly string Skill = "Skill";
+    public static readonly string CharacterObject = "CharacterObject";
 }
