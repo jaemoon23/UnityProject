@@ -31,6 +31,8 @@ namespace NovelianMagicLibraryDefense.Managers
 
         [Header("UI References - Panels")]
         [SerializeField] private GameObject cardPanel;
+        [SerializeField] private GameObject preferencesPanel;
+        [SerializeField] private string preferencesPanelName = "Preferences"; // Fallback if not assigned
 
         [Header("UI References - SpeedButtonText")]
         [SerializeField] private TextMeshProUGUI speedButtonText;
@@ -42,6 +44,10 @@ namespace NovelianMagicLibraryDefense.Managers
         [SerializeField] private Button skillButton2;
         [SerializeField] private Button skillButton3;
         [SerializeField] private Button skillButton4;
+
+        // Preferences panel state
+        private bool isPreferencesOpen = false;
+        private float previousTimeScale = 1f;
 
         /// <summary>
         /// LMJ: Initialize UI elements and setup button listeners
@@ -71,6 +77,19 @@ namespace NovelianMagicLibraryDefense.Managers
 
             if (speedButtonText != null)
                 speedButtonText.text = "X1";
+
+            // Find and initialize preferences panel
+            FindPreferencesPanel();
+            if (preferencesPanel != null)
+            {
+                preferencesPanel.SetActive(false);
+                isPreferencesOpen = false;
+                Debug.Log("[UIManager] Preferences panel found and initialized as closed");
+            }
+            else
+            {
+                Debug.LogWarning("[UIManager] Preferences panel not found! Inspector 할당 또는 GameObject 이름 확인 필요");
+            }
 
             // Setup button listeners
             SetupButtonListeners();
@@ -167,6 +186,70 @@ namespace NovelianMagicLibraryDefense.Managers
 
         #endregion
 
+        #region Preferences Panel Management
+
+        /// <summary>
+        /// Find preferences panel if not assigned in Inspector
+        /// Searches in scene root to find the panel
+        /// </summary>
+        private void FindPreferencesPanel()
+        {
+            if (preferencesPanel == null && !string.IsNullOrEmpty(preferencesPanelName))
+            {
+                // Search from scene root (handles any hierarchy structure)
+                GameObject[] rootObjects = gameObject.scene.GetRootGameObjects();
+                foreach (GameObject root in rootObjects)
+                {
+                    Transform found = FindChildRecursive(root.transform, preferencesPanelName);
+                    if (found != null)
+                    {
+                        preferencesPanel = found.gameObject;
+                        Debug.Log($"[UIManager] Found preferences panel: {preferencesPanelName} at path: {GetTransformPath(found)}");
+                        return;
+                    }
+                }
+
+                Debug.LogWarning($"[UIManager] Could not find preferences panel named '{preferencesPanelName}'");
+            }
+        }
+
+        /// <summary>
+        /// Get full path of transform for debugging
+        /// </summary>
+        private string GetTransformPath(Transform t)
+        {
+            string path = t.name;
+            while (t.parent != null)
+            {
+                t = t.parent;
+                path = t.name + "/" + path;
+            }
+            return path;
+        }
+
+        /// <summary>
+        /// Recursively search for child transform by name
+        /// </summary>
+        private Transform FindChildRecursive(Transform parent, string childName)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                Transform found = FindChildRecursive(child, childName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+            return null;
+        }
+
+        #endregion
+
         #region Button Callbacks
 
         private void OnSpeedButtonClicked()
@@ -200,10 +283,61 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private void OnSettingsButtonClicked()
         {
-            var previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f; //JML: Pause the game when settings is opened
+            // Try to find panel again if it's null
+            if (preferencesPanel == null)
+            {
+                FindPreferencesPanel();
+            }
 
-            Time.timeScale = previousTimeScale; //JML: Resume the game when settings is closed
+            if (preferencesPanel == null)
+            {
+                Debug.LogError("[UIManager] preferencesPanel을 찾을 수 없습니다! Hierarchy에서 'Preferences' 이름의 GameObject가 있는지 확인해주세요.");
+                return;
+            }
+
+            if (isPreferencesOpen)
+            {
+                ClosePreferencesPanel();
+            }
+            else
+            {
+                OpenPreferencesPanel();
+            }
+        }
+
+        /// <summary>
+        /// Open preferences panel and pause the game
+        /// </summary>
+        public void OpenPreferencesPanel()
+        {
+            if (preferencesPanel == null) return;
+
+            // Save current time scale and pause the game
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+
+            // Show preferences panel
+            preferencesPanel.SetActive(true);
+            isPreferencesOpen = true;
+
+            Debug.Log($"[UIManager] 환경설정 열림 - 게임 일시정지 (이전 timeScale: {previousTimeScale})");
+        }
+
+        /// <summary>
+        /// Close preferences panel and resume the game
+        /// </summary>
+        public void ClosePreferencesPanel()
+        {
+            if (preferencesPanel == null) return;
+
+            // Hide preferences panel
+            preferencesPanel.SetActive(false);
+            isPreferencesOpen = false;
+
+            // Resume the game with previous time scale
+            Time.timeScale = previousTimeScale;
+
+            Debug.Log($"[UIManager] 환경설정 닫힘 - 게임 재개 (timeScale: {Time.timeScale})");
         }
 
         private void OnSkillButtonClicked(int skillIndex)
