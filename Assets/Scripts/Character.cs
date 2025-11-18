@@ -78,15 +78,20 @@ public class Character : MonoBehaviour, IPoolable
 
         // JML: Ensure Z position is 0 for 2D
         Vector3 spawnPosition = new Vector3(transform.position.x, transform.position.y, 0f);
+
+        // JML: Prepare initialization data before spawning
+        float speed = skillConfig != null && skillConfig.hasProjectile ?
+                      skillConfig.projectileSpeed : 10f;
+        float duration = skillConfig != null && skillConfig.hasProjectile ?
+                         skillConfig.projectileDuration : 5f;
+        Transform targetTransform = target.GetTransform();
+
+        // JML: Spawn projectile (triggers SetActive(true) and OnSpawn())
         var projectile = GameManager.Instance.Pool.Spawn<Projectile>(spawnPosition);
 
-        // JML: Initialize projectile with SkillConfig values if available
-        if (skillConfig != null && skillConfig.hasProjectile)
-        {
-            projectile.Initialize(skillConfig.projectileSpeed, skillConfig.projectileDuration);
-        }
+        // JML: Initialize and set target atomically (before first FixedUpdate)
+        projectile.InitializeAndSetTarget(speed, duration, targetTransform);
 
-        projectile.SetTarget(target.GetTransform());
         characterAnimator.SetTrigger("2_Attack");
     }
 
