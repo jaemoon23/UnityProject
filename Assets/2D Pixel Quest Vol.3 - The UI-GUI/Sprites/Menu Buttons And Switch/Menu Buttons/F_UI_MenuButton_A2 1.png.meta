@@ -1,13 +1,5 @@
 fileFormatVersion: 2
-guid: 0d3e38ec98340654ea7cdcc8b796c0f8
-AssetOrigin:
-  serializedVersion: 1
-  productId: 305147
-  packageName: 2D Pixel Quest Vol.3 - The UI/GUI
-  packageVersion: 3.0.3
-  assetPath: Assets/2D Pixel Quest Vol.3 - The UI-GUI/Sprites/Menu Buttons And Switch/Menu
-    Buttons/F_UI_MenuButton_C2.png
-  uploadId: 762207
+guid: e8922fb383a4a7744964d2e88e77eab9
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -56,8 +48,8 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 30
-  spriteBorder: {x: 18, y: 11, z: 18, w: 11}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 10, y: 7, z: 10, w: 8}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
