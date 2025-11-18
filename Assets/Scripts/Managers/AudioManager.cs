@@ -30,9 +30,9 @@ namespace NovelianMagicLibraryDefense.Managers
         private Dictionary<string, AudioClip> loadedClips = new Dictionary<string, AudioClip>();
         private Dictionary<string, AsyncOperationHandle<AudioClip>> loadingHandles = new Dictionary<string, AsyncOperationHandle<AudioClip>>();
 
-        // Volume settings
+        // Volume settings (default to 1.0 = 100%)
         private float masterVolume = 1.0f;
-        private float bgmVolume = 0.8f;
+        private float bgmVolume = 1.0f;
         private float sfxVolume = 1.0f;
 
         // PlayerPrefs keys
@@ -371,7 +371,7 @@ namespace NovelianMagicLibraryDefense.Managers
         public void LoadAudioSettings()
         {
             masterVolume = PlayerPrefs.GetFloat(MASTER_VOLUME_KEY, 1.0f);
-            bgmVolume = PlayerPrefs.GetFloat(BGM_VOLUME_KEY, 0.8f);
+            bgmVolume = PlayerPrefs.GetFloat(BGM_VOLUME_KEY, 1.0f);
             sfxVolume = PlayerPrefs.GetFloat(SFX_VOLUME_KEY, 1.0f);
 
             // Apply loaded settings

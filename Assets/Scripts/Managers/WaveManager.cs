@@ -182,7 +182,8 @@ namespace NovelianMagicLibraryDefense.Managers
             int totalMonsters = enemyCount;
             int spawnedCount = 0;
 
-            while (spawnedCount < totalMonsters)
+            // LCB: Check isPoolReady in loop to stop spawning when reset
+            while (spawnedCount < totalMonsters && isPoolReady)
             {
                 // LMJ: RushSpawn feature disabled
                 /*
@@ -206,7 +207,8 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             // LMJ: Spawn boss after all normal enemies
-            if (bossCount > 0)
+            // LCB: Only spawn boss if pool is still ready
+            if (bossCount > 0 && isPoolReady)
             {
                 SpawnBoss();
             }
