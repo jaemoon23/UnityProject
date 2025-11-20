@@ -506,15 +506,36 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 563027494}
-  m_Father: {fileID: 1004287589}
+  - {fileID: 438956575}
+  - {fileID: 1440339337}
+  - {fileID: 1681177513}
+  - {fileID: 458700022}
+  - {fileID: 1031649769}
+  m_Father: {fileID: 1253441562}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 355.0005, y: -66.27471}
   m_SizeDelta: {x: 242.0006, y: 132.54942}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &74876978
+--- !u!114 &789957015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 789957013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e0f97fc8a5fa6a42954ff14b2e5c39c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CraftButton: {fileID: 1440339338}
+  AddIngredientButton: {fileID: 1681177514}
+  GetListButton: {fileID: 458700023}
+  BackToLobbyButton: {fileID: 1599335182}
+  IngredientText: {fileID: 1031649770}
+--- !u!114 &789957016
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
