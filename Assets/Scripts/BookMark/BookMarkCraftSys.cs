@@ -21,7 +21,7 @@ public class BookMarkCraftSys : MonoBehaviour
     [Header("Close Button")]
     [SerializeField] private Button recipeCloseButton;
     [SerializeField] private Button craftCloseButton;
-    
+    [SerializeField] private Button resultCloseButton;
     [Header("Buttons")]
     [SerializeField] private Button confirmYesButton;
     [SerializeField] private Button confirmNoButton;
@@ -70,6 +70,7 @@ public class BookMarkCraftSys : MonoBehaviour
         }
         recipeCloseButton.onClick.AddListener(() => OnclickCloseButton().Forget());
         craftCloseButton.onClick.AddListener(OnclickCraftCloseButton);
+        resultCloseButton.onClick.AddListener(OnclickResultCloseButton);
 
         confirmYesButton.onClick.AddListener(OnClickConfirmYesButton);
         confirmNoButton.onClick.AddListener(OnClickConfirmNoButton);
@@ -101,6 +102,11 @@ public class BookMarkCraftSys : MonoBehaviour
         bookMarkRecipeUI.SetActive(true);
     }
 
+    private void OnclickResultCloseButton()
+    {
+        bookMarkResultUI.SetActive(false);
+        bookMarkRecipeUI.SetActive(true);
+    }
     private void OnClickRecipeButton(int index)
     {
         if (index != 0) return; //JML: Test only first recipe
