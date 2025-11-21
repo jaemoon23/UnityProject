@@ -98,7 +98,8 @@ public class CSVLoader : MonoBehaviour
 
             // Create and load CsvTable
             var table = new CsvTable<T>(idSelector);
-            table.LoadFromText(asset.text);
+            string csvText = asset.text.Replace(",N/A,", ",0,").Replace(",N/A\n", ",0\n").Replace(",N/A\r", ",0\r").Replace(",N/A,", ",0,"); ;
+            table.LoadFromText(csvText);
 
             Debug.Log($"[CSVLoader] Table loaded: {addressableKey} ({table.Count} rows)");
             return table;
