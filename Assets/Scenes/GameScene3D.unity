@@ -439,6 +439,7 @@ MonoBehaviour:
   panel: {fileID: 2027874392}
   cardContainer: {fileID: 282760298}
   cardPrefab: {fileID: 1931262583211713607, guid: 618aa3661e4935b44b3a41abaec439f8, type: 3}
+  pauseOnGameStart: 1
   pauseOnLevelUp: 1
 --- !u!224 &161179160 stripped
 RectTransform:
@@ -1653,7 +1654,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   manualInstance: {fileID: 830796989}
-  simulateTouchInEditor: 1
+  simulateTouchInEditor: 0
 --- !u!4 &830796990
 Transform:
   m_ObjectHideFlags: 0

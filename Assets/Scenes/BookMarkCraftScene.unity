@@ -3176,6 +3176,7 @@ MonoBehaviour:
   craftFailUI: {fileID: 60160265}
   recipeCloseButton: {fileID: 7641391794575305360}
   craftCloseButton: {fileID: 129240726659511602}
+  resultCloseButton: {fileID: 0}
   confirmYesButton: {fileID: 8525862567585949733}
   confirmNoButton: {fileID: 1196319816661471325}
   craftingButton: {fileID: 6287626661536217726}
