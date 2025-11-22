@@ -30,6 +30,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1642ab52862e7bd499a41e674547b0f1
+    m_Address: F_UI_Panel_E
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 19526c1e0eed3f94e9b93dd3f7c94fb5
     m_Address: BookmarkResultTable
     m_ReadOnly: 0
@@ -50,11 +55,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3dc9fcf2d21feb346857d36f717d636a
-    m_Address: CardSprite_2
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 40e8aa93327317348916b99b1ed77fc2
     m_Address: HorrorData
     m_ReadOnly: 0
@@ -62,6 +62,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4379b47314e13e24ba69b5ae2b31df93
     m_Address: BookmarkItemTable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 51c2330dec20a03439b00e7ab4823999
+    m_Address: F_UI_Panel_G
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -80,13 +85,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9949bdb2593211243ae8ebd82ba2e6f2
-    m_Address: CardSprite_4
+  - m_GUID: 9bf392a242082324b97951c6ec88a8e7
+    m_Address: ItemIcon_102214
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9bf392a242082324b97951c6ec88a8e7
-    m_Address: ItemIcon_102214
+  - m_GUID: a4319ff885e2a924f972c098552f1470
+    m_Address: F_UI_SwitchA_ON
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -95,18 +100,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a8524d6bc9be72d4ea9a5f6ce21fa391
-    m_Address: CardSprite_1
+  - m_GUID: a7eadd7fa3f371240906014dc1e50a67
+    m_Address: Assets/2D Pixel Quest Vol.3 - The UI-GUI/Sprites/Slide Bar/Handles/F_U_SlidebarHandle_C.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b0cb45a149a2efd4789716553ef67252
     m_Address: Icon_Bookmark_Default
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b39eed346c62f0f41aefdbe5b81d0232
-    m_Address: CardSprite_3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -117,11 +117,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c740008ae2673354994a2b6154027684
     m_Address: ItemIcon_102113
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d58c22c802a58fd43bad80e8d8c2890b
-    m_Address: CardSprite_5
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

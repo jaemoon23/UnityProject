@@ -166,7 +166,8 @@ namespace NovelianMagicLibraryDefense.Managers
             int spawnedCount = 0;
 
             // LCB: Check isPoolReady in loop to stop spawning when reset
-            while (spawnedCount < totalMonsters && isPoolReady)
+            // Also check if monsterSpawner is still valid (not destroyed)
+            while (spawnedCount < totalMonsters && isPoolReady && monsterSpawner != null)
             {
                 Vector3 spawnPos = monsterSpawner.GetRandomSpawnPosition();
                 var monster = poolManager.Spawn<Monster>(spawnPos);
@@ -182,8 +183,8 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             // LMJ: Spawn boss after all normal enemies
-            // LCB: Only spawn boss if pool is still ready
-            if (bossCount > 0 && isPoolReady)
+            // LCB: Only spawn boss if pool is still ready and spawners are valid
+            if (bossCount > 0 && isPoolReady && (bossSpawner != null || monsterSpawner != null))
             {
                 SpawnBoss();
             }
