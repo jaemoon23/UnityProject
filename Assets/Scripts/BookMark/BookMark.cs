@@ -12,8 +12,8 @@ public class BookMark
     public Grade Grade { get; private set; }
     public BookmarkType Type { get; private set; }
 
-    // JML: BookMark Skill Effect ID
-    public int EffectID { get; private set; }
+    // JML: BookMark Skill ID
+    public int SkillID { get; private set; }
 
     // JML: BookMark Stat Info
     public int OptionType { get; private set; }
@@ -46,7 +46,7 @@ public class BookMark
         Type = BookmarkType.Stat;
         OptionType = optionType;
         OptionValue = optionValue;
-        EffectID = -1;
+        SkillID = -1;
         CreatedTime = DateTime.Now;
         IsEquipped = false;
         EquippedLibrarianID = -1;
@@ -56,7 +56,7 @@ public class BookMark
     /// <summary>
     /// SKill BookMark Constructor
     /// </summary>
-    public BookMark(int bookmarkDataID, string name, Grade grade, int optionType, int optionValue, int effectID)
+    public BookMark(int bookmarkDataID, string name, Grade grade, int optionType, int optionValue, int skillID)
     {
         UniqueID = GenerateUniqueID();
         BookmarkDataID = bookmarkDataID;
@@ -65,7 +65,7 @@ public class BookMark
         Type = BookmarkType.Skill;
         OptionType = optionType;
         OptionValue = optionValue;
-        EffectID = effectID;
+        SkillID = skillID;
         CreatedTime = DateTime.Now;
         IsEquipped = false;
         EquippedLibrarianID = -1;
@@ -91,16 +91,6 @@ public class BookMark
         EquipSlotIndex = -1;
     }
 
-    public float GetStatBonus()
-    {
-        return Type == BookmarkType.Stat ? OptionValue : 0f;
-    }
-
-    public int GetEffectID()
-    {
-        return Type == BookmarkType.Skill ? EffectID : -1;
-    }
-
     public override string ToString()
     {
         string typeStr = Type == BookmarkType.Stat ? "스탯 책갈피" : "스킬 책갈피";
@@ -117,7 +107,7 @@ public class BookMark
         }
         else
         {
-            return $"[고유번호: {UniqueID}] {Name} ({typeStr}, 등급: {gradeName}, 이펙트ID: {EffectID}) {equipStatus}";
+            return $"[고유번호: {UniqueID}] {Name} ({typeStr}, 등급: {gradeName}, 스킬ID: {SkillID}) {equipStatus}";
         }
     }
 

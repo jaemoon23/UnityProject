@@ -222,12 +222,12 @@ public class BookMarkManager : MonoBehaviour
     private void AddTestSkillBookmark()
     {
         var testBookmark = new BookMark(
-            bookmarkDataID: 2001,
-            name: "테스트 스킬 책갈피",
-            grade: Grade.Rare,
+            bookmarkDataID: 1111,
+            name: "체인 러브 쇼크",
+            grade: Grade.Common,
             optionType: 1,
-            optionValue: 5,
-            effectID: 101
+            optionValue: 1,
+            skillID: 3121
         );
         AddBookmark(testBookmark);
     }

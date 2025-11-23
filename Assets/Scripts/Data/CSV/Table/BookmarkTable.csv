@@ -1,11 +1,14 @@
-Bookmark_ID,Bookmark_Name,Grade_ID,Option_ID
-111,공격력 증가 책갈피(13.Option_Value),151,1311
-112,공격력 증가 책갈피(13.Option_Value),151,1312
-113,공격력 증가 책갈피(13.Option_Value),151,1313
-114,공격력 증가 책갈피(13.Option_Value),152,1314
-115,공격력 증가 책갈피(13.Option_Value),152,1315
-116,공격력 증가 책갈피(13.Option_Value),152,1316
-117,공격력 증가 책갈피(13.Option_Value),152,1317
-118,공격력 증가 책갈피(13.Option_Value),153,1318
-119,공격력 증가 책갈피(13.Option_Value),153,1319
-1110,공격력 증가 책갈피(13.Option_Value),153,13110
+Bookmark_ID,Bookmark_Name,Grade_ID,Option_ID,Skill_ID
+111,공격력 증가 책갈피(13.Option_Value),151,1311,N/A
+112,공격력 증가 책갈피(13.Option_Value),151,1312,N/A
+113,공격력 증가 책갈피(13.Option_Value),151,1313,N/A
+114,공격력 증가 책갈피(13.Option_Value),152,1314,N/A
+115,공격력 증가 책갈피(13.Option_Value),152,1315,N/A
+116,공격력 증가 책갈피(13.Option_Value),152,1316,N/A
+117,공격력 증가 책갈피(13.Option_Value),152,1317,N/A
+118,공격력 증가 책갈피(13.Option_Value),153,1318,N/A
+119,공격력 증가 책갈피(13.Option_Value),153,1319,N/A
+1110,공격력 증가 책갈피(13.Option_Value),153,13110,N/A
+1111,체인 러브 쇼크,151,N/A,3121
+1112,아케인 스트림샷,151,N/A,3102
+1113,마력 중독,152,N/A,321

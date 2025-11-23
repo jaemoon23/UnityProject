@@ -6,6 +6,11 @@ public static class Tag
     public static readonly string BossMonster = "BossMonster";
 }
 
+public static class sceneName
+{
+    public static readonly string LobbyScene = "LobbyScene";
+}
+
 public static class AddressableKey
 {
     public static readonly string Monster = "Monster";
@@ -91,6 +96,7 @@ public enum UseType
 
 public enum BookmarkType
 {
+    None = 0,
     Stat = 1,
     Skill = 2
 }

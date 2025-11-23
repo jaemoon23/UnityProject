@@ -13,7 +13,7 @@ public class CSVTestObj : MonoBehaviour
         var bookmarkCraftTable = CSVLoader.Instance.GetTable<BookmarkCraftData>();
         var bookmarkOptionTable = CSVLoader.Instance.GetTable<BookmarkOptionData>();
         var bookmarkListTable = CSVLoader.Instance.GetTable<BookmarkListData>();
-        var bookmarkSkillTable = CSVLoader.Instance.GetTable<BookmarkSkillData>();
+
 
         var currencyTable = CSVLoader.Instance.GetTable<CurrencyData>();
         var ingredientTable = CSVLoader.Instance.GetTable<IngredientData>();
@@ -27,7 +27,6 @@ public class CSVTestObj : MonoBehaviour
         Debug.Log($"Bookmark Craft Bookmark_Name: {bookmarkCraftTable.GetId(121).Recipe_Name}");
         Debug.Log($"Bookmark Option Name: {bookmarkOptionTable.GetId(1311).Option_Name}");
         Debug.Log($"Bookmark List Name: {bookmarkListTable.GetId(141).List_Name}");
-        Debug.Log($"Bookmark Skill Name: {bookmarkSkillTable.GetId(1711).Bookmark_Skill_Name}");
 
         Debug.Log("=== Currency & Ingredient Table ===");
         Debug.Log($"Ingredient Name: {ingredientTable.GetId(1011).Ingredient_Name}");

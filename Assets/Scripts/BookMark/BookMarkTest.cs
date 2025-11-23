@@ -14,10 +14,17 @@ public class BookMarkTest : MonoBehaviour
 
     private void OnAddClick()
     {
-        IngredientManager.Instance.AddIngredient(1011, 5);
-        IngredientManager.Instance.AddIngredient(1016, 3);
-        CurrencyManager.Instance.AddGold(5000);
-        Debug.Log($"{IngredientManager.Instance.GetIngredientName(1011)} 5개, {IngredientManager.Instance.GetIngredientName(1016)} 3개 추가됨, 보유 골드: {CurrencyManager.Instance.Gold}");
+        // 모든 재료 추가
+        IngredientManager.Instance.AddIngredient(1011, 100); // 희미한 마력의 종이
+        IngredientManager.Instance.AddIngredient(1012, 100); // 응축된 마력의 종이
+        IngredientManager.Instance.AddIngredient(1013, 100); // 비범한 마력의 종이
+        IngredientManager.Instance.AddIngredient(1014, 100); // 신성한 마력의 종이
+        IngredientManager.Instance.AddIngredient(1015, 100); // 고대 마력의 종이
+        IngredientManager.Instance.AddIngredient(1016, 100); // 잉크
+        IngredientManager.Instance.AddIngredient(10114, 100); // 룬석
+
+        CurrencyManager.Instance.AddGold(500000);
+        Debug.Log("모든 재료 100개씩 추가됨, 보유 골드: " + CurrencyManager.Instance.Gold);
     }
     private void OnClick()
     {

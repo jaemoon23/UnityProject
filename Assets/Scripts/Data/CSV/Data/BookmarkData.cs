@@ -8,12 +8,14 @@ public class BookmarkData
     public string Bookmark_Name { get; set; }
     public int Grade_ID { get; set; }
     public int Option_ID { get; set; }
+    public int Skill_ID { get; set; }
 }
 [Serializable]
 public class BookmarkCraftData
 {
     public int Recipe_ID { get; set; }
     public string Recipe_Name { get; set; }
+    public BookmarkType Recipe_Type { get; set; }
 
     // JML: Material fields
     public int Material_1_ID { get; set; }
@@ -55,15 +57,4 @@ public class BookmarkListData
     public int Option_2_ID { get; set; }
     public int Option_3_ID { get; set; }
     public int Option_4_ID { get; set; }
-}
-
-[Serializable]
-public class BookmarkSkillData
-{
-    public int Bookmark_Skill_ID { get; set; }
-    public string Bookmark_Skill_Name { get; set; }
-    public int Grade { get; set; }
-    public int Option_Type { get; set; }
-    public int Option_Value { get; set; }
-    public int Effect_ID { get; set; }
 }
