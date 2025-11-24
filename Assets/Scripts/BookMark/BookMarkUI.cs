@@ -29,22 +29,37 @@ public class BookMarkUI : MonoBehaviour
     [SerializeField] private Button[] statRecipeButtons;
     [SerializeField] private Button[] skillRecipeButtons;
 
-    [Header("Craft Panel")]
+    [Header("Stat Craft Panel")]
     [SerializeField] private GameObject craftPanel;
-    [SerializeField] private TextMeshProUGUI metrial1NameText;
-    [SerializeField] private Image metrial1IconImage;
-    [SerializeField] private TextMeshProUGUI metrial1CountText;
-    [SerializeField] private TextMeshProUGUI metrial2NameText;
-    [SerializeField] private Image metrial2IconImage;
-    [SerializeField] private TextMeshProUGUI metrial2CountText;
-    [SerializeField] private TextMeshProUGUI metrial3NameText;
-    [SerializeField] private Image metrial3IconImage;
-    [SerializeField] private TextMeshProUGUI metrial3CountText;
-    [SerializeField] private TextMeshProUGUI successRateText;
-    [SerializeField] private TextMeshProUGUI greatSuccessRateText;
-    [SerializeField] private TextMeshProUGUI goldText;
-    [SerializeField] private Button craftButton;
+    [SerializeField] private GameObject statCraftPanel;
+    [SerializeField] private TextMeshProUGUI statMetrial1NameText;
+    [SerializeField] private Image statMetrial1IconImage;
+    [SerializeField] private TextMeshProUGUI statMetrial1CountText;
+    [SerializeField] private TextMeshProUGUI statMetrial2NameText;
+    [SerializeField] private Image statMetrial2IconImage;
+    [SerializeField] private TextMeshProUGUI statMetrial2CountText;
+    [SerializeField] private TextMeshProUGUI statSuccessRateText;
+    [SerializeField] private TextMeshProUGUI statGreatSuccessRateText;
+    [SerializeField] private TextMeshProUGUI statGoldText;
+    [SerializeField] private Button statCraftButton;
     [SerializeField] private Button closeCraftPanelButton;
+
+    [Header("Skill Craft Panel")]
+    [SerializeField] private GameObject skillCraftPanel;
+    [SerializeField] private TextMeshProUGUI skillMetrial1NameText;
+    [SerializeField] private Image skillMetrial1IconImage;
+    [SerializeField] private TextMeshProUGUI skillMetrial1CountText;
+    [SerializeField] private TextMeshProUGUI skillMetrial2NameText;
+    [SerializeField] private Image skillMetrial2IconImage;
+    [SerializeField] private TextMeshProUGUI skillMetrial2CountText;
+    [SerializeField] private TextMeshProUGUI skillMetrial3NameText;
+    [SerializeField] private Image skillMetrial3IconImage;
+    [SerializeField] private TextMeshProUGUI skillMetrial3CountText;
+    [SerializeField] private TextMeshProUGUI skillSuccessRateText;
+    [SerializeField] private TextMeshProUGUI skillGreatSuccessRateText;
+    [SerializeField] private TextMeshProUGUI skillGoldText;
+    [SerializeField] private Button skillCraftButton;
+    
 
 
     private async UniTaskVoid Start()
@@ -60,7 +75,8 @@ public class BookMarkUI : MonoBehaviour
         closeRecipePanelButton.onClick.AddListener(OnClickCloseRecipePanelButton);
 
         // JML: Craft Button
-        craftButton.onClick.AddListener(OnCraftButtonClicked);
+        statCraftButton.onClick.AddListener(OnCraftButtonClicked);
+        skillCraftButton.onClick.AddListener(OnCraftButtonClicked);
 
         // JML: Stat Recipe Selection Buttons
         for (int i = 0; i < statRecipeButtons.Length && i < statRecipes.Count; i++)
@@ -90,7 +106,8 @@ public class BookMarkUI : MonoBehaviour
         closeRecipePanelButton.onClick.RemoveListener(OnClickCloseRecipePanelButton);
 
         // JML: Remove Craft Button
-        craftButton.onClick.RemoveListener(OnCraftButtonClicked);
+        statCraftButton.onClick.RemoveListener(OnCraftButtonClicked);
+        skillCraftButton.onClick.RemoveListener(OnCraftButtonClicked);
 
         // JML: Remove Recipe Selection Buttons
         for (int i = 0; i < statRecipeButtons.Length; i++)
@@ -145,11 +162,31 @@ public class BookMarkUI : MonoBehaviour
     {
         selectedRecipe = recipe;
 
-        // JML: Show craft panel
-        craftPanel.SetActive(true);
 
+
+        switch (SelectedBookmarkType)
+        {
+            case BookmarkType.Stat:
+                // JML: Show craft panel
+                recipePanel.SetActive(false);
+                craftPanel.SetActive(true);
+                statCraftPanel.SetActive(true);
+                skillCraftPanel.SetActive(false);
+                UpdateStatCraftPanelUI(recipe);
+                break;
+            case BookmarkType.Skill:
+                recipePanel.SetActive(false);
+                craftPanel.SetActive(true);
+                statCraftPanel.SetActive(false);
+                skillCraftPanel.SetActive(true);
+                UpdateSkillCraftPanelUI(recipe);
+                break;
+            default:
+                Debug.LogError("[BookMarkUI] 알 수 없는 책갈피 타입!");
+                return;
+        }
         // JML: Update UI
-        UpdateCraftPanelUI(recipe);
+        UpdateStatCraftPanelUI(recipe);
 
         Debug.Log($"[BookMarkUI] 레시피 선택됨: {recipe.Recipe_Name}");
     }
@@ -157,7 +194,7 @@ public class BookMarkUI : MonoBehaviour
 
     #endregion
 
-    #region Craft Panel
+    #region Stat Craft Panel
     private void OnClickCloseCraftPanelButton()
     {
         craftPanel.SetActive(false);
@@ -165,58 +202,58 @@ public class BookMarkUI : MonoBehaviour
         selectedRecipe = null;
     }
 
-    private void UpdateCraftPanelUI(BookmarkCraftData recipe)
+    private void UpdateStatCraftPanelUI(BookmarkCraftData recipe)
     {
         // JML: Material 1
         if (recipe.Material_1_ID > 0)
         {
             var material1Data = CSVLoader.Instance.GetData<IngredientData>(recipe.Material_1_ID);
-            metrial1NameText.text = material1Data != null ? material1Data.Ingredient_Name : "알 수 없음";
+            statMetrial1NameText.text = material1Data != null ? material1Data.Ingredient_Name : "알 수 없음";
 
             int inventoryCount = IngredientManager.Instance.GetIngredientCount(recipe.Material_1_ID);
             int requiredCount = recipe.Material_1_Count;
 
             if (inventoryCount < requiredCount)
             {
-                metrial1CountText.color = Color.red; 
+                statMetrial1CountText.color = Color.red;
             }
             else
             {
-                metrial1CountText.color = Color.white;
+                statMetrial1CountText.color = Color.white;
             }
 
             var material1Count = $"{inventoryCount}  / {requiredCount}";
-            metrial1CountText.text = material1Count;
+            statMetrial1CountText.text = material1Count;
         }
 
         // JML: Material 2
         if (recipe.Material_2_ID > 0)
         {
             var material2Data = CSVLoader.Instance.GetData<IngredientData>(recipe.Material_2_ID);
-            metrial2NameText.text = material2Data != null ? material2Data.Ingredient_Name : "알 수 없음";
+            statMetrial2NameText.text = material2Data != null ? material2Data.Ingredient_Name : "알 수 없음";
 
             int inventoryCount = IngredientManager.Instance.GetIngredientCount(recipe.Material_2_ID);
             int requiredCount = recipe.Material_2_Count;
 
             if (inventoryCount < requiredCount)
             {
-                metrial2CountText.color = Color.red; 
+                statMetrial2CountText.color = Color.red;
             }
             else
             {
-                metrial2CountText.color = Color.white;
+                statMetrial2CountText.color = Color.white;
             }
 
             var material2Count = $"{inventoryCount}  / {requiredCount}";
-            metrial2CountText.text = material2Count;
+            statMetrial2CountText.text = material2Count;
         }
 
         // JML: Success rates
-        successRateText.text = $"제작 성공 확률: {recipe.Success_Rate * 100}%";
-        greatSuccessRateText.text = $"제작 대성공 확률: {recipe.Great_Success_Rate * 100}%";
+        statSuccessRateText.text = $"제작 성공 확률: {recipe.Success_Rate * 100}%";
+        statGreatSuccessRateText.text = $"제작 대성공 확률: {recipe.Great_Success_Rate * 100}%";
 
         // JML: Gold cost
-        goldText.text = $"소모 골드: {recipe.Currency_Count} G";
+        statGoldText.text = $"소모 골드: {recipe.Currency_Count} G";
     }
 
     private void OnCraftButtonClicked()
@@ -242,6 +279,84 @@ public class BookMarkUI : MonoBehaviour
         }
     }
     #endregion
+    
+    #region Skill Craft Panel
+    private void UpdateSkillCraftPanelUI(BookmarkCraftData recipe)
+    {
+        // JML: Material 1
+        if (recipe.Material_1_ID > 0)
+        {
+            var material1Data = CSVLoader.Instance.GetData<IngredientData>(recipe.Material_1_ID);
+            skillMetrial1NameText.text = material1Data != null ? material1Data.Ingredient_Name : "알 수 없음";
+
+            int inventoryCount = IngredientManager.Instance.GetIngredientCount(recipe.Material_1_ID);
+            int requiredCount = recipe.Material_1_Count;
+
+            if (inventoryCount < requiredCount)
+            {
+                skillMetrial1CountText.color = Color.red;
+            }
+            else
+            {
+                skillMetrial1CountText.color = Color.white;
+            }
+
+            var material1Count = $"{inventoryCount}  / {requiredCount}";
+            skillMetrial1CountText.text = material1Count;
+        }
+
+        // JML: Material 2
+        if (recipe.Material_2_ID > 0)
+        {
+            var material2Data = CSVLoader.Instance.GetData<IngredientData>(recipe.Material_2_ID);
+            skillMetrial2NameText.text = material2Data != null ? material2Data.Ingredient_Name : "알 수 없음";
+
+            int inventoryCount = IngredientManager.Instance.GetIngredientCount(recipe.Material_2_ID);
+            int requiredCount = recipe.Material_2_Count;
+
+            if (inventoryCount < requiredCount)
+            {
+                skillMetrial2CountText.color = Color.red;
+            }
+            else
+            {
+                skillMetrial2CountText.color = Color.white;
+            }
+
+            var material2Count = $"{inventoryCount}  / {requiredCount}";
+            skillMetrial2CountText.text = material2Count;
+        }
+
+        if (recipe.Material_3_ID > 0)
+        {
+            var material3Data = CSVLoader.Instance.GetData<IngredientData>(recipe.Material_3_ID);
+            skillMetrial3NameText.text = material3Data != null ? material3Data.Ingredient_Name : "알 수 없음";
+
+            int inventoryCount = IngredientManager.Instance.GetIngredientCount(recipe.Material_3_ID);
+            int requiredCount = recipe.Material_3_Count;
+
+            if (inventoryCount < requiredCount)
+            {
+                skillMetrial3CountText.color = Color.red;
+            }
+            else
+            {
+                skillMetrial3CountText.color = Color.white;
+            }
+
+            var material3Count = $"{inventoryCount}  / {requiredCount}";
+            skillMetrial3CountText.text = material3Count;
+        }
+
+        // JML: Success rates
+        skillSuccessRateText.text = $"제작 성공 확률: {recipe.Success_Rate * 100}%";
+        skillGreatSuccessRateText.text = $"제작 대성공 확률: {recipe.Great_Success_Rate * 100}%";
+
+        // JML: Gold cost
+        skillGoldText.text = $"소모 골드: {recipe.Currency_Count} G";
+    }
+    #endregion
+
 
     #region Utility Methods
     private async UniTask LoadRecipesFromCSV()
