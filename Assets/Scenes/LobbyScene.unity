@@ -1635,7 +1635,20 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 739979275}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1872143959}
+        m_TargetAssemblyTypeName: NovelianMagicLibraryDefense.UI.LobbyUIController,
+          Assembly-CSharp
+        m_MethodName: OnBookMarkButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &739979275
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1790,7 +1803,20 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 835963785}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1872143959}
+        m_TargetAssemblyTypeName: NovelianMagicLibraryDefense.UI.LobbyUIController,
+          Assembly-CSharp
+        m_MethodName: OnInventoryButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &835963785
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2864,7 +2890,20 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1403640357}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1872143959}
+        m_TargetAssemblyTypeName: NovelianMagicLibraryDefense.UI.LobbyUIController,
+          Assembly-CSharp
+        m_MethodName: OnLibraryManagementButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1403640357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3143,13 +3182,14 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
+      - m_Target: {fileID: 1872143959}
+        m_TargetAssemblyTypeName: NovelianMagicLibraryDefense.UI.LobbyUIController,
+          Assembly-CSharp
+        m_MethodName: OnGameStartButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -3707,9 +3747,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 614fe734c62ecd0488b2c171c225d793, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startGameButton: {fileID: 0}
-  inventoryButton: {fileID: 0}
-  bookMarkCraftButton: {fileID: 0}
+  startGameButton: {fileID: 1438289941}
+  inventoryButton: {fileID: 835963784}
+  bookMarkCraftButton: {fileID: 739979274}
 --- !u!1 &2004010671
 GameObject:
   m_ObjectHideFlags: 0
