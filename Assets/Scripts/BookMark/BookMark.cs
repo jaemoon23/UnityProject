@@ -114,7 +114,7 @@ public class BookMark
     /// <summary>
     /// JML: Get Grade Name from Grade Enum
     /// </summary>
-    private string GetGradeName(Grade grade)
+    public string GetGradeName(Grade grade)
     {
         // JML: Grade enum value is already Grade_ID (151~155), use it directly
         int gradeID = (int)grade;

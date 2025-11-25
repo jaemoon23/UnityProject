@@ -28,6 +28,9 @@ public static class AddressableKey
     public static readonly string CurrencyTable = "CurrencyTable";
     public static readonly string GradeTable = "GradeTable";
     public static readonly string IngredientTable = "IngredientTable";
+    public static readonly string CharacterTable = "CharacterTable";
+    public static readonly string LevelTable = "LevelTable";
+    public static readonly string SkillTable = "SkillTable";
 
     public static string GetCharacterKey(int characterId)
     {

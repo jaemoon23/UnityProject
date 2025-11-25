@@ -1,4 +1,4 @@
-Character_ID,Character_Name,Genre,Level_1_ID,Level_2_ID,Level_3_ID,Level_4_ID,Level_5_ID,Level_6_ID,Level_7_ID,Level_8_ID,Level_9_ID,Level_10_ID,Base_Skill_ID
+Character_ID,Character_Name,Genre,Cha_Level_1_ID,Cha_Level_2_ID,Cha_Level_3_ID,Cha_Level_4_ID,Cha_Level_5_ID,Cha_Level_6_ID,Cha_Level_7_ID,Cha_Level_8_ID,Cha_Level_9_ID,Cha_Level_10_ID,Base_Skill_ID
 021001,그믐,1,0401,0402,0403,0404,0405,0406,0407,0408,0409,0410,4111
 021011,테네브라,1,0401,0402,0403,0404,0405,0406,0407,0408,0409,0410,4111
 021003,위스퍼,1,0401,0402,0403,0404,0405,0406,0407,0408,0409,0410,4111

@@ -19,6 +19,7 @@ public class BootScene : MonoBehaviour
     [SerializeField] private CurrencyManager currencyManager;
     [SerializeField] private IngredientManager ingredientManager;
     [SerializeField] private AudioManager audioManager;
+    [SerializeField] private BookMarkManager bookMarkManager;
 
     [Header("Loading Progress")]
     [SerializeField] private float minimumLoadTime = 1.0f; // JML: Minimum time to show loading screen
@@ -62,7 +63,8 @@ public class BootScene : MonoBehaviour
             fadeTask, // JML: Complete fade if not done
             InitializeCurrencyManager(),
             InitializeIngredientManager(),
-            InitializeAudioManager()
+            InitializeAudioManager(),
+            InitializeBookMarkManager()
         );
 
         Log("--- All Boot Systems Initialized ---");
@@ -73,7 +75,7 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private async UniTask InitializeFadeController()
     {
-        Log("[1/5] Initializing FadeController...");
+        Log("Initializing FadeController...");
 
         // JML: Access Instance to trigger creation if needed
         var fade = FadeController.Instance;
@@ -97,7 +99,7 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private async UniTask InitializeCSVLoader()
     {
-        Log("[2/5] Initializing CSVLoader...");
+        Log("Initializing CSVLoader...");
 
         if (csvLoader == null)
         {
@@ -130,7 +132,7 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private async UniTask InitializeCurrencyManager()
     {
-        Log("[3/5] Initializing CurrencyManager...");
+        Log("Initializing CurrencyManager...");
 
         if (currencyManager == null)
         {
@@ -151,6 +153,32 @@ public class BootScene : MonoBehaviour
             Debug.LogError("✗ CurrencyManager failed to initialize!");
         }
     }
+    private UniTask InitializeBookMarkManager()
+    {
+        Log("Initializing BookMarkManager...");
+
+        if (bookMarkManager == null)
+        {
+            Debug.LogError("✗ BookMarkManager reference is NULL! Assign it in Inspector.");
+            return UniTask.CompletedTask;
+        }
+
+        // JML: Wait for Awake to complete
+        return UniTask.RunOnThreadPool(async () =>
+        {
+            await UniTask.WaitUntil(() => BookMarkManager.Instance != null);
+            await UniTask.DelayFrame(1);
+
+            if (BookMarkManager.Instance != null)
+            {
+                Log("✓ BookMarkManager ready");
+            }
+            else
+            {
+                Debug.LogError("✗ BookMarkManager failed to initialize!");
+            }
+        });
+    }
 
     /// <summary>
     /// JML: Initialize IngredientManager (runs in parallel with other managers)
@@ -158,7 +186,7 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private async UniTask InitializeIngredientManager()
     {
-        Log("[4/5] Initializing IngredientManager...");
+        Log("Initializing IngredientManager...");
 
         if (ingredientManager == null)
         {
@@ -185,7 +213,7 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private async UniTask InitializeAudioManager()
     {
-        Log("[5/5] Initializing AudioManager...");
+        Log("Initializing AudioManager...");
 
         if (audioManager == null)
         {
