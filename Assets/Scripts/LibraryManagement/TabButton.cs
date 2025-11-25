@@ -1,3 +1,6 @@
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using NovelianMagicLibraryDefense.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -68,5 +71,15 @@ public class TabButton : MonoBehaviour
         partyPanel.SetActive(false);
         teamSetupPanel.SetActive(true);
         
+    }
+
+    public void LobbyButtonClicked()
+    {
+        LoadLobbyScene().Forget();
+    }
+
+    private async UniTaskVoid LoadLobbyScene()
+    {
+        await FadeController.Instance.LoadSceneWithFade("LobbyScene");
     }
 }

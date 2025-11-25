@@ -252,6 +252,7 @@ GameObject:
   - component: {fileID: 729743807}
   - component: {fileID: 729743806}
   - component: {fileID: 729743805}
+  - component: {fileID: 729743808}
   - component: {fileID: 729743804}
   m_Layer: 0
   m_Name: ManagerObj
@@ -326,6 +327,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b521d6a2dd77d7b46b3460884c711bc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &729743808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729743801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa4f0054d173516409a99bd6bad4389c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1862903901
 GameObject:
   m_ObjectHideFlags: 0
@@ -361,6 +374,7 @@ MonoBehaviour:
   currencyManager: {fileID: 729743806}
   ingredientManager: {fileID: 729743805}
   audioManager: {fileID: 729743804}
+  bookMarkManager: {fileID: 729743808}
   minimumLoadTime: 5
 --- !u!4 &1862903903
 Transform:

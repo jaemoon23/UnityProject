@@ -15,8 +15,6 @@ public class SkillData
     public int Effect_ID { get; set; }
     public bool Equipable { get; set; }
     public string Description { get; set; }
-    public int Table_Num { get; set; }
-    public int Order2 { get; set; }
 }
 
 

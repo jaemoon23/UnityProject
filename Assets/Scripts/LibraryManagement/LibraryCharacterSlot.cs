@@ -1,5 +1,8 @@
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 public class LibraryCharacterSlot : MonoBehaviour
@@ -12,7 +15,7 @@ public class LibraryCharacterSlot : MonoBehaviour
     [SerializeField] private Slider characterExpBar;
     [SerializeField] private Image characterSprite;
     [SerializeField] private Button characterInfoButton;
-
+    private int currentLevel;
     private CharacterInfoPanel infoPanel;
 
     private void Start()
@@ -30,7 +33,7 @@ public class LibraryCharacterSlot : MonoBehaviour
     private void OnClickCharacterInfo()
     {
         Debug.Log($"Character Info Clicked for ID: {characterID}");
-        infoPanel.InitInfo(characterID);
+        infoPanel.InitInfo(characterID, currentLevel);
         infoPanel.ShowPanel();
     }
 
@@ -39,19 +42,73 @@ public class LibraryCharacterSlot : MonoBehaviour
         infoPanel = panel.GetComponent<CharacterInfoPanel>();
     }
 
-    public void InitSlot(int id, string name, int level, int exp, int maxExp, Sprite sprite)
+    public void InitSlot(CharacterData data)
     {
-        characterID = id;
-        characterName.text = name;
-        characterLevel.text = $"Lv. {level}";
-        characterExp.text = $"{exp} / {maxExp} EXP";
-        characterSprite.sprite = sprite;
+        // 1. 캐릭터 ID 저장
+        characterID = data.Character_ID;
 
-        // Assuming max EXP for level up is 1000 for demonstration
-        characterExpBar.maxValue = maxExp;
-        characterExpBar.value = exp;
+        // 2. 캐릭터 이름 표시
+        characterName.text = data.Character_Name;
+
+        // 3. 현재 강화 레벨 (지금은 1로 고정, 나중에 저장 데이터에서 가져올 값)
+        int currentEnhanceLevel = 1;
+
+        // 4. 해당 강화 레벨의 LevelData ID 가져오기
+        int levelDataID = GetLevelDataID(data, currentEnhanceLevel);
+
+        // 5. LevelData 테이블에서 실제 스탯 정보 가져오기
+        LevelData levelData = CSVLoader.Instance.GetData<LevelData>(levelDataID);
+
+        if (levelData != null)
+        {
+            currentLevel = levelData.Level;
+            // 6. 레벨 표시
+            characterLevel.text = $"Lv.{currentLevel}";
+
+            // 7. 경험치 바 초기화 (현재는 0/100으로 임시 설정)
+            // 나중에 저장 데이터에서 현재 경험치와 최대 경험치 가져올 것
+            UpdateUI(currentLevel, 10);
+        }
+
+        // 8. 캐릭터 스프라이트 로드 (Addressables 사용)
+        LoadCharacterSprite(data.Character_ID);
     }
+    // 강화 레벨에 따라 올바른 LevelData ID 반환
+    private int GetLevelDataID(CharacterData data, int enhanceLevel)
+    {
+        return enhanceLevel switch
+        {
+            1 => data.Cha_Level_1_ID,
+            2 => data.Cha_Level_2_ID,
+            3 => data.Cha_Level_3_ID,
+            4 => data.Cha_Level_4_ID,
+            5 => data.Cha_Level_5_ID,
+            6 => data.Cha_Level_6_ID,
+            7 => data.Cha_Level_7_ID,
+            8 => data.Cha_Level_8_ID,
+            9 => data.Cha_Level_9_ID,
+            10 => data.Cha_Level_10_ID,
+            _ => data.Cha_Level_1_ID
+        };
+    }
+    // 캐릭터 스프라이트 로드
+    private void LoadCharacterSprite(int characterId)
+    {
+        string spriteKey = "ChaIcon";
+        //= AddressableKey.GetCardSpriteKey(characterId);
 
+        Addressables.LoadAssetAsync<Sprite>(spriteKey).Completed += handle =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                characterSprite.sprite = handle.Result;
+            }
+            else
+            {
+                Debug.LogWarning($"Failed to load character sprite: {spriteKey}");
+            }
+        };
+    }
     public void UpdateUI(int exp, int maxExp)
     {
         characterExp.text = $"{exp} / {maxExp}";

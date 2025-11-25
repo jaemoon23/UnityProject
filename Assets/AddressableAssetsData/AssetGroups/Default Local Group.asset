@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: 813be66670544c44d958d2ab75cca20e
   m_SerializeEntries:
+  - m_GUID: 0cd28ea9b50f97c4480a749edee76713
+    m_Address: Assets/Prefabs/Monster/Monster_01.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3c1f038d695487043969fad335a10d2c
     m_Address: ComedyData
     m_ReadOnly: 0
@@ -35,8 +40,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8cd926442039cb14883cf7d184246980
+    m_Address: ChaIcon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8eb3146986f80e2428996c5fb0636b6d
+    m_Address: LevelTable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b7b3a92a622c7184f9bde1548a29e73b
     m_Address: Lock
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6277d666d94a9649879a154fbf89429
+    m_Address: CharacterTable
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
