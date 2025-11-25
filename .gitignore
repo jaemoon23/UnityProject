@@ -113,3 +113,5 @@ InitTestScene*.unity*
 # Claude AI settings
 .claude/
 /nul
+# NuGet
+.nuget/
