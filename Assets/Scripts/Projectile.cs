@@ -353,8 +353,8 @@ namespace Novelian.Combat
                             SpawnChainEffect(startPosition, other.transform.position);
                         }
 
-                        // Find next target
-                        ITargetable nextTarget = FindNextChainTarget(other.transform.position, chainHitTargets);
+                        // Find next target (exclude current target)
+                        ITargetable nextTarget = FindNextChainTarget(other.transform.position, chainHitTargets, monster);
 
                         if (nextTarget != null)
                         {
@@ -364,8 +364,13 @@ namespace Novelian.Combat
 
                             Debug.Log($"[Projectile] Chain {currentChainCount}/{maxChainCount}: Bouncing to {nextTarget.GetTransform().name}, damage={currentChainDamage:F1}");
 
+                            // Calculate spawn position offset (outside collider to prevent re-collision)
+                            Vector3 directionToNext = (nextTarget.GetPosition() - other.transform.position).normalized;
+                            float spawnOffset = 1.0f; // 1m offset to clear collider
+                            Vector3 spawnPos = other.transform.position + directionToNext * spawnOffset;
+
                             // Re-launch projectile to next target (bounce like billiard ball!)
-                            Launch(other.transform.position, nextTarget.GetPosition(), speed, lifetime, currentChainDamage, skillData, supportSkill);
+                            Launch(spawnPos, nextTarget.GetPosition(), speed, lifetime, currentChainDamage, skillData, supportSkill);
                             return; // Don't despawn - projectile continues!
                         }
                         else
@@ -429,8 +434,8 @@ namespace Novelian.Combat
                             SpawnChainEffect(startPosition, other.transform.position);
                         }
 
-                        // Find next target
-                        ITargetable nextTarget = FindNextChainTarget(other.transform.position, chainHitTargets);
+                        // Find next target (exclude current target)
+                        ITargetable nextTarget = FindNextChainTarget(other.transform.position, chainHitTargets, boss);
 
                         if (nextTarget != null)
                         {
@@ -440,8 +445,13 @@ namespace Novelian.Combat
 
                             Debug.Log($"[Projectile] Chain {currentChainCount}/{maxChainCount}: Bouncing to {nextTarget.GetTransform().name}, damage={currentChainDamage:F1}");
 
+                            // Calculate spawn position offset (outside collider to prevent re-collision)
+                            Vector3 directionToNext = (nextTarget.GetPosition() - other.transform.position).normalized;
+                            float spawnOffset = 1.0f; // 1m offset to clear collider
+                            Vector3 spawnPos = other.transform.position + directionToNext * spawnOffset;
+
                             // Re-launch projectile to next target (bounce like billiard ball!)
-                            Launch(other.transform.position, nextTarget.GetPosition(), speed, lifetime, currentChainDamage, skillData, supportSkill);
+                            Launch(spawnPos, nextTarget.GetPosition(), speed, lifetime, currentChainDamage, skillData, supportSkill);
                             return; // Don't despawn - projectile continues!
                         }
                         else
@@ -566,7 +576,7 @@ namespace Novelian.Combat
         }
 
         //LMJ : Find next target for chain effect with priority system
-        private ITargetable FindNextChainTarget(Vector3 currentPosition, System.Collections.Generic.HashSet<ITargetable> hitTargets)
+        private ITargetable FindNextChainTarget(Vector3 currentPosition, System.Collections.Generic.HashSet<ITargetable> hitTargets, ITargetable excludeTarget = null)
         {
             if (supportSkill == null) return null;
 
@@ -580,6 +590,8 @@ namespace Novelian.Combat
             ITargetable closestHitTarget = null;
             float closestHitDistance = float.MaxValue;
 
+            const float MIN_CHAIN_DISTANCE = 0.5f; // Minimum distance to prevent immediate re-hit
+
             foreach (var hit in hits)
             {
                 // Check if it's a valid target (Monster or BossMonster)
@@ -590,7 +602,15 @@ namespace Novelian.Combat
                 if (target == null || !target.IsAlive())
                     continue;
 
+                // Skip the target we just hit (prevent immediate re-collision)
+                if (excludeTarget != null && target == excludeTarget)
+                    continue;
+
                 float distance = Vector3.Distance(currentPosition, target.GetPosition());
+
+                // Skip targets that are too close (prevent re-collision with overlapping colliders)
+                if (distance < MIN_CHAIN_DISTANCE)
+                    continue;
 
                 // Categorize by hit status
                 if (!hitTargets.Contains(target))

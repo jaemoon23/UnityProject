@@ -41,6 +41,12 @@ public class Monster : BaseEntity, ITargetable, IMovable
     private Transform wallTransform;
     private System.Threading.CancellationTokenSource weightUpdateCts;
 
+    // Mark state tracking
+    private MarkType currentMarkType = MarkType.None;
+    private float markDamageMultiplier = 0f;
+    private float markEndTime = 0f; // Time.time when mark expires
+    private System.Threading.CancellationTokenSource markCts;
+
     // 애니메이터 파라미터 해시 (성능 최적화)
     private static readonly int ANIM_IS_MOVING = Animator.StringToHash("IsMoving");
     private static readonly int ANIM_ATTACK = Animator.StringToHash("Attack");
@@ -147,8 +153,8 @@ public class Monster : BaseEntity, ITargetable, IMovable
             monsterMove.SetEnabled(false);
         }
 
-        // Legacy Rigidbody support (if exists)
-        if (rb != null)
+        // Legacy Rigidbody support (if exists and not kinematic)
+        if (rb != null && !rb.isKinematic)
         {
             rb.linearVelocity = Vector3.zero;
         }
@@ -255,16 +261,76 @@ public class Monster : BaseEntity, ITargetable, IMovable
 
         Debug.Log($"[Monster] {markType} Mark applied: +{damageMultiplier}% damage for {duration}s");
 
-        // TODO: Mark 효과 구현
-        // 1. Mark 비주얼 이펙트 생성 (markEffectPrefab)
-        // 2. Mark가 있는 동안 받는 데미지 증가
-        // 3. duration 후 Mark 제거
+        // Cancel previous mark if exists
+        markCts?.Cancel();
+        markCts?.Dispose();
+        markCts = new System.Threading.CancellationTokenSource();
 
+        // Set mark state
+        currentMarkType = markType;
+        markDamageMultiplier = damageMultiplier;
+        markEndTime = Time.time + duration; // Track when mark expires
+
+        // Spawn mark effect above monster's head (follows monster)
         if (markEffectPrefab != null)
         {
-            GameObject markEffect = Instantiate(markEffectPrefab, transform.position, Quaternion.identity, transform);
+            // Calculate position above monster's head
+            float monsterHeight = collider3D != null ? collider3D.bounds.extents.y * 2f : 2f; // Use collider height or default 2m
+            Vector3 markOffset = Vector3.up * (monsterHeight + 0.5f); // 0.5m above head
+
+            GameObject markEffect = Instantiate(markEffectPrefab, transform.position + markOffset, Quaternion.identity, transform);
+
+            // Set local position to ensure it follows monster correctly
+            markEffect.transform.localPosition = Vector3.up * (monsterHeight + 0.5f);
+
             Destroy(markEffect, duration);
+            Debug.Log($"[Monster] Mark effect spawned above head: {markEffectPrefab.name}, height offset: {monsterHeight + 0.5f}m");
         }
+
+        // Start mark duration
+        StartMark(duration, markCts.Token).Forget();
+    }
+
+    private async Cysharp.Threading.Tasks.UniTaskVoid StartMark(float duration, System.Threading.CancellationToken ct)
+    {
+        try
+        {
+            await Cysharp.Threading.Tasks.UniTask.Delay((int)(duration * 1000), cancellationToken: ct);
+
+            if (!ct.IsCancellationRequested)
+            {
+                // Clear mark state
+                currentMarkType = MarkType.None;
+                markDamageMultiplier = 0f;
+                Debug.Log($"[Monster] Mark ended");
+            }
+        }
+        catch (System.OperationCanceledException)
+        {
+            // Expected when cancelled
+        }
+    }
+
+    /// <summary>
+    /// Check if this monster has a Focus Mark (for focus targeting)
+    /// </summary>
+    public bool HasFocusMark()
+    {
+        return currentMarkType == MarkType.Focus && !isDead;
+    }
+
+    /// <summary>
+    /// Get remaining mark duration in seconds (for priority targeting)
+    /// </summary>
+    public float GetMarkRemainingTime()
+    {
+        if (currentMarkType == MarkType.None || isDead)
+        {
+            return float.MaxValue; // No mark or dead = lowest priority
+        }
+
+        float remaining = markEndTime - Time.time;
+        return Mathf.Max(0f, remaining); // Never return negative
     }
 
     /// <summary>
@@ -440,5 +506,8 @@ public class Monster : BaseEntity, ITargetable, IMovable
     {
         weightUpdateCts?.Cancel();
         weightUpdateCts?.Dispose();
+
+        markCts?.Cancel();
+        markCts?.Dispose();
     }
 }

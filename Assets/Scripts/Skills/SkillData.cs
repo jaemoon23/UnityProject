@@ -347,4 +347,5 @@ public enum MarkType
     Poison,         // 독 표식
     Holy,           // 신성 표식
     Curse,          // 저주 표식
+    Focus,          // 집중 표식
 }

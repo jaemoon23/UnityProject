@@ -136,7 +136,9 @@ namespace Novelian.Combat
         // Attack state
         private CancellationTokenSource attackCts;
         private CancellationTokenSource activeSkillCts;
+        private CancellationTokenSource channelingCts;
         private bool isInitialized = false;
+        private bool isChanneling = false;
 
         private void Start()
         {
@@ -267,14 +269,13 @@ namespace Novelian.Combat
         }
 
         //LMJ : Attempt to attack nearest or highest weight target (skill-based)
+        //      Priority: Focus Mark > useWeightTargeting ? Weight : Distance
         private void TryAttack()
         {
             if (!isInitialized || basicAttackSkill == null) return;
 
-            // Find target based on strategy (using final range from skill + character modifier)
-            ITargetable target = useWeightTargeting
-                ? TargetRegistry.Instance.FindSkillTarget(transform.position, FinalRange)
-                : TargetRegistry.Instance.FindTarget(transform.position, FinalRange);
+            // Find target with mark priority, then use weight/distance strategy
+            ITargetable target = TargetRegistry.Instance.FindTarget(transform.position, FinalRange, useWeightTargeting);
 
             if (target == null) return;
 
@@ -318,16 +319,32 @@ namespace Novelian.Combat
         }
 
         //LMJ : Attempt to use active skill on target
+        //      Priority: Focus Mark > useWeightTargeting ? Weight : Distance
         private void TryUseActiveSkill()
         {
             if (!isInitialized || activeSkill == null) return;
 
-            // Find target based on strategy (using final range from active skill + character modifier)
-            ITargetable target = useWeightTargeting
-                ? TargetRegistry.Instance.FindSkillTarget(transform.position, FinalActiveRange)
-                : TargetRegistry.Instance.FindTarget(transform.position, FinalActiveRange);
+            // Skip if already channeling
+            if (isChanneling) return;
+
+            // Find target with mark priority, then use weight/distance strategy
+            ITargetable target = TargetRegistry.Instance.FindTarget(transform.position, FinalActiveRange, useWeightTargeting);
 
             if (target == null) return;
+
+            // Check if skill is Channeling type
+            if (activeSkill.skillType == SkillAssetType.Channeling)
+            {
+                UseChannelingSkillAsync(target).Forget();
+                return;
+            }
+
+            // Check if skill is AOE type (Meteor, etc.)
+            if (activeSkill.skillType == SkillAssetType.AOE)
+            {
+                UseAOESkillAsync(target).Forget();
+                return;
+            }
 
             // Calculate spawn position (character position + offset)
             Vector3 spawnPos = transform.position + spawnOffset;
@@ -394,6 +411,475 @@ namespace Novelian.Combat
             }
         }
 
+        //LMJ : Use channeling skill (laser/beam style)
+        private async UniTaskVoid UseChannelingSkillAsync(ITargetable target)
+        {
+            if (activeSkill == null || activeSkill.skillType != SkillAssetType.Channeling) return;
+
+            isChanneling = true;
+            channelingCts?.Cancel();
+            channelingCts = new CancellationTokenSource();
+            var ct = channelingCts.Token;
+
+            GameObject castEffect = null;
+            GameObject startEffect = null;
+            System.Collections.Generic.List<GameObject> beamEffects = new System.Collections.Generic.List<GameObject>();
+            System.Collections.Generic.List<GameObject> hitEffects = new System.Collections.Generic.List<GameObject>();
+
+            try
+            {
+                Debug.Log($"[Character] Starting channeling skill: {activeSkill.skillName}");
+
+                // 1. Cast Effect (시전 준비)
+                if (activeSkill.castTime > 0f && activeSkill.castEffectPrefab != null)
+                {
+                    Vector3 spawnPos = transform.position + spawnOffset;
+                    castEffect = Object.Instantiate(activeSkill.castEffectPrefab, spawnPos, Quaternion.identity);
+                    Debug.Log($"[Character] Cast Effect started ({activeSkill.castTime:F1}s)");
+
+                    await UniTask.Delay((int)(activeSkill.castTime * 1000), cancellationToken: ct);
+
+                    if (castEffect != null) Object.Destroy(castEffect);
+                }
+
+                // Check if target is still valid after cast time
+                if (target == null || !target.IsAlive())
+                {
+                    Debug.Log("[Character] Channeling cancelled: Target died during cast");
+                    return;
+                }
+
+                // 2. Start Effect (빔 발사 지점, 선택)
+                if (activeSkill.projectileEffectPrefab != null)
+                {
+                    Vector3 spawnPos = transform.position + spawnOffset;
+                    startEffect = Object.Instantiate(activeSkill.projectileEffectPrefab, spawnPos, Quaternion.identity);
+                    startEffect.transform.SetParent(transform); // Follow character
+                    Debug.Log("[Character] Start Effect spawned");
+                }
+
+                // 3. Build chain targets (if Chain support skill is active)
+                System.Collections.Generic.List<ITargetable> chainTargets = BuildChainTargets(target);
+
+                // 4. Create beam effects for all targets
+                if (activeSkill.areaEffectPrefab != null)
+                {
+                    for (int i = 0; i < chainTargets.Count; i++)
+                    {
+                        Vector3 spawnPos = (i == 0) ? transform.position + spawnOffset : chainTargets[i - 1].GetPosition();
+                        GameObject beamEffect = Object.Instantiate(activeSkill.areaEffectPrefab, spawnPos, Quaternion.identity);
+                        beamEffects.Add(beamEffect);
+                    }
+                    Debug.Log($"[Character] Created {beamEffects.Count} beam effects for {chainTargets.Count} targets");
+                }
+                else
+                {
+                    Debug.LogWarning("[Character] Channeling skill has no Beam Effect (areaEffectPrefab)!");
+                }
+
+                // 5. Create hit effects for all targets (follow targets)
+                if (activeSkill.hitEffectPrefab != null)
+                {
+                    for (int i = 0; i < chainTargets.Count; i++)
+                    {
+                        GameObject hitEffect = Object.Instantiate(activeSkill.hitEffectPrefab, chainTargets[i].GetPosition(), Quaternion.identity);
+                        hitEffect.transform.SetParent(chainTargets[i].GetTransform()); // Follow target
+                        hitEffects.Add(hitEffect);
+                    }
+                    Debug.Log($"[Character] Created {hitEffects.Count} hit effects following targets");
+                }
+
+                // 6. Channeling loop (channelDuration 동안)
+                float elapsed = 0f;
+                float nextTickTime = 0f;
+                int tickCount = 0;
+                bool firstTick = true; // Track first tick for status effects
+
+                while (elapsed < activeSkill.channelDuration)
+                {
+                    // Update beam effects position/rotation and clean up dead targets
+                    for (int i = 0; i < beamEffects.Count && i < chainTargets.Count; i++)
+                    {
+                        if (chainTargets[i] == null || !chainTargets[i].IsAlive())
+                        {
+                            // Remove dead target's beam and hit effect
+                            if (beamEffects[i] != null) Object.Destroy(beamEffects[i]);
+                            beamEffects[i] = null;
+
+                            if (i < hitEffects.Count && hitEffects[i] != null)
+                            {
+                                Object.Destroy(hitEffects[i]);
+                                hitEffects[i] = null;
+                            }
+                            continue;
+                        }
+
+                        Vector3 startPos = (i == 0) ? transform.position + spawnOffset : chainTargets[i - 1].GetPosition();
+                        Vector3 endPos = chainTargets[i].GetPosition();
+                        UpdateBeamEffect(beamEffects[i], startPos, endPos);
+                    }
+
+                    // Apply damage and effects at tick intervals
+                    if (elapsed >= nextTickTime)
+                    {
+                        float currentDamage = FinalActiveDamage;
+
+                        for (int i = 0; i < chainTargets.Count; i++)
+                        {
+                            if (chainTargets[i] == null || !chainTargets[i].IsAlive())
+                                continue;
+
+                            // Apply chain damage reduction
+                            if (i > 0 && supportSkill != null && supportSkill.statusEffectType == StatusEffectType.Chain)
+                            {
+                                currentDamage *= (1f - supportSkill.chainDamageReduction / 100f);
+                            }
+
+                            // Apply status effects (only on first tick)
+                            if (firstTick && supportSkill != null && supportSkill.statusEffectType != StatusEffectType.Chain)
+                            {
+                                ApplyStatusEffect(chainTargets[i]);
+                            }
+
+                            // Apply damage
+                            chainTargets[i].TakeDamage(currentDamage);
+
+                            Debug.Log($"[Character] Channeling tick {tickCount} target {i}: {currentDamage:F1} damage to {chainTargets[i].GetTransform().name}");
+                        }
+
+                        tickCount++;
+                        nextTickTime += activeSkill.channelTickInterval;
+                        firstTick = false;
+                    }
+
+                    // Wait one frame
+                    await UniTask.Yield(ct);
+                    elapsed += Time.deltaTime;
+                }
+
+                Debug.Log($"[Character] Channeling completed: {tickCount} ticks, {chainTargets.Count} targets");
+            }
+            catch (System.OperationCanceledException)
+            {
+                Debug.Log("[Character] Channeling cancelled");
+            }
+            finally
+            {
+                // Clean up effects
+                if (castEffect != null) Object.Destroy(castEffect);
+                if (startEffect != null) Object.Destroy(startEffect);
+                foreach (var beam in beamEffects)
+                {
+                    if (beam != null) Object.Destroy(beam);
+                }
+                foreach (var hitEffect in hitEffects)
+                {
+                    if (hitEffect != null) Object.Destroy(hitEffect);
+                }
+
+                isChanneling = false;
+                Debug.Log("[Character] Channeling ended, effects cleaned up");
+            }
+        }
+
+        //LMJ : Use AOE skill (Meteor style - falls from sky, ground collision)
+        private async UniTaskVoid UseAOESkillAsync(ITargetable target)
+        {
+            if (activeSkill == null || activeSkill.skillType != SkillAssetType.AOE) return;
+
+            GameObject castEffect = null;
+            GameObject meteorEffect = null;
+            GameObject hitEffect = null;
+
+            try
+            {
+                Debug.Log($"[Character] Starting AOE skill: {activeSkill.skillName}, Damage: {FinalActiveDamage:F1}");
+
+                // 1. Cast Effect (시전 준비) - 캐릭터 위치에서 재생
+                if (activeSkill.castTime > 0f && activeSkill.castEffectPrefab != null)
+                {
+                    Vector3 spawnPos = transform.position + spawnOffset;
+                    castEffect = Object.Instantiate(activeSkill.castEffectPrefab, spawnPos, Quaternion.identity);
+                    Debug.Log($"[Character] AOE Cast Effect started ({activeSkill.castTime:F1}s)");
+
+                    await UniTask.Delay((int)(activeSkill.castTime * 1000));
+
+                    if (castEffect != null) Object.Destroy(castEffect);
+                }
+
+                // 2. castTime 후 타겟 위치 다시 가져오기 (몬스터가 이동했을 수 있음)
+                // 타겟이 죽었으면 마지막 위치 사용
+                Vector3 targetPos;
+                if (target != null && target.IsAlive())
+                {
+                    targetPos = target.GetPosition();
+                }
+                else
+                {
+                    // 타겟이 죽었으면 새 타겟 찾기
+                    ITargetable newTarget = TargetRegistry.Instance.FindTarget(transform.position, FinalActiveRange, useWeightTargeting);
+                    if (newTarget != null)
+                    {
+                        targetPos = newTarget.GetPosition();
+                        Debug.Log($"[Character] Original target died, using new target at {targetPos}");
+                    }
+                    else
+                    {
+                        Debug.Log("[Character] AOE cancelled: No valid targets");
+                        return;
+                    }
+                }
+
+                // 3. 착탄 위치는 타겟 Y 위치 그대로 사용 (지면 Raycast 대신)
+                Vector3 impactPos = targetPos;
+                Debug.Log($"[Character] AOE impact position: {impactPos}");
+
+                // 4. Meteor Effect (착탄 위치에 스폰 - 파티클이 자체 낙하 연출)
+                if (activeSkill.projectileEffectPrefab != null)
+                {
+                    meteorEffect = Object.Instantiate(activeSkill.projectileEffectPrefab, impactPos, Quaternion.identity);
+                    Debug.Log($"[Character] Meteor spawned at {impactPos}");
+
+                    // 파티클 낙하 시간 대기 (projectileLifetime 사용, 기본값 1.5초)
+                    float fallDuration = activeSkill.projectileLifetime > 0 ? activeSkill.projectileLifetime : 1.5f;
+                    await UniTask.Delay((int)(fallDuration * 1000));
+                }
+
+                // 5. Hit Effect (착탄 폭발) - 착탄 위치에서 재생
+                if (activeSkill.hitEffectPrefab != null)
+                {
+                    hitEffect = Object.Instantiate(activeSkill.hitEffectPrefab, impactPos, Quaternion.identity);
+                    Debug.Log($"[Character] AOE Hit Effect spawned at {impactPos}");
+                }
+
+                // 6. AOE 범위 데미지 적용 (착탄 위치 기준)
+                float aoeRadius = activeSkill.aoeRadius > 0 ? activeSkill.aoeRadius : 3f;
+                Collider[] hits = Physics.OverlapSphere(impactPos, aoeRadius);
+                int hitCount = 0;
+                float damageToApply = FinalActiveDamage;
+
+                Debug.Log($"[Character] AOE checking {hits.Length} colliders in {aoeRadius}m radius");
+
+                foreach (var hit in hits)
+                {
+                    if (!hit.CompareTag(Tag.Monster) && !hit.CompareTag(Tag.BossMonster))
+                        continue;
+
+                    ITargetable hitTarget = hit.GetComponent<ITargetable>();
+                    if (hitTarget == null || !hitTarget.IsAlive())
+                        continue;
+
+                    // 데미지 적용
+                    Debug.Log($"[Character] AOE applying {damageToApply:F1} damage to {hit.name}");
+                    hitTarget.TakeDamage(damageToApply);
+                    hitCount++;
+
+                    // Support 스킬 상태이상 적용
+                    if (supportSkill != null && supportSkill.statusEffectType != StatusEffectType.None)
+                    {
+                        ApplyStatusEffect(hitTarget);
+                    }
+                }
+
+                Debug.Log($"[Character] AOE skill {activeSkill.skillName} completed: {hitCount} targets hit with {damageToApply:F1} damage each");
+
+                // Meteor 이펙트 정리 (hitEffect보다 먼저 사라지게)
+                if (meteorEffect != null)
+                {
+                    Object.Destroy(meteorEffect, 0.1f);
+                }
+
+                // Hit Effect 자동 정리 (2초 후)
+                if (hitEffect != null)
+                {
+                    Object.Destroy(hitEffect, 2f);
+                }
+            }
+            catch (System.OperationCanceledException)
+            {
+                Debug.Log("[Character] AOE skill cancelled");
+            }
+            finally
+            {
+                // 예외 발생 시 이펙트 정리
+                if (castEffect != null) Object.Destroy(castEffect);
+            }
+        }
+
+        //LMJ : Build chain targets for channeling skill
+        private System.Collections.Generic.List<ITargetable> BuildChainTargets(ITargetable firstTarget)
+        {
+            var targets = new System.Collections.Generic.List<ITargetable> { firstTarget };
+
+            // If no Chain support skill, return single target
+            if (supportSkill == null || supportSkill.statusEffectType != StatusEffectType.Chain)
+            {
+                return targets;
+            }
+
+            // Build chain
+            int maxChainCount = supportSkill.chainCount;
+            var hitTargets = new System.Collections.Generic.HashSet<ITargetable> { firstTarget };
+            ITargetable currentTarget = firstTarget;
+
+            for (int i = 0; i < maxChainCount; i++)
+            {
+                ITargetable nextTarget = FindNextChainTarget(currentTarget.GetPosition(), supportSkill.chainRange, hitTargets);
+                if (nextTarget == null) break;
+
+                targets.Add(nextTarget);
+                hitTargets.Add(nextTarget);
+                currentTarget = nextTarget;
+
+                Debug.Log($"[Character] Chain {i + 1}/{maxChainCount}: {nextTarget.GetTransform().name}");
+            }
+
+            return targets;
+        }
+
+        //LMJ : Find next target for chain effect
+        private ITargetable FindNextChainTarget(Vector3 currentPosition, float chainRange, System.Collections.Generic.HashSet<ITargetable> hitTargets)
+        {
+            Collider[] hits = Physics.OverlapSphere(currentPosition, chainRange);
+
+            ITargetable closestTarget = null;
+            float closestDistance = float.MaxValue;
+
+            foreach (var hit in hits)
+            {
+                if (!hit.CompareTag(Tag.Monster) && !hit.CompareTag(Tag.BossMonster))
+                    continue;
+
+                ITargetable target = hit.GetComponent<ITargetable>();
+                if (target == null || !target.IsAlive())
+                    continue;
+
+                // Skip already hit targets
+                if (hitTargets.Contains(target))
+                    continue;
+
+                float distance = Vector3.Distance(currentPosition, target.GetPosition());
+
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestTarget = target;
+                }
+            }
+
+            return closestTarget;
+        }
+
+        //LMJ : Apply status effects to target (CC, DOT, Mark)
+        private void ApplyStatusEffect(ITargetable target)
+        {
+            if (supportSkill == null || target == null) return;
+
+            switch (supportSkill.statusEffectType)
+            {
+                case StatusEffectType.CC:
+                    if (target.GetTransform().CompareTag(Tag.Monster))
+                    {
+                        Monster monster = target.GetTransform().GetComponent<Monster>();
+                        if (monster != null)
+                        {
+                            monster.ApplyCC(supportSkill.ccType, supportSkill.ccDuration, supportSkill.ccSlowAmount, supportSkill.ccEffectPrefab);
+                            Debug.Log($"[Character] Applied CC to {monster.name}: {supportSkill.ccType}");
+                        }
+                    }
+                    else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                    {
+                        BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                        if (boss != null)
+                        {
+                            boss.ApplyCC(supportSkill.ccType, supportSkill.ccDuration, supportSkill.ccSlowAmount, supportSkill.ccEffectPrefab);
+                            Debug.Log($"[Character] Applied CC to {boss.name}: {supportSkill.ccType}");
+                        }
+                    }
+                    break;
+
+                case StatusEffectType.DOT:
+                    if (target.GetTransform().CompareTag(Tag.Monster))
+                    {
+                        Monster monster = target.GetTransform().GetComponent<Monster>();
+                        if (monster != null)
+                        {
+                            monster.ApplyDOT(supportSkill.dotType, supportSkill.dotDamagePerTick, supportSkill.dotTickInterval, supportSkill.dotDuration, supportSkill.dotEffectPrefab);
+                            Debug.Log($"[Character] Applied DOT to {monster.name}: {supportSkill.dotType}");
+                        }
+                    }
+                    else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                    {
+                        BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                        if (boss != null)
+                        {
+                            boss.ApplyDOT(supportSkill.dotType, supportSkill.dotDamagePerTick, supportSkill.dotTickInterval, supportSkill.dotDuration, supportSkill.dotEffectPrefab);
+                            Debug.Log($"[Character] Applied DOT to {boss.name}: {supportSkill.dotType}");
+                        }
+                    }
+                    break;
+
+                case StatusEffectType.Mark:
+                    if (target.GetTransform().CompareTag(Tag.Monster))
+                    {
+                        Monster monster = target.GetTransform().GetComponent<Monster>();
+                        if (monster != null)
+                        {
+                            monster.ApplyMark(supportSkill.markType, supportSkill.markDuration, supportSkill.markDamageMultiplier, supportSkill.markEffectPrefab);
+                            Debug.Log($"[Character] Applied Mark to {monster.name}: {supportSkill.markType}");
+                        }
+                    }
+                    else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                    {
+                        BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                        if (boss != null)
+                        {
+                            boss.ApplyMark(supportSkill.markType, supportSkill.markDuration, supportSkill.markDamageMultiplier, supportSkill.markEffectPrefab);
+                            Debug.Log($"[Character] Applied Mark to {boss.name}: {supportSkill.markType}");
+                        }
+                    }
+                    break;
+
+                case StatusEffectType.Chain:
+                    // Chain is handled in BuildChainTargets
+                    break;
+            }
+        }
+
+        //LMJ : Update beam effect to connect character and target
+        private void UpdateBeamEffect(GameObject beamEffect, ITargetable target)
+        {
+            if (beamEffect == null || target == null) return;
+
+            Vector3 startPos = transform.position + spawnOffset;
+            Vector3 endPos = target.GetPosition();
+
+            UpdateBeamEffect(beamEffect, startPos, endPos);
+        }
+
+        //LMJ : Update beam effect to connect two positions (for chain beams)
+        private void UpdateBeamEffect(GameObject beamEffect, Vector3 startPos, Vector3 endPos)
+        {
+            if (beamEffect == null) return;
+
+            // Try LineRenderer first (most common for beam effects)
+            LineRenderer lineRenderer = beamEffect.GetComponent<LineRenderer>();
+            if (lineRenderer != null)
+            {
+                lineRenderer.SetPosition(0, startPos);
+                lineRenderer.SetPosition(1, endPos);
+                return;
+            }
+
+            // Fallback: Transform-based (position, scale, rotation)
+            Vector3 direction = endPos - startPos;
+            float distance = direction.magnitude;
+
+            beamEffect.transform.position = startPos;
+            beamEffect.transform.rotation = Quaternion.LookRotation(direction);
+            beamEffect.transform.localScale = new Vector3(1f, 1f, distance); // Stretch along Z-axis
+        }
+
         // IPoolable implementation
         public void OnSpawn()
         {
@@ -417,6 +903,7 @@ namespace Novelian.Combat
             characterObj.SetActive(false);
             attackCts?.Cancel();
             activeSkillCts?.Cancel();
+            channelingCts?.Cancel();
             Debug.Log("[Character] Character despawned");
         }
 
@@ -426,6 +913,8 @@ namespace Novelian.Combat
             attackCts?.Dispose();
             activeSkillCts?.Cancel();
             activeSkillCts?.Dispose();
+            channelingCts?.Cancel();
+            channelingCts?.Dispose();
         }
 
         //LMJ : Set spawn offset from CharacterPreset (future feature)

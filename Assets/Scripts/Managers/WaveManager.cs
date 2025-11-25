@@ -29,6 +29,7 @@ namespace NovelianMagicLibraryDefense.Managers
         [SerializeField] private float spawnInterval = 2f;
 
         private bool isPoolReady = false;
+        private System.Threading.CancellationTokenSource spawnCts;
 
         #region WaveData
         private int enemyCount;
@@ -114,7 +115,13 @@ namespace NovelianMagicLibraryDefense.Managers
             // LMJ: Wait for pools to be ready before spawning
             await UniTask.WaitUntil(() => isPoolReady);
             // Debug.Log("[WaveManager] Starting wave spawn loop");
-            SpawnEnemy().Forget();
+
+            // Create new cancellation token for this wave
+            spawnCts?.Cancel();
+            spawnCts?.Dispose();
+            spawnCts = new System.Threading.CancellationTokenSource();
+
+            SpawnEnemy(spawnCts.Token).Forget();
         }
 
         private void HandleMonsterDied(Monster monster)
@@ -154,12 +161,12 @@ namespace NovelianMagicLibraryDefense.Managers
             }
         }
 
-        private async UniTaskVoid SpawnEnemy()
+        private async UniTaskVoid SpawnEnemy(System.Threading.CancellationToken cancellationToken)
         {
             // LMJ: Wait for pools to be ready before spawning
             while (!isPoolReady)
             {
-                await UniTask.Yield();
+                await UniTask.Yield(cancellationToken);
             }
 
             int totalMonsters = enemyCount;
@@ -168,6 +175,9 @@ namespace NovelianMagicLibraryDefense.Managers
             // LCB: Check isPoolReady in loop to stop spawning when reset
             while (spawnedCount < totalMonsters && isPoolReady)
             {
+                // Check if spawner still exists (scene not destroyed)
+                if (monsterSpawner == null) break;
+
                 Vector3 spawnPos = monsterSpawner.GetRandomSpawnPosition();
                 var monster = poolManager.Spawn<Monster>(spawnPos);
 
@@ -178,7 +188,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 }
 
                 spawnedCount++;
-                await UniTask.Delay((int)(spawnInterval * 1000));
+                await UniTask.Delay((int)(spawnInterval * 1000), cancellationToken: cancellationToken);
             }
 
             // LMJ: Spawn boss after all normal enemies
@@ -226,6 +236,15 @@ namespace NovelianMagicLibraryDefense.Managers
         public int GetRemainderCount()
         {
             return enemyCount;
+        }
+
+        protected override void OnDestroy()
+        {
+            // Cancel all spawn operations when scene is destroyed
+            spawnCts?.Cancel();
+            spawnCts?.Dispose();
+
+            base.OnDestroy();
         }
     }
 

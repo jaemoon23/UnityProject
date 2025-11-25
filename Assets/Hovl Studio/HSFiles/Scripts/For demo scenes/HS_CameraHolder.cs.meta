@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a586cf93dc19b28488308d7488b8de20
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 133012
+  packageName: AOE Magic spells Vol.1
+  packageVersion: 2.3.2
+  assetPath: Assets/Hovl Studio/HSFiles/Scripts/For demo scenes/HS_CameraHolder.cs
+  uploadId: 730591
