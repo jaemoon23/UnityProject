@@ -52,7 +52,11 @@ public class CSVLoader : MonoBehaviour
                 RegisterTableAsync<BookmarkListData>(AddressableKey.BookmarkListTable, x => x.List_ID),
                 RegisterTableAsync<GradeData>(AddressableKey.GradeTable, x => x.Grade_ID),
                 RegisterTableAsync<CurrencyData>(AddressableKey.CurrencyTable, x => x.Currency_ID),
-                RegisterTableAsync<IngredientData>(AddressableKey.IngredientTable, x => x.Ingredient_ID)
+                RegisterTableAsync<IngredientData>(AddressableKey.IngredientTable, x => x.Ingredient_ID),
+                RegisterTableAsync<CharacterData>(AddressableKey.CharacterTable, x => x.Character_ID),
+                RegisterTableAsync<LevelData>(AddressableKey.LevelTable, x => x.Cha_Level_ID),
+                RegisterTableAsync<SkillData>(AddressableKey.SkillTable, x => x.Skill_ID)
+
             );
 
             IsInit = true;

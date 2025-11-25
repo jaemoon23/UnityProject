@@ -195,56 +195,166 @@ public class BookMarkManager : MonoBehaviour
         return GetBookmarksByType(BookmarkType.Skill);
     }
 
-    #region Debug Methods
+    #region Character Bookmark Equipment Management
+
+    // 캐릭터별 장착된 책갈피 배열 (5개 슬롯)
+    private Dictionary<int, BookMark[]> characterBookmarks = new Dictionary<int, BookMark[]>();
 
     /// <summary>
-    /// JML: Add Test Stat Bookmark
-    /// 테스트용 스탯 책갈피 추가
+    /// 캐릭터의 책갈피 배열 가져오기 (없으면 생성)
     /// </summary>
-    [ContextMenu("테스트 스탯 책갈피 추가")]
-    private void AddTestStatBookmark()
+    private BookMark[] GetOrCreateBookmarkArray(int characterID)
     {
-        var testBookmark = new BookMark(
-            bookmarkDataID: 1001,
-            name: "테스트 스탯 책갈피",
-            grade: Grade.Common,
-            optionType: 1,
-            optionValue: 10.5f
-        );
-        AddBookmark(testBookmark);
-    }
-
-    /// <summary>
-    /// JML: Add Test Skill Bookmark
-    /// 테스트용 스킬 책갈피 추가
-    /// </summary>
-    [ContextMenu("테스트 스킬 책갈피 추가")]
-    private void AddTestSkillBookmark()
-    {
-        var testBookmark = new BookMark(
-            bookmarkDataID: 1111,
-            name: "체인 러브 쇼크",
-            grade: Grade.Common,
-            optionType: 1,
-            optionValue: 1,
-            skillID: 3121
-        );
-        AddBookmark(testBookmark);
-    }
-
-    /// <summary>
-    /// JML: Print All Bookmarks
-    /// 보유 책갈피 목록 출력
-    /// </summary>
-    [ContextMenu("보유 책갈피 목록 출력")]
-    private void PrintAllBookmarks()
-    {
-        Debug.Log($"=== 보유 책갈피 목록 ({ownedBookmarks.Count}개) ===");
-        for (int i = 0; i < ownedBookmarks.Count; i++)
+        if (!characterBookmarks.ContainsKey(characterID))
         {
-            Debug.Log(ownedBookmarks[i]);
+            characterBookmarks[characterID] = new BookMark[5];
         }
+        return characterBookmarks[characterID];
     }
+
+    /// <summary>
+    /// 책갈피를 캐릭터에 장착 (이미 장착된 경우 교체)
+    /// </summary>
+    public bool EquipBookmarkToCharacter(int characterID, BookMark bookmark, int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= 5)
+        {
+            Debug.LogError($"[BookMarkManager] 잘못된 슬롯 인덱스: {slotIndex}");
+            return false;
+        }
+
+        if (bookmark == null)
+        {
+            Debug.LogError("[BookMarkManager] null 책갈피는 장착할 수 없습니다.");
+            return false;
+        }
+
+        // 다른 곳에 이미 장착된 책갈피인지 확인
+        if (bookmark.IsEquipped)
+        {
+            Debug.LogWarning($"[BookMarkManager] 책갈피 {bookmark.Name}는 이미 다른 곳에 장착되어 있습니다.");
+            return false;
+        }
+
+        BookMark[] bookmarks = GetOrCreateBookmarkArray(characterID);
+
+        // 기존 책갈피가 있으면 먼저 해제
+        if (bookmarks[slotIndex] != null)
+        {
+            BookMark oldBookmark = bookmarks[slotIndex];
+            oldBookmark.Unequip();
+            Debug.Log($"[BookMarkManager] 슬롯 {slotIndex}에서 기존 책갈피 해제: {oldBookmark.Name}");
+        }
+
+        // 새 책갈피 장착
+        bookmarks[slotIndex] = bookmark;
+        bookmark.Equip(characterID, slotIndex);
+
+        Debug.Log($"[BookMarkManager] 책갈피 장착: {bookmark.Name} (슬롯 {slotIndex})");
+        return true;
+    }
+
+    /// <summary>
+    /// 특정 캐릭터의 특정 슬롯의 책갈피 가져오기
+    /// </summary>
+    public BookMark GetCharacterBookmarkAtSlot(int characterID, int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= 5) return null;
+
+        BookMark[] bookmarks = GetOrCreateBookmarkArray(characterID);
+        return bookmarks[slotIndex];
+    }
+
+    /// <summary>
+    /// 캐릭터에게 실제로 장착된 책갈피만 가져오기 (null 제외)
+    /// 스탯/스킬 적용 시 사용
+    /// </summary>
+    public List<BookMark> GetEquippedBookmarksForCharacter(int characterID)
+    {
+        BookMark[] bookmarks = GetOrCreateBookmarkArray(characterID);
+        List<BookMark> result = new List<BookMark>();
+
+        for (int i = 0; i < bookmarks.Length; i++)
+        {
+            if (bookmarks[i] != null)
+            {
+                result.Add(bookmarks[i]);
+            }
+        }
+
+        return result;
+    }
+
+    // 사용법
+    // // 캐릭터 ID로 장착된 모든 책갈피 가져오기 (null 제외)
+    // List<BookMark> equippedBookmarks = BookMarkManager.Instance.GetEquippedBookmarksForCharacter(characterID);
+
+    // // 스탯/스킬 적용
+    // for (int i = 0; i<equippedBookmarks.Count; i++)
+    // {
+    //     BookMark bookmark = equippedBookmarks[i];
+        
+    //     if (bookmark.Type == BookmarkType.Stat)
+    //     {
+    //         // 스탯 적용 로직
+    //     }
+    //     else if (bookmark.Type == BookmarkType.Skill)
+    //     {
+    //         // 스킬 적용 로직
+    //     }
+    // }
+#endregion
+
+#region Debug Methods
+
+/// <summary>
+/// JML: Add Test Stat Bookmark
+/// 테스트용 스탯 책갈피 추가
+/// </summary>
+[ContextMenu("테스트 스탯 책갈피 추가")]
+private void AddTestStatBookmark()
+{
+    var testBookmark = new BookMark(
+        bookmarkDataID: 1001,
+        name: "테스트 스탯 책갈피",
+        grade: Grade.Common,
+        optionType: 1,
+        optionValue: 10.5f
+    );
+    AddBookmark(testBookmark);
+}
+
+/// <summary>
+/// JML: Add Test Skill Bookmark
+/// 테스트용 스킬 책갈피 추가
+/// </summary>
+[ContextMenu("테스트 스킬 책갈피 추가")]
+private void AddTestSkillBookmark()
+{
+    var testBookmark = new BookMark(
+        bookmarkDataID: 1111,
+        name: "체인 러브 쇼크",
+        grade: Grade.Common,
+        optionType: 1,
+        optionValue: 1,
+        skillID: 3121
+    );
+    AddBookmark(testBookmark);
+}
+
+/// <summary>
+/// JML: Print All Bookmarks
+/// 보유 책갈피 목록 출력
+/// </summary>
+[ContextMenu("보유 책갈피 목록 출력")]
+private void PrintAllBookmarks()
+{
+    Debug.Log($"=== 보유 책갈피 목록 ({ownedBookmarks.Count}개) ===");
+    for (int i = 0; i < ownedBookmarks.Count; i++)
+    {
+        Debug.Log(ownedBookmarks[i]);
+    }
+}
 
     #endregion
 }
