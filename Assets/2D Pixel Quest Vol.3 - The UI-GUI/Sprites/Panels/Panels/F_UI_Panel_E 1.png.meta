@@ -1,12 +1,5 @@
 fileFormatVersion: 2
-guid: 18e08d6cdd025ad4aa722c390a32791a
-AssetOrigin:
-  serializedVersion: 1
-  productId: 305147
-  packageName: 2D Pixel Quest Vol.3 - The UI/GUI
-  packageVersion: 3.0.3
-  assetPath: Assets/2D Pixel Quest Vol.3 - The UI-GUI/Sprites/Panels/Panels/F_UI_Banner_B3.png
-  uploadId: 762207
+guid: e1806b4e0d38f6749aa29fba6d0b8732
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -55,8 +48,8 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 50
-  spriteBorder: {x: 27, y: 13, z: 26, w: 16}
+  spritePixelsToUnits: 25
+  spriteBorder: {x: 23, y: 22, z: 23, w: 22}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
