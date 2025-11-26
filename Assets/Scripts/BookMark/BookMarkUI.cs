@@ -12,6 +12,7 @@ public class BookMarkUI : MonoBehaviour
 
     private List<BookmarkCraftData> statRecipes = new List<BookmarkCraftData>();
     private List<BookmarkCraftData> skillRecipes = new List<BookmarkCraftData>();
+    private List<CraftSceneBookMarkSlot> bookSlotList = new List<CraftSceneBookMarkSlot>();
     private BookmarkCraftData selectedRecipe = null;
 
     [Header("Choice Panel")]
@@ -19,6 +20,9 @@ public class BookMarkUI : MonoBehaviour
     [SerializeField] private Button selectionStatButton;
     [SerializeField] private Button selectionSkillButton;
     [SerializeField] private Button closeChoicePanelButton;
+    [SerializeField] private GameObject BookmarkUISlotPrefab;
+    [SerializeField] private Transform statBookmarkSlotParent;
+    [SerializeField] private GameObject bookMarkInfoPanel;
 
     [Header("Recipe Panel")]
     [SerializeField] private GameObject recipePanel;
@@ -59,7 +63,12 @@ public class BookMarkUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI skillGreatSuccessRateText;
     [SerializeField] private TextMeshProUGUI skillGoldText;
     [SerializeField] private Button skillCraftButton;
-    
+
+    [Header("Result Panel")]
+    [SerializeField] private GameObject resultPanel;
+    [SerializeField] private TextMeshProUGUI resultText;
+    [SerializeField] private Image ResultBookMarkImage;
+    [SerializeField] private TextMeshProUGUI resultOptionText;
 
 
     private async UniTaskVoid Start()
@@ -93,6 +102,15 @@ public class BookMarkUI : MonoBehaviour
         }
         // JML: Close Craft Panel Button
         closeCraftPanelButton.onClick.AddListener(OnClickCloseCraftPanelButton);
+
+        // JML: 보유한 책갈피 수량만큼 슬롯 생성
+        CreateBookmarkSlots();
+
+        // JML: 책갈피 추가 이벤트 구독 (제작 완료 시 슬롯 동적 추가)
+        if (BookMarkManager.Instance != null)
+        {
+            BookMarkManager.Instance.OnBookmarkAdded += OnBookmarkAdded;
+        }
     }
 
     private void OnDestroy()
@@ -118,6 +136,12 @@ public class BookMarkUI : MonoBehaviour
         for (int i = 0; i < skillRecipeButtons.Length; i++)
         {
             skillRecipeButtons[i].onClick.RemoveAllListeners();
+        }
+
+        // JML: 책갈피 추가 이벤트 구독 해제
+        if (BookMarkManager.Instance != null)
+        {
+            BookMarkManager.Instance.OnBookmarkAdded -= OnBookmarkAdded;
         }
     }
 
@@ -272,10 +296,13 @@ public class BookMarkUI : MonoBehaviour
         if (result.IsSuccess)
         {
             Debug.Log($"[BookMarkUI] 제작 성공! {result.Message}");
-            // TODO: Panel for success feedback
-
-            // JML: Hide craft panel after success
-            //craftPanel.SetActive(false);
+            // JML: ResultPanel 표시
+            ShowCraftResult(result);
+        }
+        else
+        {
+            Debug.LogWarning($"[BookMarkUI] 제작 실패: {result.Message}");
+            // TODO: 실패 메시지 UI 표시
         }
     }
     #endregion
@@ -392,6 +419,182 @@ public class BookMarkUI : MonoBehaviour
         skillRecipes.Sort((a, b) => a.Recipe_ID.CompareTo(b.Recipe_ID));
 
         Debug.Log($"[BookMarkUI] Loaded {statRecipes.Count} stat recipes, {skillRecipes.Count} skill recipes");
+    }
+
+    /// <summary>
+    /// JML: 보유한 책갈피로 슬롯 생성
+    /// </summary>
+    private void CreateBookmarkSlots()
+    {
+        // JML: BookMarkManager에서 실제 보유 책갈피 가져오기
+        List<BookMark> ownedBookmarks = BookMarkManager.Instance.GetAllBookmarks();
+
+        for (int i = 0; i < ownedBookmarks.Count; i++)
+        {
+            BookMark bookMark = ownedBookmarks[i];
+
+            var slot = Instantiate(BookmarkUISlotPrefab, statBookmarkSlotParent);
+            var slotComponent = slot.GetComponent<CraftSceneBookMarkSlot>();
+            bookSlotList.Add(slotComponent);
+
+            // JML: 아이콘 키 결정 (현재: 하드코딩 / 나중: 테이블에서 조회)
+            string categoryKey = GetCategoryIconKey(bookMark.Type);
+            string bookmarkKey = GetBookmarkIconKey(bookMark);
+
+            slotComponent.Init(bookMark, categoryKey, bookmarkKey, choicePanel, bookMarkInfoPanel).Forget();
+        }
+
+        Debug.Log($"[BookMarkUI] 보유 책갈피 슬롯 {ownedBookmarks.Count}개 생성 완료");
+    }
+
+    /// <summary>
+    /// JML: 책갈피 추가 시 슬롯 동적 생성 (이벤트 핸들러)
+    /// </summary>
+    private void OnBookmarkAdded(BookMark bookMark)
+    {
+        var slot = Instantiate(BookmarkUISlotPrefab, statBookmarkSlotParent);
+        var slotComponent = slot.GetComponent<CraftSceneBookMarkSlot>();
+        bookSlotList.Add(slotComponent);
+
+        string categoryKey = GetCategoryIconKey(bookMark.Type);
+        string bookmarkKey = GetBookmarkIconKey(bookMark);
+
+        slotComponent.Init(bookMark, categoryKey, bookmarkKey, choicePanel, bookMarkInfoPanel).Forget();
+
+        Debug.Log($"[BookMarkUI] 새 책갈피 슬롯 추가: {bookMark.Name}");
+    }
+
+    /// <summary>
+    /// JML: 카테고리 아이콘 키 반환
+    /// TODO: 나중에 IconPathTable에서 조회하도록 변경
+    /// </summary>
+    private string GetCategoryIconKey(BookmarkType type)
+    {
+        return type switch
+        {
+            BookmarkType.Stat => "PictoIcon_Attack",
+            BookmarkType.Skill => "PictoIcon_Attack",
+            _ => "PictoIcon_Attack"
+        };
+    }
+
+    /// <summary>
+    /// JML: 책갈피 아이콘 키 반환
+    /// TODO: 나중에 IconPathTable에서 조회하도록 변경
+    /// </summary>
+    private string GetBookmarkIconKey(BookMark bookMark)
+    {
+        // 현재: 하드코딩 (타입별 기본 아이콘)
+        // 나중에: CSVLoader.Instance.GetData<IconPathData>(bookMark.BookmarkDataID)?.Icon_Key
+        return bookMark.Type switch
+        {
+            BookmarkType.Stat => "PictoIcon_Attack",
+            BookmarkType.Skill => "PictoIcon_Attack",
+            _ => "PictoIcon_Attack"
+        };
+    }
+    #endregion
+
+    #region Result Panel
+    /// <summary>
+    /// JML: 제작 결과 패널 표시
+    /// </summary>
+    private void ShowCraftResult(BookMarkCraftResult result)
+    {
+        if (result.CraftedBookmark == null)
+        {
+            Debug.LogError("[BookMarkUI] CraftedBookmark가 null입니다!");
+            return;
+        }
+
+        // JML: 1. 성공 메시지 설정
+        if (result.SuccessType == CraftSuccessType.GreatSuccess)
+        {
+            resultText.text = "제작 대성공!";
+        }
+        else
+        {
+            resultText.text = "제작 성공!";
+        }
+
+        // JML: 2. 책갈피 아이콘 로드 (비동기)
+        LoadResultBookmarkIcon(result.CraftedBookmark).Forget();
+
+        // JML: 3. 옵션 정보 텍스트 생성
+        resultOptionText.text = GenerateResultOptionText(result.CraftedBookmark);
+
+        // JML: 4. 패널 활성화
+        resultPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// JML: 결과 패널 책갈피 아이콘 로드
+    /// </summary>
+    private async UniTaskVoid LoadResultBookmarkIcon(BookMark bookMark)
+    {
+        string iconKey = GetBookmarkIconKey(bookMark);
+        var icon = await UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Sprite>(iconKey).ToUniTask();
+
+        if (ResultBookMarkImage != null && icon != null)
+        {
+            ResultBookMarkImage.sprite = icon;
+        }
+    }
+
+    /// <summary>
+    /// JML: 결과 옵션 텍스트 생성
+    /// </summary>
+    private string GenerateResultOptionText(BookMark bookMark)
+    {
+        string gradeName = bookMark.GetGradeName(bookMark.Grade);
+
+        if (bookMark.Type == BookmarkType.Stat)
+        {
+            string optionName = GetOptionTypeName(bookMark.OptionType);
+            return $"{gradeName} 등급\n{optionName} +{bookMark.OptionValue}\n책갈피 제작 성공!";
+        }
+        else // Skill
+        {
+            // JML: CSV에서 스킬 이름 가져오기
+            string skillName = GetSkillName(bookMark.SkillID);
+            return $"{gradeName} 등급\n{skillName}\n책갈피 제작 성공!";
+        }
+    }
+
+    /// <summary>
+    /// JML: 스킬 ID로 스킬 이름 가져오기
+    /// </summary>
+    private string GetSkillName(int skillID)
+    {
+        var skillData = CSVLoader.Instance.GetData<SkillData>(skillID);
+        if (skillData != null && !string.IsNullOrEmpty(skillData.Skill_Name))
+        {
+            return skillData.Skill_Name;
+        }
+        return $"알 수 없는 스킬 ({skillID})";
+    }
+
+    /// <summary>
+    /// JML: 옵션 타입 이름 반환
+    /// TODO: 나중에 CSV 테이블에서 가져오도록 변경
+    /// </summary>
+    private string GetOptionTypeName(int optionType)
+    {
+        switch (optionType)
+        {
+            case 1: return "공격력";
+            case 2: return "방어력";
+            case 3: return "체력";
+            default: return "알 수 없음";
+        }
+    }
+
+    /// <summary>
+    /// JML: 결과 패널 닫기
+    /// </summary>
+    public void OnCloseResultPanel()
+    {
+        resultPanel.SetActive(false);
     }
     #endregion
 }
