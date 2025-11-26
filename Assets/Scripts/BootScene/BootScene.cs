@@ -24,12 +24,21 @@ public class BootScene : MonoBehaviour
     [SerializeField] private DeckManager deckManager;
     [SerializeField] private CharacterEnhancementManager characterEnhancementManager;
 
+    [SerializeField] private LoadingUIManager loadingUIManager;
+
     [Header("Loading Progress")]
     [SerializeField] private float minimumLoadTime = 1.0f; // JML: Minimum time to show loading screen
 
     private async void Start()
     {
         Log("=== Boot Scene Started ===");
+
+        // LCB: 페이드 패널을 검은 화면으로 미리 설정 (튕김 방지)
+        if (FadeController.Instance != null)
+        {
+            FadeController.Instance.fadePanel.SetActive(true);
+            FadeController.Instance.fadeImage.color = new Color(0, 0, 0, 1); // 완전히 검은 화면
+        }
 
         float startTime = Time.time;
 
@@ -315,30 +324,50 @@ public class BootScene : MonoBehaviour
 
     /// <summary>
     /// JML: Transition to the next scene with fade effect
-    /// LCB: 수정 - LoadingUI 진행률 표시 후 FadeController로 씬 전환
+    /// LCB: 수정 - 페이드인(시작) → 로딩UI → 페이드아웃 → 씬전환 → 페이드인
     /// </summary>
     private async UniTask TransitionToNextScene()
     {
         Log($"=== Transitioning to {nextSceneName} ===");
 
-        // LCB: LoadingUIManager의 새로운 메서드 사용
-        // LCB: 실행 순서: LoadingUI 표시 → 진행률 0-100% → FadeController 씬 전환
-        if (LoadingUIManager.Instance != null)
+        if (FadeController.Instance == null || LoadingUIManager.Instance == null)
         {
-            await LoadingUIManager.Instance.LoadSceneWithProgress(nextSceneName);
-        }
-        else if (FadeController.Instance != null)
-        {
-            // LCB: Fallback 1: LoadingUI 없으면 기존 FadeController만 사용
-            Debug.LogWarning("LoadingUIManager not available, using FadeController only");
-            await FadeController.Instance.LoadSceneWithFade(nextSceneName);
-        }
-        else
-        {
-            // LCB: Fallback 2: 둘 다 없으면 직접 씬 로드
-            Debug.LogWarning("No transition managers available, loading scene directly");
+            Debug.LogWarning("FadeController or LoadingUIManager not available, loading scene directly");
             await SceneManager.LoadSceneAsync(nextSceneName);
+            return;
         }
+
+        // Step 1: 페이드 인 (검은 화면에서 밝아짐)
+        Log("Step 1: Fade In (Start from black)");
+        await FadeController.Instance.FadeIn(0.5f); // 검은색 → 투명 (밝아짐)
+
+        // Step 2: 로딩 UI 표시 및 진행률 애니메이션 (페이드 인 상태 유지)
+        Log("Step 2: Show Loading UI");
+        LoadingUIManager.Instance.Show();
+        await LoadingUIManager.Instance.FakeLoadAsync(3000); // 3초 동안 진행률 애니메이션
+
+        // Step 3: 100% 상태 잠깐 보여주기
+        await UniTask.Delay(200);
+
+        // Step 4: 페이드 아웃 (화면이 어두워짐) - 전환 시작
+        Log("Step 3: Fade Out");
+        await FadeController.Instance.FadeOut(0.5f);
+
+        // Step 5: 로딩 UI 숨기기
+        await LoadingUIManager.Instance.Hide();
+
+        // Step 6: 씬 로드 (페이드 아웃 상태 유지)
+        Log($"Step 4: Loading {nextSceneName}");
+        await SceneManager.LoadSceneAsync(nextSceneName);
+
+        // Step 7: 새 씬에서 페이드 인 (밝아짐)
+        Log("Step 5: Fade In (New Scene)");
+        await FadeController.Instance.FadeIn(0.5f);
+
+        // Step 8: 페이드 패널 비활성화
+        FadeController.Instance.fadePanel.SetActive(false);
+
+        Log("=== Scene Transition Complete ===");
     }
 
     /// <summary>

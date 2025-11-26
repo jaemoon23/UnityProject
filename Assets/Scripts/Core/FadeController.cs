@@ -30,8 +30,8 @@ namespace NovelianMagicLibraryDefense.Core
             }
         }
 
-        private Image fadeImage;
-        private GameObject fadePanel;
+        public Image fadeImage; // LCB: BootScene에서 접근 가능하도록 public으로 변경
+        public GameObject fadePanel; // LCB: BootScene에서 접근 가능하도록 public으로 변경
         private Canvas fadeCanvas;
 
         private void Awake()
@@ -114,7 +114,7 @@ namespace NovelianMagicLibraryDefense.Core
         /// Fades from transparent to opaque (black)
         /// Uses Time.unscaledDeltaTime for frame-rate independence
         /// </summary>
-        private async UniTask FadeOut(float duration)
+        public async UniTask FadeOut(float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration)
@@ -131,7 +131,7 @@ namespace NovelianMagicLibraryDefense.Core
         /// Fades from opaque (black) to transparent
         /// Uses Time.unscaledDeltaTime for frame-rate independence
         /// </summary>
-        private async UniTask FadeIn(float duration)
+        public async UniTask FadeIn(float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration)
