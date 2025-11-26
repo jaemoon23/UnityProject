@@ -579,30 +579,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1706755326413671114, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 0eb4b37baa538bd4bab737f7d648f9f2, type: 3}
-    - target: {fileID: 1706755326413671114, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1706755326413671114, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1706755326413671114, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1826377322002861740, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1826377322002861740, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 182
-      objectReference: {fileID: 0}
     - target: {fileID: 2753973246216113109, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
       propertyPath: m_Name
       value: LodingUI
@@ -646,75 +622,6 @@ PrefabInstance:
     - target: {fileID: 3121227078565216452, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_text
-      value: "Tip:  UI\uB97C \uB54C\uB9AC\uC9C0 \uB9C8\uC138\uC694. \n\uC774\uBBF8
-        \uCDA9\uBD84\uD788 \uB9DE\uC558\uC2B5\uB2C8\uB2E4."
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontSize
-      value: 60
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontStyle
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontColor.b
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontColor.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontColor.r
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontSizeBase
-      value: 60
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4278190080
-      objectReference: {fileID: 0}
-    - target: {fileID: 3766045188685306802, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_HorizontalAlignment
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 7668998933371814649, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.b
-      value: 0.545192
-      objectReference: {fileID: 0}
-    - target: {fileID: 7668998933371814649, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.g
-      value: 0.8739197
-      objectReference: {fileID: 0}
-    - target: {fileID: 7668998933371814649, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.r
-      value: 0.9685534
-      objectReference: {fileID: 0}
-    - target: {fileID: 8500670046330677347, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.b
-      value: 0.8113208
-      objectReference: {fileID: 0}
-    - target: {fileID: 8500670046330677347, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.g
-      value: 0.8113208
-      objectReference: {fileID: 0}
-    - target: {fileID: 8500670046330677347, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_Color.r
-      value: 0.8113208
-      objectReference: {fileID: 0}
-    - target: {fileID: 8798840502411449260, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 66
-      objectReference: {fileID: 0}
-    - target: {fileID: 8798840502411449260, guid: a7e04975930ab3443ad3ffb9c068f449, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 1402
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
