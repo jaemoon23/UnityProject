@@ -1840,7 +1840,7 @@ MonoBehaviour:
   characterObj: {fileID: 3183513094207426140}
   basicAttackSkill: {fileID: 11400000, guid: 3ecfc6148496b844fabeb8878ad9ded6, type: 2}
   activeSkill: {fileID: 11400000, guid: 8169482c2fec8e046bf12064012ef8eb, type: 2}
-  supportSkill: {fileID: 11400000, guid: 2520f96c7f40374418ce112defddc094, type: 2}
+  supportSkill: {fileID: 11400000, guid: 555b093892cfbc64faaae6d8de982154, type: 2}
   damageModifier: 0
   attackSpeedModifier: 0
   projectileSpeedModifier: 0

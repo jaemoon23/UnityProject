@@ -22,6 +22,12 @@ public class BossMonster : BaseEntity, ITargetable, IMovable
     private bool isWallHit = false;
     public bool IsWallHit => isWallHit;
 
+    // Mark state tracking
+    private MarkType currentMarkType = MarkType.None;
+    private float markDamageMultiplier = 0f;
+    private float markEndTime = 0f; // Time.time when mark expires
+    private System.Threading.CancellationTokenSource markCts;
+
     // JML: ITargetable implementation
     public float Weight { get; private set; } = 5f; // Example weight value
     //--------------------------------
@@ -152,12 +158,76 @@ public class BossMonster : BaseEntity, ITargetable, IMovable
     {
         Debug.Log($"[BossMonster] {markType} Mark applied: +{damageMultiplier}% damage for {duration}s");
 
-        // TODO: Mark 효과 구현
+        // Cancel previous mark if exists
+        markCts?.Cancel();
+        markCts?.Dispose();
+        markCts = new System.Threading.CancellationTokenSource();
+
+        // Set mark state
+        currentMarkType = markType;
+        markDamageMultiplier = damageMultiplier;
+        markEndTime = Time.time + duration; // Track when mark expires
+
+        // Spawn mark effect above monster's head (follows monster)
         if (markEffectPrefab != null)
         {
-            GameObject markEffect = Instantiate(markEffectPrefab, transform.position, Quaternion.identity, transform);
+            // Calculate position above boss's head
+            float bossHeight = collider3D != null ? collider3D.bounds.extents.y * 2f : 3f; // Use collider height or default 3m (boss is bigger)
+            Vector3 markOffset = Vector3.up * (bossHeight + 0.5f); // 0.5m above head
+
+            GameObject markEffect = Instantiate(markEffectPrefab, transform.position + markOffset, Quaternion.identity, transform);
+
+            // Set local position to ensure it follows boss correctly
+            markEffect.transform.localPosition = Vector3.up * (bossHeight + 0.5f);
+
             Destroy(markEffect, duration);
+            Debug.Log($"[BossMonster] Mark effect spawned above head: {markEffectPrefab.name}, height offset: {bossHeight + 0.5f}m");
         }
+
+        // Start mark duration
+        StartMark(duration, markCts.Token).Forget();
+    }
+
+    private async Cysharp.Threading.Tasks.UniTaskVoid StartMark(float duration, System.Threading.CancellationToken ct)
+    {
+        try
+        {
+            await Cysharp.Threading.Tasks.UniTask.Delay((int)(duration * 1000), cancellationToken: ct);
+
+            if (!ct.IsCancellationRequested)
+            {
+                // Clear mark state
+                currentMarkType = MarkType.None;
+                markDamageMultiplier = 0f;
+                Debug.Log($"[BossMonster] Mark ended");
+            }
+        }
+        catch (System.OperationCanceledException)
+        {
+            // Expected when cancelled
+        }
+    }
+
+    /// <summary>
+    /// Check if this boss has a Focus Mark (for focus targeting)
+    /// </summary>
+    public bool HasFocusMark()
+    {
+        return currentMarkType == MarkType.Focus && IsAlive();
+    }
+
+    /// <summary>
+    /// Get remaining mark duration in seconds (for priority targeting)
+    /// </summary>
+    public float GetMarkRemainingTime()
+    {
+        if (currentMarkType == MarkType.None || !IsAlive())
+        {
+            return float.MaxValue; // No mark or dead = lowest priority
+        }
+
+        float remaining = markEndTime - Time.time;
+        return Mathf.Max(0f, remaining); // Never return negative
     }
 
     public override void Die()
@@ -235,5 +305,11 @@ public class BossMonster : BaseEntity, ITargetable, IMovable
         // JML: Redundant safety check - should already be unregistered in Die()
         // But kept as failsafe for edge cases
         TargetRegistry.Instance.UnregisterTarget(this);
+    }
+
+    private void OnDestroy()
+    {
+        markCts?.Cancel();
+        markCts?.Dispose();
     }
 }

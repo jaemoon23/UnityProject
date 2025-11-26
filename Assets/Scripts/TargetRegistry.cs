@@ -56,14 +56,21 @@ public class TargetRegistry
     }
 
     /// <summary>
-    /// JML: Find the closest targetable entity within a specified range.
+    /// JML: Find target with Mark priority, then use specified strategy for non-marked targets.
+    /// Priority: Focus Mark (shortest duration) > useWeight ? Weight : Distance
     /// </summary>
     /// <param name="position"> The position from which to search for targets.</param>
     /// <param name="range"> The maximum range within which to search for targets.</param>
-    public ITargetable FindTarget(Vector3 position, float range)
+    /// <param name="useWeightForNonMarked"> Use weight-based targeting for non-marked targets (default: distance-based)</param>
+    public ITargetable FindTarget(Vector3 position, float range, bool useWeightForNonMarked = false)
     {
         ITargetable closestTarget = null;
         float closestDistance = float.MaxValue;
+        float bestWeight = float.MinValue;
+
+        ITargetable closestFocusTarget = null;
+        float closestFocusRemainingTime = float.MaxValue;
+        float closestFocusDistance = float.MaxValue;
 
         foreach (var target in targets)
         {
@@ -72,13 +79,52 @@ public class TargetRegistry
 
             float distance = Vector3.Distance(position, target.GetPosition());
 
-            if (distance <= range && distance < closestDistance)
+            if (distance <= range)
             {
-                closestDistance = distance;
-                closestTarget = target;
+                // Priority 1: Focus Mark targets (prioritize by shortest remaining duration, then distance)
+                if (target.HasFocusMark())
+                {
+                    float remainingTime = target.GetMarkRemainingTime();
+
+                    // Select target with shortest remaining mark duration
+                    // If same duration, use distance as tiebreaker
+                    if (remainingTime < closestFocusRemainingTime ||
+                        (remainingTime == closestFocusRemainingTime && distance < closestFocusDistance))
+                    {
+                        closestFocusRemainingTime = remainingTime;
+                        closestFocusDistance = distance;
+                        closestFocusTarget = target;
+                    }
+                }
+                // Priority 2: Non-marked targets (use weight or distance based on flag)
+                else
+                {
+                    if (useWeightForNonMarked)
+                    {
+                        // Weight-based targeting (higher weight = higher priority)
+                        float weight = target.Weight;
+                        if (weight > bestWeight || (weight == bestWeight && distance < closestDistance))
+                        {
+                            bestWeight = weight;
+                            closestDistance = distance;
+                            closestTarget = target;
+                        }
+                    }
+                    else
+                    {
+                        // Distance-based targeting (closer = higher priority)
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestTarget = target;
+                        }
+                    }
+                }
             }
         }
-        return closestTarget;
+
+        // Return focus target if exists, otherwise return best non-marked target
+        return closestFocusTarget ?? closestTarget;
     }
 
     /// <summary>

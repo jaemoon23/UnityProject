@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a79ba5bb0b3780b4a98ce45e779b6441
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 133012
+  packageName: AOE Magic spells Vol.1
+  packageVersion: 2.3.2
+  assetPath: Assets/Hovl Studio/HSFiles/Scripts/HS_EffectSound.cs
+  uploadId: 730591
