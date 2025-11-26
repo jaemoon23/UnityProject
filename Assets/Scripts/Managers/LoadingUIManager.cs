@@ -25,6 +25,7 @@ namespace NovelianMagicLibraryDefense.Managers
         // LCB: UI 컴포넌트들 (Inspector에서 할당)
         [Header("UI Components (Assign in Inspector)")]
         [SerializeField] private GameObject loadingPanel;
+        [SerializeField] private Canvas loadingCanvas; // LCB: Canvas 직접 제어
         [SerializeField] private Image progressBar;
         [SerializeField] private TextMeshProUGUI progressText;
         [SerializeField] private TextMeshProUGUI loadingTipText;
@@ -60,10 +61,15 @@ namespace NovelianMagicLibraryDefense.Managers
             instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // LCB: 시작 시 로딩 패널 비활성화
+            // LCB: 시작 시 로딩 패널 및 Canvas 비활성화
             if (loadingPanel != null)
             {
                 loadingPanel.SetActive(false);
+            }
+
+            if (loadingCanvas != null)
+            {
+                loadingCanvas.enabled = false;
             }
         }
 
@@ -74,6 +80,12 @@ namespace NovelianMagicLibraryDefense.Managers
         public void Show()
         {
             if (loadingPanel == null) return;
+
+            // LCB: Canvas와 Panel 모두 활성화
+            if (loadingCanvas != null)
+            {
+                loadingCanvas.enabled = true;
+            }
 
             loadingPanel.SetActive(true);
             isShowing = true;
@@ -103,6 +115,13 @@ namespace NovelianMagicLibraryDefense.Managers
             await UniTask.Delay((int)(minimumDisplayTime * 1000));
 
             loadingPanel.SetActive(false);
+
+            // LCB: Canvas도 비활성화하여 완전히 숨김
+            if (loadingCanvas != null)
+            {
+                loadingCanvas.enabled = false;
+            }
+
             isShowing = false;
 
             Debug.Log("[LoadingUIManager] Loading UI hidden");
@@ -247,19 +266,11 @@ namespace NovelianMagicLibraryDefense.Managers
                 // Step 3: 100% 상태를 잠깐 보여줌 (선택적)
                 await UniTask.Delay(200, cancellationToken: ct);
 
-                // Step 4: LoadingUI 숨기기
-                await Hide();
+                // Step 4: 씬 로드 (LoadingUI는 켜진 상태에서)
+                await UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(addressableKey);
 
-                // Step 5: FadeController로 씬 전환
-                if (Core.FadeController.Instance != null)
-                {
-                    await Core.FadeController.Instance.LoadSceneWithFade(addressableKey);
-                }
-                else
-                {
-                    Debug.LogWarning("[LoadingUIManager] FadeController not available, loading scene directly");
-                    await UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(addressableKey);
-                }
+                // Step 5: 씬 로드 후 LoadingUI 숨기기
+                await Hide();
             }
             catch (System.OperationCanceledException)
             {

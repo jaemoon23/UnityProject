@@ -1268,6 +1268,7 @@ GameObject:
   - component: {fileID: 473596599}
   - component: {fileID: 473596598}
   - component: {fileID: 473596602}
+  - component: {fileID: 473596603}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1870,6 +1871,10 @@ PrefabInstance:
     - target: {fileID: 3357175333104331083, guid: ee1636ee49cbc2c42b1139f8b22070f4, type: 3}
       propertyPath: m_Name
       value: ProjectileTemplate
+      objectReference: {fileID: 0}
+    - target: {fileID: 3357175333104331083, guid: ee1636ee49cbc2c42b1139f8b22070f4, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4900120075946603214, guid: ee1636ee49cbc2c42b1139f8b22070f4, type: 3}
       propertyPath: m_Material
