@@ -1,8 +1,17 @@
 using UnityEngine;
 
-//UI¸¦ ¸¸µé¶§ SafeArea¸¸Å­ ¸®»çÀÌÁîµÇ´Â ½ºÅ©¸³Æ®´Ù.
+/// <summary>
+/// UIë¥¼ ë””ë°”ì´ìŠ¤ SafeAreaë§Œí¼ ì¡°ì •í•˜ëŠ” ìŠ¤í¬ë¦½íŠ¸
+/// ë°©í–¥ë³„ë¡œ ì„ íƒì ìœ¼ë¡œ SafeAreaë¥¼ ì ìš©í•  ìˆ˜ ìˆìŒ
+/// </summary>
 public class SafeArea : MonoBehaviour
 {
+    [Header("SafeArea ì ìš© ë°©í–¥ ì„ íƒ")]
+    [SerializeField] private bool applyTop = true;
+    [SerializeField] private bool applyBottom = true;
+    [SerializeField] private bool applyLeft = true;
+    [SerializeField] private bool applyRight = true;
+
     private RectTransform safeAreaRect;
     private Canvas canvas;
     private Rect lastSafeArea;
@@ -14,9 +23,8 @@ public class SafeArea : MonoBehaviour
         OnRectTransformDimensionsChange();
     }
 
-    private void OnRectTransformDimensionsChange() //È­¸éÀÌ º¯ÇÒ¶§ ÀÚµ¿À¸·Î È£ÃâµÇ´Â ÀÌº¥Æ® ÇÔ¼ö´Ù.
+    private void OnRectTransformDimensionsChange() // í™”ë©´ì´ ë°”ë€”ë•Œ ìë™ìœ¼ë¡œ í˜¸ì¶œë˜ëŠ” ì´ë²¤íŠ¸ í•¨ìˆ˜
     {
-
         if (GetSafeArea() != lastSafeArea && canvas != null)
         {
             lastSafeArea = GetSafeArea();
@@ -26,13 +34,37 @@ public class SafeArea : MonoBehaviour
 
     private void UpdateSizeToSafeArea()
     {
-
         var safeArea = GetSafeArea();
-        var inverseSize = new Vector2(1f, 1f) / canvas.pixelRect.size; //0.0ºÎÅÍ 1.0À¸·Î »çÀÌÁî°¡ Á¤ÇØÁø´Ù.
-        var newAnchorMin = Vector2.Scale(safeArea.position, inverseSize); //Å©±â¸¦ ÀÇ¹ÌÇÏ´Â°Ô ¾Æ´Ï¶ó °¢ x y z¿¡ inverseSize¸¦ °öÇÏ´Â °ÍÀÌ´Ù.
-        var newAnchorMax = Vector2.Scale(safeArea.position + safeArea.size, inverseSize);
+        var canvasRect = canvas.pixelRect;
+        var inverseSize = new Vector2(1f, 1f) / canvasRect.size; // 0.0ì—ì„œ 1.0ê¹Œì§€ ì •ê·œí™”ëœ ê°’ìœ¼ë¡œ ë³€í™˜
 
-        //¾ŞÄ¿ Á¤±ÔÈ­ -> ¾ŞÄ¿¸¦ »õ·Î Àâ´Â °ÍÀÌ´Ù.
+        // SafeArea ì¢Œí‘œë¥¼ ì •ê·œí™”
+        var safeAreaMin = Vector2.Scale(safeArea.position, inverseSize);
+        var safeAreaMax = Vector2.Scale(safeArea.position + safeArea.size, inverseSize);
+
+        // í˜„ì¬ ì•µì»¤ ê°’ ê°€ì ¸ì˜¤ê¸° (ê¸°ë³¸ê°’ì€ ì „ì²´ í™”ë©´)
+        Vector2 newAnchorMin = new Vector2(0f, 0f);
+        Vector2 newAnchorMax = new Vector2(1f, 1f);
+
+        // ì„ íƒì ìœ¼ë¡œ SafeArea ì ìš©
+        if (applyLeft)
+        {
+            newAnchorMin.x = safeAreaMin.x;
+        }
+        if (applyRight)
+        {
+            newAnchorMax.x = safeAreaMax.x;
+        }
+        if (applyBottom)
+        {
+            newAnchorMin.y = safeAreaMin.y;
+        }
+        if (applyTop)
+        {
+            newAnchorMax.y = safeAreaMax.y;
+        }
+
+        // ì•µì»¤ ì •ê·œí™” -> ì•µì»¤ëŠ” ë¶€ëª¨ ê¸°ì¤€ ë¹„ìœ¨
         safeAreaRect.anchorMin = newAnchorMin;
         safeAreaRect.anchorMax = newAnchorMax;
 

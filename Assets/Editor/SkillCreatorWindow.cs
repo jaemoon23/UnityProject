@@ -161,30 +161,186 @@ public class SkillCreatorWindow : EditorWindow
 
     private void DrawEffectsSection()
     {
-        EditorGUILayout.LabelField("✨ 이펙트 프리팹 (파티클 직접 발사)", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("✨ 이펙트 프리팹", EditorStyles.boldLabel);
         EditorGUILayout.BeginVertical("box");
 
-        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Muzzleflash)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        // 스킬 타입에 따라 다른 이펙트 UI 표시
+        switch (currentSkill.skillType)
+        {
+            case SkillAssetType.Projectile:
+                DrawProjectileEffects();
+                break;
+
+            case SkillAssetType.AOE:
+                DrawAOEEffects();
+                break;
+
+            case SkillAssetType.Channeling:
+                DrawChannelingEffects();
+                break;
+
+            case SkillAssetType.Flicker:
+                DrawFlickerEffects();
+                break;
+
+            case SkillAssetType.DOT:
+                DrawDOTEffects();
+                break;
+
+            case SkillAssetType.Summon:
+                DrawSummonEffects();
+                break;
+
+            default:
+                DrawGenericEffects();
+                break;
+        }
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawProjectileEffects()
+    {
+        EditorGUILayout.LabelField("🎯 발사체 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
         EditorGUILayout.LabelField("  └ 스킬 발동 순간, 캐스터 위치에서 재생", EditorStyles.miniLabel);
-
         EditorGUILayout.Space(3);
 
-        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("투사체 비주얼", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
-        EditorGUILayout.LabelField("  └ 투사체를 따라다니는 파티클 (Retro Arsenal 프리팹)", EditorStyles.miniLabel);
-
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("투사체 비주얼 (Projectile Visual)", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 투사체를 따라다니는 파티클", EditorStyles.miniLabel);
         EditorGUILayout.Space(3);
 
-        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Impact)", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Hit Effect)", currentSkill.hitEffectPrefab, typeof(GameObject), false);
         EditorGUILayout.LabelField("  └ 타겟 충돌 시 폭발/충격 효과", EditorStyles.miniLabel);
 
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox("💡 Retro Arsenal 추천:\n• Cast Effect: Combat/Muzzleflash\n• Projectile Visual: Combat/Missiles\n• Hit Effect: Combat/Explosions", MessageType.None);
+    }
+
+    private void DrawAOEEffects()
+    {
+        EditorGUILayout.LabelField("💥 AOE 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 시전 시간 동안 재생, 캐스터 위치", EditorStyles.miniLabel);
         EditorGUILayout.Space(3);
 
-        currentSkill.areaEffectPrefab = (GameObject)EditorGUILayout.ObjectField("범위 이펙트 (AOE)", currentSkill.areaEffectPrefab, typeof(GameObject), false);
-        EditorGUILayout.LabelField("  └ AOE 스킬의 지속 범위 표시", EditorStyles.miniLabel);
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("스킬 비주얼 (Skill Visual)", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 스킬의 메인 비주얼 이펙트", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Hit Effect)", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 타겟 충돌 판정 시 발생하는 이펙트", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.areaEffectPrefab = (GameObject)EditorGUILayout.ObjectField("범위 이펙트 (Area Effect)", currentSkill.areaEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ AOE 스킬의 지속 범위 표시 이펙트", EditorStyles.miniLabel);
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.HelpBox("💡 Tip: Retro Arsenal 사용 시\n• Combat/Missiles → 투사체 비주얼\n• Combat/Explosions → 피격 이펙트\n• Combat/Muzzleflash → 시전 이펙트", MessageType.None);
-        EditorGUILayout.EndVertical();
+        EditorGUILayout.HelpBox("💡 Retro Arsenal 추천:\n• Cast Effect: Combat/Muzzleflash\n• Skill Visual: Combat/Explosions (지속형)\n• Hit Effect: Combat/Impact\n• Area Effect: Combat/AOE Indicators", MessageType.None);
+    }
+
+    private void DrawChannelingEffects()
+    {
+        EditorGUILayout.LabelField("🌊 채널링 레이저/빔 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField($"  └ 시전 시간 ({currentSkill.castTime:F1}초) 동안 캐릭터 위치에서 재생", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시작점 이펙트 (Start Effect) [선택]", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 채널링 시작 시 캐릭터 위치에서 재생 (빔 발사 지점)", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.areaEffectPrefab = (GameObject)EditorGUILayout.ObjectField("빔 이펙트 (Beam Effect) [필수]", currentSkill.areaEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField($"  └ 캐릭터→타겟 연결되는 레이저/빔 ({currentSkill.channelDuration:F1}초 동안 유지)", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Hit Effect) [선택]", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField($"  └ 타겟(몬스터) 위치에서 틱({currentSkill.channelTickInterval:F1}초)마다 재생", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox(
+            "💡 채널링 레이저/빔 동작 흐름:\n" +
+            $"1. Cast Effect ({currentSkill.castTime:F1}초) - 캐스팅 준비\n" +
+            $"2. Start Effect (시작 시) - 캐릭터 위치, 빔 발사 지점 [선택]\n" +
+            $"3. Beam Effect ({currentSkill.channelDuration:F1}초) - 캐릭터→타겟 연결 빔 [필수]\n" +
+            $"4. Hit Effect (틱마다) - 타겟 피격 지점 [선택]\n\n" +
+            "구조: [캐릭터]→(Start)→(Beam)→(Hit)→[몬스터]\n\n" +
+            "📝 Start Effect와 Hit Effect는 선택사항입니다.\n" +
+            "통짜 이펙트를 사용하는 경우 Beam Effect만 설정하세요.",
+            MessageType.Info
+        );
+    }
+
+    private void DrawFlickerEffects()
+    {
+        EditorGUILayout.LabelField("👻 플리커 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 스킬 발동 순간, 캐스터 위치", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("순간이동 이펙트 (Dash Effect)", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 각 순간이동마다 재생되는 이펙트", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Hit Effect)", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 타겟 타격 시 재생", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox("💡 플리커 스킬:\n각 순간이동마다 Dash Effect가 재생되며,\n타겟 타격 시 Hit Effect 발생", MessageType.None);
+    }
+
+    private void DrawDOTEffects()
+    {
+        EditorGUILayout.LabelField("🔥 DOT 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 스킬 발동 순간, 캐스터 위치", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("DOT 지속 이펙트 (DOT Effect)", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField($"  └ DOT 지속 시간({currentSkill.dotDuration:F1}초) 동안 타겟을 따라다니며 재생", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트 (Hit Effect)", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField($"  └ 각 틱({currentSkill.dotTickInterval:F1}초)마다 재생", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox("💡 DOT 스킬:\nDOT Effect는 타겟의 자식으로 붙어 따라다니며,\n각 틱마다 Hit Effect 재생", MessageType.None);
+    }
+
+    private void DrawSummonEffects()
+    {
+        EditorGUILayout.LabelField("💎 소환 스킬 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트 (Cast Effect)", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 스킬 발동 순간, 캐스터 위치", EditorStyles.miniLabel);
+        EditorGUILayout.Space(3);
+
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("소환 이펙트 (Summon Effect)", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.LabelField("  └ 소환 대상이 등장할 때 재생", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox("💡 소환 스킬:\nCast Effect 후 Summon Effect와 함께\n소환 프리팹이 생성됨", MessageType.None);
+    }
+
+    private void DrawGenericEffects()
+    {
+        EditorGUILayout.LabelField("✨ 기본 이펙트", EditorStyles.boldLabel);
+
+        currentSkill.castEffectPrefab = (GameObject)EditorGUILayout.ObjectField("시전 이펙트", currentSkill.castEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.Space(3);
+
+        currentSkill.projectileEffectPrefab = (GameObject)EditorGUILayout.ObjectField("스킬 비주얼", currentSkill.projectileEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.Space(3);
+
+        currentSkill.hitEffectPrefab = (GameObject)EditorGUILayout.ObjectField("피격 이펙트", currentSkill.hitEffectPrefab, typeof(GameObject), false);
+        EditorGUILayout.Space(3);
+
+        currentSkill.areaEffectPrefab = (GameObject)EditorGUILayout.ObjectField("범위 이펙트", currentSkill.areaEffectPrefab, typeof(GameObject), false);
     }
 
     private void DrawTypeSpecificSection()
@@ -283,9 +439,33 @@ public class SkillCreatorWindow : EditorWindow
     {
         EditorGUILayout.LabelField("🌊 Channeling 전용 설정", EditorStyles.boldLabel);
         EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.LabelField("⏱️ 타이밍 설정", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"  • 시전 시간: {currentSkill.castTime:F1}초 (⚔️ 기본 능력치 섹션에서 설정)", EditorStyles.miniLabel);
         currentSkill.channelDuration = EditorGUILayout.FloatField("채널링 시간 (초)", currentSkill.channelDuration);
         currentSkill.channelTickInterval = EditorGUILayout.FloatField("틱 간격 (초)", currentSkill.channelTickInterval);
+
+        int tickCount = currentSkill.channelTickInterval > 0 ? Mathf.FloorToInt(currentSkill.channelDuration / currentSkill.channelTickInterval) : 0;
+        EditorGUILayout.LabelField($"  총 틱 횟수: {tickCount}회", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(5);
         currentSkill.interruptible = EditorGUILayout.Toggle("중단 가능", currentSkill.interruptible);
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.HelpBox(
+            "💡 채널링 스킬 동작 흐름:\n" +
+            $"1. 시전 시간 ({currentSkill.castTime:F1}초): Cast Effect 재생 (캐스팅 준비)\n" +
+            $"2. 채널링 시간 ({currentSkill.channelDuration:F1}초): Skill Visual 유지 (채널링 이펙트)\n" +
+            $"3. {currentSkill.channelTickInterval:F1}초마다 데미지/발사체 발사 (총 {tickCount}회)\n\n" +
+            "⚡ Support 스킬 효과:\n" +
+            "• 다중 발사 (Additional Projectiles)\n" +
+            "• 체이닝 (Chain)\n" +
+            "• 기타 상태 이상 효과 모두 적용 가능\n\n" +
+            "📝 시전 시간 변경:\n" +
+            "위쪽 '⚔️ 기본 능력치' 섹션에서 '시전 시간 (초)' 값을 변경하세요",
+            MessageType.Info
+        );
+
         EditorGUILayout.EndVertical();
     }
 
@@ -489,6 +669,17 @@ public class SkillCreatorWindow : EditorWindow
                 EditorGUILayout.LabelField($"• 총 틱 횟수: {tickCount}회 ({currentSkill.dotDuration:F1}초 / {currentSkill.dotTickInterval:F1}초)");
                 EditorGUILayout.LabelField($"• 총 DOT 데미지: {totalDotDamage:F1} ({tickCount}회 × {currentSkill.dotDamagePerTick:F1})");
                 EditorGUILayout.LabelField($"• 즉발 + DOT: {currentSkill.baseDamage + totalDotDamage:F1}");
+                break;
+
+            case SkillAssetType.Channeling:
+                int channelTickCount = currentSkill.channelTickInterval > 0 ? Mathf.FloorToInt(currentSkill.channelDuration / currentSkill.channelTickInterval) : 0;
+                float totalChannelTime = currentSkill.castTime + currentSkill.channelDuration;
+                float totalChannelDamage = currentSkill.baseDamage * channelTickCount;
+                float channelDPS = totalChannelTime > 0 ? totalChannelDamage / totalChannelTime : 0;
+                EditorGUILayout.LabelField($"• 총 소요 시간: {totalChannelTime:F1}초 (시전 {currentSkill.castTime:F1}초 + 채널링 {currentSkill.channelDuration:F1}초)");
+                EditorGUILayout.LabelField($"• 총 틱 횟수: {channelTickCount}회 ({currentSkill.channelDuration:F1}초 / {currentSkill.channelTickInterval:F1}초)");
+                EditorGUILayout.LabelField($"• 총 데미지: {totalChannelDamage:F1} ({currentSkill.baseDamage:F1} × {channelTickCount}회)");
+                EditorGUILayout.LabelField($"• 평균 DPS: {channelDPS:F1} ({totalChannelDamage:F1} / {totalChannelTime:F1}초)");
                 break;
         }
 

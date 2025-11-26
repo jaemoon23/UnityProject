@@ -16,6 +16,7 @@ TagManager:
   - Target
   - Missile
   - Obstacle
+  - SelecDeckChaPanel
   layers:
   - Default
   - TransparentFX
@@ -26,7 +27,7 @@ TagManager:
   - Projectile
   - Monster
   - Walkable
-  - 
+  - Ground
   - 
   - 
   - 
