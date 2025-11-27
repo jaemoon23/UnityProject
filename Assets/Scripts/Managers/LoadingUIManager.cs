@@ -44,6 +44,7 @@ namespace NovelianMagicLibraryDefense.Managers
         [Header("Settings")]
         [SerializeField] private float minimumDisplayTime = 1.0f; // LCB: 최소 표시 시간 (너무 빠른 깜빡임 방지)
         [SerializeField] private int smoothSteps = 100; // LCB: 부드러운 진행률 업데이트를 위한 단계 수
+        [SerializeField] private int LOADING_DURATION_MS = 3000; // LCB: 기본 로딩 지속 시간 (밀리초)
 
         private bool isShowing = false;
         private CancellationTokenSource loadingCts; // LCB: 로딩 취소용 토큰
@@ -247,11 +248,10 @@ namespace NovelianMagicLibraryDefense.Managers
         /// LCB: 실행 순서: LoadingUI 표시 → 진행률 1-100% 순차적으로 → FadeController로 씬 전환
         /// </summary>
         /// <param name="addressableKey">Addressable 씬 키</param>
-        /// <param name="loadingDurationMs">로딩 진행률 표시 시간 (기본: 5000ms = 5초)</param>
+        /// <param name="LOADING_DURATION_MS">로딩 진행률 표시 시간 (기본: 5000ms = 5초)</param>
         /// <param name="ct">취소 토큰</param>
         public async UniTask LoadSceneWithProgress(
             string addressableKey,
-            int loadingDurationMs = 3000,
             CancellationToken ct = default
         )
         {
@@ -261,7 +261,7 @@ namespace NovelianMagicLibraryDefense.Managers
                 Show();
 
                 // Step 2: 진행률 0-100% 애니메이션
-                await FakeLoadAsync(loadingDurationMs, ct);
+                await FakeLoadAsync(LOADING_DURATION_MS, ct);
 
                 // Step 3: 100% 상태를 잠깐 보여줌 (선택적)
                 await UniTask.Delay(200, cancellationToken: ct);

@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wallEvents: {fileID: 11400000, guid: 385762a3bb97eb1439bc9ecd0f1ebc41, type: 2}
-  maxHealth: 200
+  maxHealth: 10000
 --- !u!65 &1349090608359486497
 BoxCollider:
   m_ObjectHideFlags: 0

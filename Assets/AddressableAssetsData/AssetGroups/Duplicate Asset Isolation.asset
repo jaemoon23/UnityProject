@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Duplicate Asset Isolation
+  m_EditorClassIdentifier: 
+  m_GroupName: Duplicate Asset Isolation
+  m_GUID: 59cfd8d4ad6f2814cba34bfada561f7c
+  m_SerializeEntries:
+  - m_GUID: 04d6420dde0e4986837410464fef040c
+    m_Address: Assets/RPGTinyHeroWavePolyart/HDRP_URP/URP/Material/DefaultPolyart.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2371a70b2cc14c9bb087e5332661993d
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animation/BowAndArrow/ArrowAnim/Attack04_Combo04_Arrow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36e335017ad71d54fbb10842863188ae
+    m_Address: Packages/com.unity.render-pipelines.core/Runtime/RenderPipelineResources/FallbackShader.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6e4851bddc5c4b2e9385618d044d920e
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animation/BowAndArrow/ArrowAnim/Idle_Arrow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 75ac7a7a630947caae49d60492e0bdc9
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animation/BowAndArrow/ArrowAnim/Attack01_Combo0102_Arrow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7844c8d971c44b898c5d6cf4325ac34e
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animation/BowAndArrow/ArrowAnim/Attack02_Combo03_Arrow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82ffb425336948be9eb9b50fe34b3237
+    m_Address: Assets/RPGTinyHeroWavePolyart/HDRP_URP/URP/Texture/DefaultPolyart/Emission.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 933532a4fcc9baf4fa0491de14d08ed7
+    m_Address: Packages/com.unity.render-pipelines.universal/Shaders/Lit.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0759b8ad680412897139613a6b787a2
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animation/BowAndArrow/ArrowAnim/Attack03_Combo05_Arrow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b59aff1aeb32428daf89f688b69fd2c5
+    m_Address: Assets/RPGTinyHeroWavePolyart/Animator/ArrowsCTRL.controller
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d14728658dfc4d54a626af9cb428c73a
+    m_Address: Assets/RPGTinyHeroWavePolyart/HDRP_URP/URP/Texture/DefaultPolyart/Albedo.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e2477423d1d8436ea44b5dcf909d3944
+    m_Address: Assets/RPGTinyHeroWavePolyart/Mesh/Weapons/ArrowsSkinnedMesh.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e6e9a19c3678ded42a3bc431ebef7dbd
+    m_Address: Packages/com.unity.render-pipelines.universal/Shaders/Utils/FallbackError.shader
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 2d6cfc97562658e4c973bbc1ff53b3e6, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 63af5e570465b1c49becf17fc1e63c12, type: 2}
+    - {fileID: 11400000, guid: 2328fba7ab15a3546a8f9e6e3a8f2b0f, type: 2}
