@@ -151,12 +151,12 @@ namespace NovelianMagicLibraryDefense.Managers
         /// <summary>
         /// LCB: UniTaskManager 패턴 - 1부터 100%까지 1%씩 순차적으로 증가하는 로딩
         /// LCB: 실제 씬 로딩과 무관하게 일정 시간동안 진행률을 증가시킴
+        /// LCB: durationMs를 지정하지 않으면 Inspector의 LOADING_DURATION_MS 값 사용
         /// </summary>
-        /// <param name="durationMs">전체 로딩 애니메이션 시간 (밀리초)</param>
         /// <param name="ct">취소 토큰</param>
-        public async UniTask FakeLoadAsync(int durationMs, CancellationToken ct = default)
+        public async UniTask FakeLoadAsync(CancellationToken ct = default)
         {
-            int stepDelay = durationMs / 100; // LCB: 100단계로 나누기 (1%씩)
+            int stepDelay = LOADING_DURATION_MS / 100; // LCB: Inspector에서 설정한 값 사용
             SetProgress(0f); // LCB: 0%부터 시작
 
             // LCB: 1%부터 100%까지 1%씩 증가
@@ -260,8 +260,8 @@ namespace NovelianMagicLibraryDefense.Managers
                 // Step 1: LoadingUI 표시
                 Show();
 
-                // Step 2: 진행률 0-100% 애니메이션
-                await FakeLoadAsync(LOADING_DURATION_MS, ct);
+                // Step 2: 진행률 0-100% 애니메이션 (Inspector의 LOADING_DURATION_MS 사용)
+                await FakeLoadAsync(ct);
 
                 // Step 3: 100% 상태를 잠깐 보여줌 (선택적)
                 await UniTask.Delay(200, cancellationToken: ct);

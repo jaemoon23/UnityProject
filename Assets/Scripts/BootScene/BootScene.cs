@@ -341,10 +341,10 @@ public class BootScene : MonoBehaviour
         Log("Step 1: Fade In (Start from black)");
         await FadeController.Instance.FadeIn(0.5f); // 검은색 → 투명 (밝아짐)
 
-        // Step 2: 로딩 UI 표시 및 진행률 애니메이션 (페이드 인 상태 유지)
+        // Step 2: 로딩 UI 표시 및 진행률 애니메이션 (Inspector의 LOADING_DURATION_MS 사용)
         Log("Step 2: Show Loading UI");
         LoadingUIManager.Instance.Show();
-        await LoadingUIManager.Instance.FakeLoadAsync(3000); // 3초 동안 진행률 애니메이션
+        await LoadingUIManager.Instance.FakeLoadAsync();
 
         // Step 3: 100% 상태 잠깐 보여주기
         await UniTask.Delay(200);

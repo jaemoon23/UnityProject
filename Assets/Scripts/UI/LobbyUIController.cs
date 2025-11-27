@@ -56,9 +56,9 @@ namespace NovelianMagicLibraryDefense.UI
                 return;
             }
 
-            // Step 1: 로딩 UI 표시 및 진행률 애니메이션
+            // Step 1: 로딩 UI 표시 및 진행률 애니메이션 (Inspector의 LOADING_DURATION_MS 사용)
             LoadingUIManager.Instance.Show();
-            await LoadingUIManager.Instance.FakeLoadAsync(2000); // 2초 동안 로딩 애니메이션
+            await LoadingUIManager.Instance.FakeLoadAsync();
 
             // Step 2: 100% 상태 잠깐 보여주기
             await UniTask.Delay(200);
