@@ -1,193 +1,162 @@
-using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 캐릭터에 책갈피를 장착하기 위한 패널
+/// 보유한 책갈피 목록을 표시하고, 클릭 시 LibraryBookMarkInfoPanel을 통해 장착/해제
+/// </summary>
 public class BookmarkEquipPanel : MonoBehaviour
 {
     [Header("Slot Settings")]
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private Transform slotContainer;
 
-    [Header("Buttons")]
-    [SerializeField] private Button closeButton;
-    [SerializeField] private Button equipButton; // LCB: Equip button (장착 버튼)
-    [SerializeField] private Button unequipButton; // LCB: Unequip button (해제 버튼)
-
     [Header("Panel References")]
-    [SerializeField] private GameObject InfoPanel;
-    private CharacterInfoPanel characterInfoPanel;
+    [SerializeField] private GameObject characterInfoPanel;
+    [SerializeField] private GameObject libraryBookMarkInfoPanel;
 
-    [SerializeField] BookMarkManager bmManager;
+    [Header("Manager")]
+    [SerializeField] private BookMarkManager bmManager;
 
-    // LCB: Track currently selected slot (현재 선택된 슬롯 추적)
-    private BookmarkEquipSlot currentSelectedSlot;
-
-
-    private void Awake()
-    {
-        characterInfoPanel = InfoPanel.GetComponent<CharacterInfoPanel>();
-
-        // LCB: Setup button listeners (버튼 리스너 설정)
-        if (equipButton != null)
-        {
-            equipButton.onClick.AddListener(OnEquipButtonClicked);
-        }
-        if (unequipButton != null)
-        {
-            unequipButton.onClick.AddListener(OnUnequipButtonClicked);
-        }
-
-        // LCB: Initialize buttons as disabled (버튼 초기 비활성화)
-        UpdateButtonStates();
-    }
+    // 생성된 슬롯 리스트 (정리용)
+    private List<CraftSceneBookMarkSlot> slotList = new List<CraftSceneBookMarkSlot>();
 
     private void OnEnable()
     {
-        // LCB: Clear previous selection (이전 선택 초기화)
-        currentSelectedSlot = null;
-        UpdateButtonStates();
-
-        List<BookMark> unequippedBookmarks = BookMarkManager.Instance.GetAllBookmarks();
-        for (int i = 0; i < unequippedBookmarks.Count; i++)
-        {
-            if (!unequippedBookmarks[i].IsEquipped)
-            {
-                GameObject slot = Instantiate(slotPrefab, slotContainer);
-                BookmarkEquipSlot slotComponent = slot.GetComponent<BookmarkEquipSlot>();
-                // LCB: Pass this panel reference to slot (슬롯에 패널 참조 전달)
-                slotComponent.Init(unequippedBookmarks[i], characterInfoPanel, this);
-            }
-        }
+        CreateBookmarkSlots();
     }
 
     private void OnDisable()
     {
-        // 패널이 비활성화될 때 슬롯 정리 (재활성화 시 다시 생성됨)
+        ClearSlots();
+    }
+
+    /// <summary>
+    /// 보유한 책갈피 슬롯 생성
+    /// </summary>
+    private void CreateBookmarkSlots()
+    {
+        // 기존 슬롯 정리
+        ClearSlots();
+
+        // BookMarkManager에서 모든 책갈피 가져오기
+        List<BookMark> allBookmarks = BookMarkManager.Instance.GetAllBookmarks();
+
+        for (int i = 0; i < allBookmarks.Count; i++)
+        {
+            BookMark bookMark = allBookmarks[i];
+
+            GameObject slot = Instantiate(slotPrefab, slotContainer);
+            CraftSceneBookMarkSlot slotComponent = slot.GetComponent<CraftSceneBookMarkSlot>();
+
+            if (slotComponent != null)
+            {
+                slotList.Add(slotComponent);
+
+                // 아이콘 키 결정 (BookMarkUI.cs와 동일한 방식)
+                string categoryKey = GetCategoryIconKey(bookMark.Type);
+                string bookmarkKey = GetBookmarkIconKey(bookMark);
+
+                // Init 호출 - LibraryBookMarkInfoPanel 전달
+                slotComponent.Init(
+                    bookMark,
+                    categoryKey,
+                    bookmarkKey,
+                    null,  // choicePanel은 사용하지 않음
+                    libraryBookMarkInfoPanel
+                ).Forget();
+            }
+        }
+
+        Debug.Log($"[BookmarkEquipPanel] 책갈피 슬롯 {allBookmarks.Count}개 생성 완료");
+    }
+
+    /// <summary>
+    /// 슬롯 정리
+    /// </summary>
+    private void ClearSlots()
+    {
+        foreach (var slot in slotList)
+        {
+            if (slot != null)
+            {
+                Destroy(slot.gameObject);
+            }
+        }
+        slotList.Clear();
+
+        // slotContainer의 자식도 정리
         if (slotContainer != null)
         {
             foreach (Transform child in slotContainer)
             {
-                if (child != null)
-                {
-                    Destroy(child.gameObject);
-                }
+                Destroy(child.gameObject);
             }
         }
     }
 
     /// <summary>
-    /// LCB: Called when a bookmark slot is clicked
-    /// 책갈피 슬롯 클릭 시 호출
+    /// 카테고리 아이콘 키 반환 (BookMarkUI.cs에서 복사)
     /// </summary>
-    public void OnSlotClicked(BookmarkEquipSlot clickedSlot)
+    private string GetCategoryIconKey(BookmarkType type)
     {
-        // LCB: Deselect previous slot (이전 슬롯 선택 해제)
-        if (currentSelectedSlot != null)
+        return type switch
         {
-            currentSelectedSlot.SetSelected(false);
-        }
-
-        // LCB: Select new slot (새 슬롯 선택)
-        currentSelectedSlot = clickedSlot;
-        currentSelectedSlot.SetSelected(true);
-
-        // LCB: Update button states (버튼 상태 업데이트)
-        UpdateButtonStates();
-
-        Debug.Log($"[BookmarkEquipPanel] 책갈피 선택: {clickedSlot.Bookmark.Name}");
+            BookmarkType.Stat => "PictoIcon_Buff",
+            BookmarkType.Skill => "PictoIcon_Battle",
+            _ => "PictoIcon_Attack"
+        };
     }
 
     /// <summary>
-    /// LCB: Update equip/unequip button states based on selection
-    /// 선택 상태에 따라 장착/해제 버튼 상태 업데이트
+    /// 책갈피 아이콘 키 반환 (BookMarkUI.cs에서 복사)
     /// </summary>
-    private void UpdateButtonStates()
+    private string GetBookmarkIconKey(BookMark bookMark)
     {
-        bool hasSelection = currentSelectedSlot != null;
-
-        if (equipButton != null)
+        return bookMark.Type switch
         {
-            equipButton.interactable = hasSelection;
-        }
-
-        // LCB: Unequip button only enabled when selected character slot has bookmark
-        // 해제 버튼은 선택된 캐릭터 슬롯에 책갈피가 있을 때만 활성화
-        if (unequipButton != null)
-        {
-            int selectedSlotIndex = characterInfoPanel.GetSelectedSlotIndex();
-            BookMark equippedBookmark = BookMarkManager.Instance.GetCharacterBookmarkAtSlot(
-                characterInfoPanel.CharacterID,
-                selectedSlotIndex
-            );
-            unequipButton.interactable = equippedBookmark != null;
-        }
+            BookmarkType.Stat => "PictoIcon_Attack",
+            BookmarkType.Skill => "PictoIcon_Attack",
+            _ => "PictoIcon_Attack"
+        };
     }
 
     /// <summary>
-    /// LCB: Equip selected bookmark to character slot
-    /// 선택된 책갈피를 캐릭터 슬롯에 장착
+    /// 슬롯 새로고침 - 장착/해제 후 호출
     /// </summary>
-    private void OnEquipButtonClicked()
+    public void RefreshSlots()
     {
-        if (currentSelectedSlot == null)
-        {
-            Debug.LogWarning("[BookmarkEquipPanel] 선택된 책갈피가 없습니다.");
-            return;
-        }
-
-        BookMark selectedBookmark = currentSelectedSlot.Bookmark;
-        int slotIndex = characterInfoPanel.GetSelectedSlotIndex();
-        int characterID = characterInfoPanel.CharacterID;
-
-        // LCB: Equip bookmark through manager (매니저를 통해 책갈피 장착)
-        bool success = BookMarkManager.Instance.EquipBookmarkToCharacter(
-            characterID,
-            selectedBookmark,
-            slotIndex
-        );
-
-        if (success)
-        {
-            // LCB: Update character info panel UI (캐릭터 정보 패널 UI 업데이트)
-            characterInfoPanel.UpdateSlotText(slotIndex, selectedBookmark.Name);
-            characterInfoPanel.RefreshBookmarkUI();
-
-            Debug.Log($"[BookmarkEquipPanel] 책갈피 '{selectedBookmark.Name}' 슬롯 {slotIndex}에 장착 완료!");
-
-            // LCB: Close panel and refresh (패널 닫고 새로고침)
-            ClosePanel();
-        }
+        CreateBookmarkSlots();
     }
 
     /// <summary>
-    /// LCB: Unequip bookmark from character slot
-    /// 캐릭터 슬롯에서 책갈피 해제
+    /// 특정 책갈피에 해당하는 슬롯 찾기
     /// </summary>
-    private void OnUnequipButtonClicked()
+    public CraftSceneBookMarkSlot FindSlotByBookmark(BookMark bookmark)
     {
-        int slotIndex = characterInfoPanel.GetSelectedSlotIndex();
-        int characterID = characterInfoPanel.CharacterID;
+        if (bookmark == null) return null;
 
-        // LCB: Unequip bookmark through manager (매니저를 통해 책갈피 해제)
-        bool success = BookMarkManager.Instance.UnequipBookmarkFromCharacter(characterID, slotIndex);
-
-        if (success)
+        foreach (var slot in slotList)
         {
-            // LCB: Update character info panel UI (캐릭터 정보 패널 UI 업데이트)
-            characterInfoPanel.UpdateSlotText(slotIndex, $"책갈피 슬롯 {slotIndex + 1}");
-            characterInfoPanel.RefreshBookmarkUI();
-
-            Debug.Log($"[BookmarkEquipPanel] 슬롯 {slotIndex}에서 책갈피 해제 완료!");
-
-            // LCB: Update button states (버튼 상태 업데이트)
-            UpdateButtonStates();
+            if (slot != null && slot.BookMarkData == bookmark)
+            {
+                return slot;
+            }
         }
+        return null;
     }
 
+    /// <summary>
+    /// 패널 닫기
+    /// </summary>
     public void ClosePanel()
     {
-        this.gameObject.SetActive(false);
-        InfoPanel.SetActive(true);
+        gameObject.SetActive(false);
+        if (characterInfoPanel != null)
+        {
+            characterInfoPanel.SetActive(true);
+        }
     }
 }
