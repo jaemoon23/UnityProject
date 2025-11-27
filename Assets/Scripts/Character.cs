@@ -650,27 +650,11 @@ namespace Novelian.Combat
                     Debug.Log($"[Character] AOE ground impact: {impactPos} (fallback Y=0)");
                 }
 
-                // 4. Meteor Effect (몬스터 스폰 위치에서 출발 → 착탄 지점으로 이동)
+                // 4. Meteor Effect (착탄점 위에서 출발 → 착탄 지점으로 낙하)
                 if (activeSkill.projectileEffectPrefab != null)
                 {
-                    // 몬스터 스폰 위치 가져오기 (WaveManager에서)
-                    Vector3 meteorStartPos = impactPos + Vector3.up * 20f; // 기본값: 착탄점 위 20m
-                    if (NovelianMagicLibraryDefense.Managers.GameManager.Instance?.Wave != null)
-                    {
-                        // WaveManager의 monsterSpawner 위치 사용
-                        var waveManager = NovelianMagicLibraryDefense.Managers.GameManager.Instance.Wave;
-                        var spawnerField = waveManager.GetType().GetField("monsterSpawner",
-                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        if (spawnerField != null)
-                        {
-                            var spawner = spawnerField.GetValue(waveManager) as NovelianMagicLibraryDefense.Spawners.MonsterSpawner;
-                            if (spawner != null)
-                            {
-                                meteorStartPos = spawner.transform.position + Vector3.up * 10f; // 스폰 위치 + 높이
-                                Debug.Log($"[Character] Meteor start from MonsterSpawner: {meteorStartPos}");
-                            }
-                        }
-                    }
+                    // 메테오 시작 위치: 착탄점 위 20m
+                    Vector3 meteorStartPos = impactPos + Vector3.up * 20f;
 
                     meteorEffect = Object.Instantiate(activeSkill.projectileEffectPrefab, meteorStartPos, Quaternion.identity);
                     Debug.Log($"[Character] Meteor spawned at {meteorStartPos}, moving to {impactPos}");

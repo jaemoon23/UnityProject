@@ -28,7 +28,6 @@ namespace Novelian.Combat
     public class Projectile : MonoBehaviour, IPoolable
     {
         private const float OUT_OF_BOUNDS_DISTANCE = 100f;
-        private const float SPAWN_GRACE_PERIOD = 0.1f; // Ignore ground collision for first 0.1s
 
         [Header("Components")]
         [SerializeField, Tooltip("Rigidbody for physics movement (Physics mode only)")]
@@ -61,7 +60,6 @@ namespace Novelian.Combat
         private Vector3 startPosition;
         private Vector3 targetPosition;
         private float elapsedTime;
-        private float spawnTime; // Time.time when spawned (for grace period)
         private bool isInitialized = false;
 
         // Lifetime tracking
@@ -99,7 +97,6 @@ namespace Novelian.Combat
             lifetime = projectileLifetime;
             damage = damageAmount; // Set damage from parameter
             elapsedTime = 0f;
-            spawnTime = Time.time; // Record spawn time for grace period
             isInitialized = true;
 
             // Store skill data and support skill data
@@ -161,7 +158,6 @@ namespace Novelian.Combat
             damage = damageAmount;
             onHitCallback = onHit;
             elapsedTime = 0f;
-            spawnTime = Time.time; // Record spawn time for grace period
             isInitialized = true;
 
             // Store support skill data for status effects
@@ -321,14 +317,8 @@ namespace Novelian.Combat
             }
 
             // LMJ: Ground/Terrain collision - destroy projectile (layer-based check)
-            // Skip during spawn grace period to prevent immediate destruction
             if (other.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
-                if (Time.time - spawnTime < SPAWN_GRACE_PERIOD)
-                {
-                    return; // Ignore ground collision during grace period
-                }
-
                 Debug.Log("[Projectile] Hit ground, destroying");
                 if (mode == ProjectileMode.Physics)
                 {
