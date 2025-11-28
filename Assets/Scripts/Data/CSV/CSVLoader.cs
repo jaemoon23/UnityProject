@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+#if UNITY_EDITOR
+using System.IO;
+#endif
 
 
 public class CSVLoader : MonoBehaviour
@@ -16,6 +21,9 @@ public class CSVLoader : MonoBehaviour
     {
         public static CsvTable<T> Table;
     }
+
+    // 스킬 CSV 파일 경로 (에디터용)
+    private const string SKILL_CSV_PATH = "Assets/Data/CSV";
 
     private void Awake()
     {
@@ -58,7 +66,12 @@ public class CSVLoader : MonoBehaviour
                 RegisterTableAsync<SkillData>(AddressableKey.SkillTable, x => x.Skill_ID),
                 RegisterTableAsync<EnhancementLevelData>(AddressableKey.EnhancementLevelTable, x => x.Pw_Level),
                 RegisterTableAsync<CharacterEnhancementData>(AddressableKey.CharacterEnhancementTable, x => x.Character_PwUp_ID),
-                RegisterTableAsync<StringTable>(AddressableKey.StringTable, x => x.Text_ID)
+                RegisterTableAsync<StringTable>(AddressableKey.StringTable, x => x.Text_ID),
+
+                // 새 스킬 테이블 (3행 헤더 형식)
+                RegisterSkillTableAsync<MainSkillData>(AddressableKey.MainSkillTable, "MainSkillTable.csv", x => x.skill_id),
+                RegisterSkillTableAsync<SupportSkillData>(AddressableKey.SupportSkillTable, "SupportSkillTable.csv", x => x.support_id),
+                RegisterSkillTableAsync<SkillLevelData>(AddressableKey.SkillLevelTable, "SkillLevelTable.csv", x => x.GetCompositeKey())
             );
 
             IsInit = true;
@@ -81,6 +94,109 @@ public class CSVLoader : MonoBehaviour
         {
             TableHolder<T>.Table = table; // Store directly in type-specific static field
         }
+    }
+
+    /// <summary>
+    /// Register skill table with 3-row header format (한글헤더/영문헤더/타입)
+    /// 에디터: 파일 직접 읽기 (즉시 반영)
+    /// 빌드: Addressables 사용
+    /// </summary>
+    private async UniTask RegisterSkillTableAsync<T>(string addressableKey, string fileName, Func<T, int> idSelector) where T : class
+    {
+        var table = await LoadSkillTableAsync<T>(addressableKey, fileName, idSelector);
+        if (table != null)
+        {
+            TableHolder<T>.Table = table;
+        }
+    }
+
+    /// <summary>
+    /// Load skill CSV table with 3-row header format
+    /// </summary>
+    private async UniTask<CsvTable<T>> LoadSkillTableAsync<T>(string addressableKey, string fileName, Func<T, int> idSelector) where T : class
+    {
+        Debug.Log($"[CSVLoader] Loading skill table: {addressableKey}");
+
+        try
+        {
+            string csvText = null;
+
+#if UNITY_EDITOR
+            // 에디터: 파일 직접 읽기 (CSV 수정 시 즉시 반영)
+            string filePath = Path.Combine(SKILL_CSV_PATH, fileName);
+            if (File.Exists(filePath))
+            {
+                csvText = File.ReadAllText(filePath);
+                Debug.Log($"[CSVLoader] Editor mode: Direct file read from {filePath}");
+            }
+            else
+            {
+                Debug.LogWarning($"[CSVLoader] File not found: {filePath}, falling back to Addressables");
+            }
+#endif
+
+            // 빌드 또는 에디터에서 파일을 못 찾은 경우: Addressables 사용
+            if (string.IsNullOrEmpty(csvText))
+            {
+                TextAsset asset = await Addressables.LoadAssetAsync<TextAsset>(addressableKey);
+                if (asset == null)
+                {
+                    Debug.LogError($"[CSVLoader] Failed to load TextAsset: {addressableKey}");
+                    return null;
+                }
+                csvText = asset.text;
+            }
+
+            // 3행 헤더 형식 처리: 첫번째(한글헤더)와 세번째(타입) 행 제거
+            csvText = ProcessSkillCsvFormat(csvText);
+
+            // N/A 처리
+            csvText = System.Text.RegularExpressions.Regex.Replace(csvText, @",N/A(?=[,\r\n]|$)", ",0");
+
+            // Create and load CsvTable
+            var table = new CsvTable<T>(idSelector);
+            table.LoadFromText(csvText);
+
+            Debug.Log($"[CSVLoader] Skill table loaded: {addressableKey} ({table.Count} rows)");
+            return table;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CSVLoader] Error loading skill table {addressableKey}: {e.Message}\n{e.StackTrace}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 3행 헤더 CSV 형식 처리
+    /// 1행: 한글 헤더 (제거)
+    /// 2행: 영문 헤더 (유지 - CsvHelper가 사용)
+    /// 3행: 타입 정의 (제거)
+    /// 4행~: 데이터 (유지)
+    /// </summary>
+    private string ProcessSkillCsvFormat(string csvText)
+    {
+        var lines = csvText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+
+        if (lines.Count < 4)
+        {
+            Debug.LogWarning("[CSVLoader] CSV has less than 4 lines, returning as-is");
+            return csvText;
+        }
+
+        // 1행(한글헤더)와 3행(타입) 제거, 2행(영문헤더)와 4행~(데이터) 유지
+        var processedLines = new List<string>();
+        processedLines.Add(lines[1]); // 영문 헤더 (index 1)
+
+        for (int i = 3; i < lines.Count; i++) // 데이터 (index 3부터)
+        {
+            if (!string.IsNullOrWhiteSpace(lines[i]))
+            {
+                processedLines.Add(lines[i]);
+            }
+        }
+
+        return string.Join("\n", processedLines);
     }
 
     /// <summary>
@@ -127,4 +243,42 @@ public class CSVLoader : MonoBehaviour
     {
         return TableHolder<T>.Table?.GetId(id);
     }
+
+    /// <summary>
+    /// 스킬 레벨 데이터 조회 (skill_id + level 조합)
+    /// </summary>
+    public SkillLevelData GetSkillLevelData(int skillId, int level)
+    {
+        int compositeKey = skillId * 100 + level;
+        return GetData<SkillLevelData>(compositeKey);
+    }
+
+    /// <summary>
+    /// 특정 스킬의 모든 레벨 데이터 조회
+    /// </summary>
+    public List<SkillLevelData> GetAllSkillLevels(int skillId)
+    {
+        var table = GetTable<SkillLevelData>();
+        if (table == null) return new List<SkillLevelData>();
+
+        return table.FindAll(x => x.skill_id == skillId);
+    }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// 에디터에서 스킬 테이블만 다시 로드 (CSV 수정 후 즉시 반영용)
+    /// </summary>
+    public async UniTask ReloadSkillTablesAsync()
+    {
+        Debug.Log("[CSVLoader] Reloading skill tables...");
+
+        await UniTask.WhenAll(
+            RegisterSkillTableAsync<MainSkillData>(AddressableKey.MainSkillTable, "MainSkillTable.csv", x => x.skill_id),
+            RegisterSkillTableAsync<SupportSkillData>(AddressableKey.SupportSkillTable, "SupportSkillTable.csv", x => x.support_id),
+            RegisterSkillTableAsync<SkillLevelData>(AddressableKey.SkillLevelTable, "SkillLevelTable.csv", x => x.GetCompositeKey())
+        );
+
+        Debug.Log("[CSVLoader] Skill tables reloaded!");
+    }
+#endif
 }

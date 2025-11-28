@@ -1,4 +1,5 @@
 //LMJ : Character with simple projectile-based combat (Issue #265)
+//     Migrated to new CSV-based skill system
 namespace Novelian.Combat
 {
     using UnityEngine;
@@ -10,15 +11,15 @@ namespace Novelian.Combat
         [Header("Character Visual")]
         [SerializeField] private GameObject characterObj;
 
-        [Header("스킬 장착 (Skill Equipment)")]
-        [SerializeField, Tooltip("기본 공격 스킬 (Basic Attack Skill)")]
-        private SkillAssetData basicAttackSkill;
+        [Header("스킬 장착 (Skill Equipment) - CSV ID 기반")]
+        [SerializeField, Tooltip("기본 공격 스킬 ID (MainSkillTable)")]
+        private int basicAttackSkillId = 1001;
 
-        [SerializeField, Tooltip("액티브 스킬 (Active Skill - 자동 실행)")]
-        private SkillAssetData activeSkill;
+        [SerializeField, Tooltip("액티브 스킬 ID (MainSkillTable)")]
+        private int activeSkillId = 0;
 
-        [SerializeField, Tooltip("보조 스킬 (Support Skill - Active Skill에 영향)")]
-        private SkillAssetData supportSkill;
+        [SerializeField, Tooltip("보조 스킬 ID (SupportSkillTable)")]
+        private int supportSkillId = 0;
 
         [Header("캐릭터 스텟 변형 (%) (Character Stat Modifiers)")]
         [SerializeField, Tooltip("데미지 변형 (%)")]
@@ -45,25 +46,33 @@ namespace Novelian.Combat
         [SerializeField, Tooltip("Use weight-based targeting (default: distance-based)")]
         private bool useWeightTargeting = false;
 
+        // 캐싱된 스킬 데이터
+        private MainSkillData basicAttackData;
+        private MainSkillData activeSkillData;
+        private SupportSkillData supportData;
+        private MainSkillPrefabEntry basicAttackPrefabs;
+        private MainSkillPrefabEntry activeSkillPrefabs;
+        private SupportSkillPrefabEntry supportPrefabs;
+
         // 최종 수치 계산 프로퍼티 (스킬 기본값 × 캐릭터 변형)
-        private float FinalDamage => basicAttackSkill != null
-            ? basicAttackSkill.baseDamage * (1f + damageModifier / 100f)
+        private float FinalDamage => basicAttackData != null
+            ? basicAttackData.base_damage * (1f + damageModifier / 100f)
             : 0f;
 
-        private float FinalAttackSpeed => basicAttackSkill != null
-            ? (1f / basicAttackSkill.cooldown) * (1f + attackSpeedModifier / 100f)
+        private float FinalAttackSpeed => basicAttackData != null
+            ? (1f / basicAttackData.cooldown) * (1f + attackSpeedModifier / 100f)
             : 1f;
 
-        private float FinalProjectileSpeed => basicAttackSkill != null
-            ? basicAttackSkill.projectileSpeed * (1f + projectileSpeedModifier / 100f)
+        private float FinalProjectileSpeed => basicAttackData != null
+            ? basicAttackData.projectile_speed * (1f + projectileSpeedModifier / 100f)
             : 10f;
 
-        private float FinalRange => basicAttackSkill != null
-            ? basicAttackSkill.range * (1f + rangeModifier / 100f)
+        private float FinalRange => basicAttackData != null
+            ? basicAttackData.range * (1f + rangeModifier / 100f)
             : 1000f;
 
-        private float FinalProjectileLifetime => basicAttackSkill != null
-            ? basicAttackSkill.projectileLifetime
+        private float FinalProjectileLifetime => basicAttackData != null
+            ? basicAttackData.projectile_lifetime
             : 5f;
 
         // Active Skill 최종 수치 계산 프로퍼티 (캐릭터 변형 + Support 스킬 변형)
@@ -71,9 +80,9 @@ namespace Novelian.Combat
         {
             get
             {
-                if (activeSkill == null) return 0f;
-                float damage = activeSkill.baseDamage * (1f + damageModifier / 100f);
-                if (supportSkill != null) damage *= (1f + supportSkill.damageModifier / 100f);
+                if (activeSkillData == null) return 0f;
+                float damage = activeSkillData.base_damage * (1f + damageModifier / 100f);
+                if (supportData != null) damage *= supportData.damage_mult;
                 return damage;
             }
         }
@@ -82,9 +91,9 @@ namespace Novelian.Combat
         {
             get
             {
-                if (activeSkill == null) return 1f;
-                float attackSpeed = (1f / activeSkill.cooldown) * (1f + attackSpeedModifier / 100f);
-                if (supportSkill != null) attackSpeed *= (1f + supportSkill.attackSpeedModifier / 100f);
+                if (activeSkillData == null) return 1f;
+                float attackSpeed = (1f / activeSkillData.cooldown) * (1f + attackSpeedModifier / 100f);
+                if (supportData != null) attackSpeed *= supportData.attack_speed_mult;
                 return attackSpeed;
             }
         }
@@ -93,24 +102,24 @@ namespace Novelian.Combat
         {
             get
             {
-                if (activeSkill == null) return 10f;
-                float speed = activeSkill.projectileSpeed * (1f + projectileSpeedModifier / 100f);
-                if (supportSkill != null) speed *= (1f + supportSkill.projectileSpeedMultiplier / 100f);
+                if (activeSkillData == null) return 10f;
+                float speed = activeSkillData.projectile_speed * (1f + projectileSpeedModifier / 100f);
+                if (supportData != null) speed *= supportData.speed_mult;
                 return speed;
             }
         }
 
-        private float FinalActiveRange => activeSkill != null
-            ? activeSkill.range * (1f + rangeModifier / 100f)
+        private float FinalActiveRange => activeSkillData != null
+            ? activeSkillData.range * (1f + rangeModifier / 100f)
             : 1000f;
 
         private float FinalActiveProjectileLifetime
         {
             get
             {
-                if (activeSkill == null) return 5f;
-                float lifetime = activeSkill.projectileLifetime;
-                if (supportSkill != null) lifetime *= (1f + supportSkill.durationMultiplier / 100f);
+                if (activeSkillData == null) return 5f;
+                float lifetime = activeSkillData.projectile_lifetime;
+                // Support skill duration multiplier (currently not in CSV, future feature)
                 return lifetime;
             }
         }
@@ -120,16 +129,16 @@ namespace Novelian.Combat
         {
             get
             {
-                if (activeSkill == null) return 1;
+                if (activeSkillData == null) return 1;
 
-                // Support 스킬이 있고 additionalProjectiles > 0이면 총 개수로 사용
-                if (supportSkill != null && supportSkill.additionalProjectiles > 0)
+                // Support 스킬이 있고 add_projectiles > 0이면 총 개수로 사용
+                if (supportData != null && supportData.add_projectiles > 0)
                 {
-                    return supportSkill.additionalProjectiles;
+                    return supportData.add_projectiles;
                 }
 
                 // Support 스킬이 없으면 Active Skill의 기본 개수 사용
-                return activeSkill.projectileCount;
+                return activeSkillData.projectile_count;
             }
         }
 
@@ -142,6 +151,7 @@ namespace Novelian.Combat
 
         private void Start()
         {
+            LoadSkillData();
             InitializeProjectilePool();
             InitializeActiveSkillPool();
             StartAttackLoop();
@@ -149,20 +159,77 @@ namespace Novelian.Combat
             isInitialized = true;
         }
 
-        //LMJ : Initialize projectile pool (from basic attack skill)
-        private void InitializeProjectilePool()
+        //LMJ : Load skill data from CSV and PrefabDatabase
+        private void LoadSkillData()
         {
-            if (basicAttackSkill == null)
+            if (CSVLoader.Instance == null || !CSVLoader.Instance.IsInit)
             {
-                Debug.LogError("[Character] basicAttackSkill is null!");
+                Debug.LogError("[Character] CSVLoader not initialized!");
                 return;
             }
 
-            // Effect만 있는 경우 ProjectileTemplate 사용
-            if (basicAttackSkill.projectileEffectPrefab == null)
+            var prefabDb = SkillPrefabDatabase.Instance;
+
+            // Basic Attack Skill
+            if (basicAttackSkillId > 0)
             {
-                Debug.LogWarning($"[Character] {basicAttackSkill.skillName} has no effect prefab. Cannot fire skill.");
+                basicAttackData = CSVLoader.Instance.GetData<MainSkillData>(basicAttackSkillId);
+                if (basicAttackData != null)
+                {
+                    basicAttackPrefabs = prefabDb?.GetMainSkillEntry(basicAttackSkillId);
+                    Debug.Log($"[Character] Loaded basic attack: {basicAttackData.skill_name} (ID: {basicAttackSkillId})");
+                }
+                else
+                {
+                    Debug.LogError($"[Character] Basic attack skill ID {basicAttackSkillId} not found in CSV!");
+                }
+            }
+
+            // Active Skill
+            if (activeSkillId > 0)
+            {
+                activeSkillData = CSVLoader.Instance.GetData<MainSkillData>(activeSkillId);
+                if (activeSkillData != null)
+                {
+                    activeSkillPrefabs = prefabDb?.GetMainSkillEntry(activeSkillId);
+                    Debug.Log($"[Character] Loaded active skill: {activeSkillData.skill_name} (ID: {activeSkillId})");
+                }
+                else
+                {
+                    Debug.LogWarning($"[Character] Active skill ID {activeSkillId} not found in CSV!");
+                }
+            }
+
+            // Support Skill
+            if (supportSkillId > 0)
+            {
+                supportData = CSVLoader.Instance.GetData<SupportSkillData>(supportSkillId);
+                if (supportData != null)
+                {
+                    supportPrefabs = prefabDb?.GetSupportSkillEntry(supportSkillId);
+                    Debug.Log($"[Character] Loaded support skill: {supportData.support_name} (ID: {supportSkillId})");
+                }
+                else
+                {
+                    Debug.LogWarning($"[Character] Support skill ID {supportSkillId} not found in CSV!");
+                }
+            }
+        }
+
+        //LMJ : Initialize projectile pool (from basic attack skill)
+        private void InitializeProjectilePool()
+        {
+            if (basicAttackData == null)
+            {
+                Debug.LogError("[Character] basicAttackData is null!");
                 return;
+            }
+
+            // Check for projectile prefab
+            GameObject projectilePrefab = basicAttackPrefabs?.projectilePrefab;
+            if (projectilePrefab == null && projectileTemplate == null)
+            {
+                Debug.LogWarning($"[Character] No projectile prefab for skill {basicAttackData.skill_name}. Using template.");
             }
 
             if (projectileTemplate == null)
@@ -177,23 +244,16 @@ namespace Novelian.Combat
             {
                 pool.CreatePool<Projectile>(projectileTemplate, defaultCapacity: 20, maxSize: 100);
                 pool.WarmUp<Projectile>(20);
-                Debug.Log($"[Character] Projectile pool initialized with ProjectileTemplate for skill: {basicAttackSkill.skillName}");
+                Debug.Log($"[Character] Projectile pool initialized for skill: {basicAttackData.skill_name}");
             }
         }
 
         //LMJ : Initialize active skill projectile pool
         private void InitializeActiveSkillPool()
         {
-            if (activeSkill == null)
+            if (activeSkillData == null)
             {
-                Debug.LogWarning("[Character] activeSkill is null. Skipping active skill initialization.");
-                return;
-            }
-
-            // Effect만 있는 경우 ProjectileTemplate 사용
-            if (activeSkill.projectileEffectPrefab == null)
-            {
-                Debug.LogWarning($"[Character] {activeSkill.skillName} has no effect prefab. Cannot fire skill.");
+                Debug.LogWarning("[Character] activeSkillData is null. Skipping active skill initialization.");
                 return;
             }
 
@@ -210,7 +270,7 @@ namespace Novelian.Combat
             {
                 pool.CreatePool<Projectile>(projectileTemplate, defaultCapacity: 10, maxSize: 50);
                 pool.WarmUp<Projectile>(10);
-                Debug.Log($"[Character] Active skill pool initialized with ProjectileTemplate for skill: {activeSkill.skillName}");
+                Debug.Log($"[Character] Active skill pool initialized for skill: {activeSkillData.skill_name}");
             }
         }
 
@@ -242,9 +302,9 @@ namespace Novelian.Combat
         //LMJ : Start active skill loop
         private void StartActiveSkillLoop()
         {
-            if (activeSkill == null)
+            if (activeSkillData == null)
             {
-                Debug.LogWarning("[Character] activeSkill is null. Skipping active skill loop.");
+                Debug.LogWarning("[Character] activeSkillData is null. Skipping active skill loop.");
                 return;
             }
 
@@ -271,10 +331,9 @@ namespace Novelian.Combat
         }
 
         //LMJ : Attempt to attack nearest or highest weight target (skill-based)
-        //      Priority: Focus Mark > useWeightTargeting ? Weight : Distance
         private void TryAttack()
         {
-            if (!isInitialized || basicAttackSkill == null) return;
+            if (!isInitialized || basicAttackData == null) return;
 
             // Find target with mark priority, then use weight/distance strategy
             ITargetable target = TargetRegistry.Instance.FindTarget(transform.position, FinalRange, useWeightTargeting);
@@ -285,26 +344,30 @@ namespace Novelian.Combat
             Vector3 spawnPos = transform.position + spawnOffset;
             Vector3 targetPos = target.GetPosition();
 
-            // Effect가 있으면 ProjectileTemplate 발사
-            if (basicAttackSkill.projectileEffectPrefab != null)
+            // Get projectile prefab from database
+            GameObject projectilePrefab = basicAttackPrefabs?.projectilePrefab;
+            GameObject hitEffectPrefab = basicAttackPrefabs?.hitEffectPrefab;
+
+            // Launch projectile
+            if (projectilePrefab != null || projectileTemplate != null)
             {
                 var pool = NovelianMagicLibraryDefense.Managers.GameManager.Instance.Pool;
                 Projectile projectile = pool.Spawn<Projectile>(spawnPos);
-                projectile.Launch(spawnPos, targetPos, FinalProjectileSpeed, FinalProjectileLifetime, FinalDamage, basicAttackSkill, null);
+                projectile.Launch(spawnPos, targetPos, FinalProjectileSpeed, FinalProjectileLifetime, FinalDamage, basicAttackSkillId, 0);
 
-                Debug.Log($"[Character] Fired projectile {basicAttackSkill.skillName} at {target.GetTransform().name} (Damage: {FinalDamage:F1})");
+                Debug.Log($"[Character] Fired projectile {basicAttackData.skill_name} at {target.GetTransform().name} (Damage: {FinalDamage:F1})");
             }
-            // Effect도 없으면 즉발 공격
+            // Instant attack (no projectile)
             else
             {
-                // 피격 이펙트만 표시
-                if (basicAttackSkill.hitEffectPrefab != null)
+                // Hit effect
+                if (hitEffectPrefab != null)
                 {
-                    GameObject hitEffect = Object.Instantiate(basicAttackSkill.hitEffectPrefab, targetPos, Quaternion.identity);
+                    GameObject hitEffect = Object.Instantiate(hitEffectPrefab, targetPos, Quaternion.identity);
                     Object.Destroy(hitEffect, 2f);
                 }
 
-                // 즉시 데미지 적용
+                // Apply damage
                 if (target.GetTransform().CompareTag(Tag.Monster))
                 {
                     Monster monster = target.GetTransform().GetComponent<Monster>();
@@ -316,15 +379,14 @@ namespace Novelian.Combat
                     if (boss != null) boss.TakeDamage(FinalDamage);
                 }
 
-                Debug.Log($"[Character] Instant attack {basicAttackSkill.skillName} at {target.GetTransform().name} (Instant Damage: {FinalDamage:F1})");
+                Debug.Log($"[Character] Instant attack {basicAttackData.skill_name} at {target.GetTransform().name} (Instant Damage: {FinalDamage:F1})");
             }
         }
 
         //LMJ : Attempt to use active skill on target
-        //      Priority: Focus Mark > useWeightTargeting ? Weight : Distance
         private void TryUseActiveSkill()
         {
-            if (!isInitialized || activeSkill == null) return;
+            if (!isInitialized || activeSkillData == null) return;
 
             // Skip if already channeling
             if (isChanneling) return;
@@ -335,14 +397,14 @@ namespace Novelian.Combat
             if (target == null) return;
 
             // Check if skill is Channeling type
-            if (activeSkill.skillType == SkillAssetType.Channeling)
+            if (activeSkillData.GetSkillType() == SkillAssetType.Channeling)
             {
                 UseChannelingSkillAsync(target).Forget();
                 return;
             }
 
             // Check if skill is AOE type (Meteor, etc.)
-            if (activeSkill.skillType == SkillAssetType.AOE)
+            if (activeSkillData.GetSkillType() == SkillAssetType.AOE)
             {
                 UseAOESkillAsync(target).Forget();
                 return;
@@ -352,8 +414,11 @@ namespace Novelian.Combat
             Vector3 spawnPos = transform.position + spawnOffset;
             Vector3 targetPos = target.GetPosition();
 
-            // Effect가 있으면 ProjectileTemplate으로 다중 발사체 부채꼴 발사
-            if (activeSkill.projectileEffectPrefab != null)
+            // Get prefabs from database
+            GameObject projectilePrefab = activeSkillPrefabs?.projectilePrefab;
+
+            // Launch projectiles (fan pattern)
+            if (projectilePrefab != null || projectileTemplate != null)
             {
                 var pool = NovelianMagicLibraryDefense.Managers.GameManager.Instance.Pool;
                 int projectileCount = FinalActiveProjectileCount;
@@ -374,30 +439,26 @@ namespace Novelian.Combat
                     // 새로운 타겟 위치 계산 (멀리 떨어진 지점)
                     Vector3 spreadTargetPos = spawnPos + spreadDirection * 1000f;
 
-                    // 발사체 생성 및 발사 (Support 스킬 데이터 전달)
+                    // 발사체 생성 및 발사 (Support 스킬 ID 전달)
                     Projectile projectile = pool.Spawn<Projectile>(spawnPos);
-                    projectile.Launch(spawnPos, spreadTargetPos, FinalActiveProjectileSpeed, FinalActiveProjectileLifetime, FinalActiveDamage, activeSkill, supportSkill);
-
-                    // Debug: Support 스킬 전달 확인
-                    if (supportSkill != null)
-                    {
-                        Debug.Log($"[Character] Support Skill passed to projectile: {supportSkill.skillName}, StatusEffect: {supportSkill.statusEffectType}");
-                    }
+                    projectile.Launch(spawnPos, spreadTargetPos, FinalActiveProjectileSpeed, FinalActiveProjectileLifetime, FinalActiveDamage, activeSkillId, supportSkillId);
                 }
 
-                Debug.Log($"[Character] Used Active Skill (projectile x{projectileCount}): {activeSkill.skillName} at {target.GetTransform().name} (Damage: {FinalActiveDamage:F1})");
+                Debug.Log($"[Character] Used Active Skill (projectile x{projectileCount}): {activeSkillData.skill_name} at {target.GetTransform().name} (Damage: {FinalActiveDamage:F1})");
             }
-            // Effect도 없으면 즉발 공격
+            // Instant attack
             else
             {
-                // 피격 이펙트만 표시
-                if (activeSkill.hitEffectPrefab != null)
+                GameObject hitEffectPrefab = activeSkillPrefabs?.hitEffectPrefab;
+
+                // Hit effect
+                if (hitEffectPrefab != null)
                 {
-                    GameObject hitEffect = Object.Instantiate(activeSkill.hitEffectPrefab, targetPos, Quaternion.identity);
+                    GameObject hitEffect = Object.Instantiate(hitEffectPrefab, targetPos, Quaternion.identity);
                     Object.Destroy(hitEffect, 2f);
                 }
 
-                // 즉시 데미지 적용
+                // Apply damage
                 if (target.GetTransform().CompareTag(Tag.Monster))
                 {
                     Monster monster = target.GetTransform().GetComponent<Monster>();
@@ -409,14 +470,14 @@ namespace Novelian.Combat
                     if (boss != null) boss.TakeDamage(FinalActiveDamage);
                 }
 
-                Debug.Log($"[Character] Active instant attack {activeSkill.skillName} at {target.GetTransform().name} (Instant Damage: {FinalActiveDamage:F1})");
+                Debug.Log($"[Character] Active instant attack {activeSkillData.skill_name} at {target.GetTransform().name} (Instant Damage: {FinalActiveDamage:F1})");
             }
         }
 
         //LMJ : Use channeling skill (laser/beam style)
         private async UniTaskVoid UseChannelingSkillAsync(ITargetable target)
         {
-            if (activeSkill == null || activeSkill.skillType != SkillAssetType.Channeling) return;
+            if (activeSkillData == null || activeSkillData.GetSkillType() != SkillAssetType.Channeling) return;
 
             isChanneling = true;
             channelingCts?.Cancel();
@@ -431,16 +492,22 @@ namespace Novelian.Combat
 
             try
             {
-                Debug.Log($"[Character] Starting channeling skill: {activeSkill.skillName}");
+                Debug.Log($"[Character] Starting channeling skill: {activeSkillData.skill_name}");
+
+                // Get prefabs
+                GameObject castEffectPrefab = activeSkillPrefabs?.castEffectPrefab;
+                GameObject projectileEffectPrefab = activeSkillPrefabs?.projectilePrefab;
+                GameObject areaEffectPrefab = activeSkillPrefabs?.areaEffectPrefab;
+                GameObject hitEffectPrefab = activeSkillPrefabs?.hitEffectPrefab;
 
                 // 1. Cast Effect (시전 준비)
-                if (activeSkill.castTime > 0f && activeSkill.castEffectPrefab != null)
+                if (activeSkillData.cast_time > 0f && castEffectPrefab != null)
                 {
                     Vector3 spawnPos = transform.position + spawnOffset;
-                    castEffect = Object.Instantiate(activeSkill.castEffectPrefab, spawnPos, Quaternion.identity);
-                    Debug.Log($"[Character] Cast Effect started ({activeSkill.castTime:F1}s)");
+                    castEffect = Object.Instantiate(castEffectPrefab, spawnPos, Quaternion.identity);
+                    Debug.Log($"[Character] Cast Effect started ({activeSkillData.cast_time:F1}s)");
 
-                    await UniTask.Delay((int)(activeSkill.castTime * 1000), cancellationToken: ct);
+                    await UniTask.Delay((int)(activeSkillData.cast_time * 1000), cancellationToken: ct);
 
                     if (castEffect != null) Object.Destroy(castEffect);
                 }
@@ -452,12 +519,12 @@ namespace Novelian.Combat
                     return;
                 }
 
-                // 2. Start Effect (빔 발사 지점, 선택)
-                if (activeSkill.projectileEffectPrefab != null)
+                // 2. Start Effect (빔 발사 지점)
+                if (projectileEffectPrefab != null)
                 {
                     Vector3 spawnPos = transform.position + spawnOffset;
-                    startEffect = Object.Instantiate(activeSkill.projectileEffectPrefab, spawnPos, Quaternion.identity);
-                    startEffect.transform.SetParent(transform); // Follow character
+                    startEffect = Object.Instantiate(projectileEffectPrefab, spawnPos, Quaternion.identity);
+                    startEffect.transform.SetParent(transform);
                     Debug.Log("[Character] Start Effect spawned");
                 }
 
@@ -465,47 +532,41 @@ namespace Novelian.Combat
                 System.Collections.Generic.List<ITargetable> chainTargets = BuildChainTargets(target);
 
                 // 4. Create beam effects for all targets
-                if (activeSkill.areaEffectPrefab != null)
+                if (areaEffectPrefab != null)
                 {
                     for (int i = 0; i < chainTargets.Count; i++)
                     {
                         Vector3 spawnPos = (i == 0) ? transform.position + spawnOffset : chainTargets[i - 1].GetPosition();
-                        GameObject beamEffect = Object.Instantiate(activeSkill.areaEffectPrefab, spawnPos, Quaternion.identity);
+                        GameObject beamEffect = Object.Instantiate(areaEffectPrefab, spawnPos, Quaternion.identity);
                         beamEffects.Add(beamEffect);
                     }
                     Debug.Log($"[Character] Created {beamEffects.Count} beam effects for {chainTargets.Count} targets");
                 }
-                else
-                {
-                    Debug.LogWarning("[Character] Channeling skill has no Beam Effect (areaEffectPrefab)!");
-                }
 
-                // 5. Create hit effects for all targets (follow targets)
-                if (activeSkill.hitEffectPrefab != null)
+                // 5. Create hit effects for all targets
+                if (hitEffectPrefab != null)
                 {
                     for (int i = 0; i < chainTargets.Count; i++)
                     {
-                        GameObject hitEffect = Object.Instantiate(activeSkill.hitEffectPrefab, chainTargets[i].GetPosition(), Quaternion.identity);
-                        hitEffect.transform.SetParent(chainTargets[i].GetTransform()); // Follow target
+                        GameObject hitEffect = Object.Instantiate(hitEffectPrefab, chainTargets[i].GetPosition(), Quaternion.identity);
+                        hitEffect.transform.SetParent(chainTargets[i].GetTransform());
                         hitEffects.Add(hitEffect);
                     }
-                    Debug.Log($"[Character] Created {hitEffects.Count} hit effects following targets");
                 }
 
-                // 6. Channeling loop (channelDuration 동안)
+                // 6. Channeling loop
                 float elapsed = 0f;
                 float nextTickTime = 0f;
                 int tickCount = 0;
-                bool firstTick = true; // Track first tick for status effects
+                bool firstTick = true;
 
-                while (elapsed < activeSkill.channelDuration)
+                while (elapsed < activeSkillData.channel_duration)
                 {
-                    // Update beam effects position/rotation and clean up dead targets
+                    // Update beam effects and clean up dead targets
                     for (int i = 0; i < beamEffects.Count && i < chainTargets.Count; i++)
                     {
                         if (chainTargets[i] == null || !chainTargets[i].IsAlive())
                         {
-                            // Remove dead target's beam and hit effect
                             if (beamEffects[i] != null) Object.Destroy(beamEffects[i]);
                             beamEffects[i] = null;
 
@@ -522,7 +583,7 @@ namespace Novelian.Combat
                         UpdateBeamEffect(beamEffects[i], startPos, endPos);
                     }
 
-                    // Apply damage and effects at tick intervals
+                    // Apply damage at tick intervals
                     if (elapsed >= nextTickTime)
                     {
                         float currentDamage = FinalActiveDamage;
@@ -533,29 +594,26 @@ namespace Novelian.Combat
                                 continue;
 
                             // Apply chain damage reduction
-                            if (i > 0 && supportSkill != null && supportSkill.statusEffectType == StatusEffectType.Chain)
+                            if (i > 0 && supportData != null && supportData.GetStatusEffectType() == StatusEffectType.Chain)
                             {
-                                currentDamage *= (1f - supportSkill.chainDamageReduction / 100f);
+                                currentDamage *= (1f - supportData.chain_damage_reduction / 100f);
                             }
 
                             // Apply status effects (only on first tick)
-                            if (firstTick && supportSkill != null && supportSkill.statusEffectType != StatusEffectType.Chain)
+                            if (firstTick && supportData != null && supportData.GetStatusEffectType() != StatusEffectType.Chain)
                             {
                                 ApplyStatusEffect(chainTargets[i]);
                             }
 
                             // Apply damage
                             chainTargets[i].TakeDamage(currentDamage);
-
-                            Debug.Log($"[Character] Channeling tick {tickCount} target {i}: {currentDamage:F1} damage to {chainTargets[i].GetTransform().name}");
                         }
 
                         tickCount++;
-                        nextTickTime += activeSkill.channelTickInterval;
+                        nextTickTime += activeSkillData.channel_tick_interval;
                         firstTick = false;
                     }
 
-                    // Wait one frame
                     await UniTask.Yield(ct);
                     elapsed += Time.deltaTime;
                 }
@@ -568,7 +626,6 @@ namespace Novelian.Combat
             }
             finally
             {
-                // Clean up effects
                 if (castEffect != null) Object.Destroy(castEffect);
                 if (startEffect != null) Object.Destroy(startEffect);
                 foreach (var beam in beamEffects)
@@ -581,14 +638,13 @@ namespace Novelian.Combat
                 }
 
                 isChanneling = false;
-                Debug.Log("[Character] Channeling ended, effects cleaned up");
             }
         }
 
-        //LMJ : Use AOE skill (Meteor style - falls from sky, ground collision)
+        //LMJ : Use AOE skill (Meteor style)
         private async UniTaskVoid UseAOESkillAsync(ITargetable target)
         {
-            if (activeSkill == null || activeSkill.skillType != SkillAssetType.AOE) return;
+            if (activeSkillData == null || activeSkillData.GetSkillType() != SkillAssetType.AOE) return;
 
             GameObject castEffect = null;
             GameObject meteorEffect = null;
@@ -596,22 +652,25 @@ namespace Novelian.Combat
 
             try
             {
-                Debug.Log($"[Character] Starting AOE skill: {activeSkill.skillName}, Damage: {FinalActiveDamage:F1}");
+                Debug.Log($"[Character] Starting AOE skill: {activeSkillData.skill_name}");
 
-                // 1. Cast Effect (시전 준비) - 캐릭터 위치에서 재생
-                if (activeSkill.castTime > 0f && activeSkill.castEffectPrefab != null)
+                // Get prefabs
+                GameObject castEffectPrefab = activeSkillPrefabs?.castEffectPrefab;
+                GameObject projectileEffectPrefab = activeSkillPrefabs?.projectilePrefab;
+                GameObject hitEffectPrefab = activeSkillPrefabs?.hitEffectPrefab;
+
+                // 1. Cast Effect
+                if (activeSkillData.cast_time > 0f && castEffectPrefab != null)
                 {
                     Vector3 spawnPos = transform.position + spawnOffset;
-                    castEffect = Object.Instantiate(activeSkill.castEffectPrefab, spawnPos, Quaternion.identity);
-                    Debug.Log($"[Character] AOE Cast Effect started ({activeSkill.castTime:F1}s)");
+                    castEffect = Object.Instantiate(castEffectPrefab, spawnPos, Quaternion.identity);
 
-                    await UniTask.Delay((int)(activeSkill.castTime * 1000));
+                    await UniTask.Delay((int)(activeSkillData.cast_time * 1000));
 
                     if (castEffect != null) Object.Destroy(castEffect);
                 }
 
-                // 2. castTime 후 타겟 위치 다시 가져오기 (몬스터가 이동했을 수 있음)
-                // 타겟이 죽었으면 마지막 위치 사용
+                // 2. Get target position
                 Vector3 targetPos;
                 if (target != null && target.IsAlive())
                 {
@@ -619,12 +678,10 @@ namespace Novelian.Combat
                 }
                 else
                 {
-                    // 타겟이 죽었으면 새 타겟 찾기
                     ITargetable newTarget = TargetRegistry.Instance.FindTarget(transform.position, FinalActiveRange, useWeightTargeting);
                     if (newTarget != null)
                     {
                         targetPos = newTarget.GetPosition();
-                        Debug.Log($"[Character] Original target died, using new target at {targetPos}");
                     }
                     else
                     {
@@ -633,40 +690,28 @@ namespace Novelian.Combat
                     }
                 }
 
-                // 3. 착탄 위치는 지면 좌표로 변환 (Meteor-style)
+                // 3. Ground impact position
                 Vector3 impactPos = targetPos;
-
-                // Raycast로 지면 위치 찾기
                 Ray groundRay = new Ray(targetPos + Vector3.up * 10f, Vector3.down);
                 if (Physics.Raycast(groundRay, out RaycastHit groundHit, 20f, LayerMask.GetMask("Ground")))
                 {
                     impactPos = groundHit.point;
-                    Debug.Log($"[Character] AOE ground impact: {impactPos} (raycast hit)");
                 }
                 else
                 {
-                    // Ground 레이어 못 찾으면 Y=0으로 설정
                     impactPos = new Vector3(targetPos.x, 0f, targetPos.z);
-                    Debug.Log($"[Character] AOE ground impact: {impactPos} (fallback Y=0)");
                 }
 
-                // 4. Meteor Effect (착탄점 위에서 출발 → 착탄 지점으로 낙하)
-                if (activeSkill.projectileEffectPrefab != null)
+                // 4. Meteor Effect
+                if (projectileEffectPrefab != null)
                 {
-                    // 메테오 시작 위치: 착탄점 위 20m
                     Vector3 meteorStartPos = impactPos + Vector3.up * 20f;
+                    meteorEffect = Object.Instantiate(projectileEffectPrefab, meteorStartPos, Quaternion.identity);
 
-                    meteorEffect = Object.Instantiate(activeSkill.projectileEffectPrefab, meteorStartPos, Quaternion.identity);
-                    Debug.Log($"[Character] Meteor spawned at {meteorStartPos}, moving to {impactPos}");
-
-                    // Meteor 이동 애니메이션 (projectileSpeed 사용)
                     float meteorSpeed = FinalActiveProjectileSpeed > 0 ? FinalActiveProjectileSpeed : 10f;
                     float distance = Vector3.Distance(meteorStartPos, impactPos);
                     float travelTime = distance / meteorSpeed;
 
-                    Debug.Log($"[Character] Meteor travel: distance={distance:F1}m, speed={meteorSpeed:F1}, time={travelTime:F2}s");
-
-                    // Lerp로 이동 애니메이션
                     float elapsed = 0f;
                     while (elapsed < travelTime && meteorEffect != null)
                     {
@@ -674,7 +719,6 @@ namespace Novelian.Combat
                         float t = Mathf.Clamp01(elapsed / travelTime);
                         meteorEffect.transform.position = Vector3.Lerp(meteorStartPos, impactPos, t);
 
-                        // Meteor가 착탄 지점을 바라보도록 회전
                         Vector3 direction = (impactPos - meteorStartPos).normalized;
                         if (direction != Vector3.zero)
                         {
@@ -684,27 +728,22 @@ namespace Novelian.Combat
                         await UniTask.Yield(PlayerLoopTiming.Update);
                     }
 
-                    // 최종 위치 보정
                     if (meteorEffect != null)
                     {
                         meteorEffect.transform.position = impactPos;
                     }
                 }
 
-                // 5. Hit Effect (착탄 폭발) - 착탄 위치에서 재생
-                if (activeSkill.hitEffectPrefab != null)
+                // 5. Hit Effect
+                if (hitEffectPrefab != null)
                 {
-                    hitEffect = Object.Instantiate(activeSkill.hitEffectPrefab, impactPos, Quaternion.identity);
-                    Debug.Log($"[Character] AOE Hit Effect spawned at {impactPos}");
+                    hitEffect = Object.Instantiate(hitEffectPrefab, impactPos, Quaternion.identity);
                 }
 
-                // 6. AOE 범위 데미지 적용 (착탄 위치 기준)
-                float aoeRadius = activeSkill.aoeRadius > 0 ? activeSkill.aoeRadius : 3f;
+                // 6. AOE damage
+                float aoeRadius = activeSkillData.aoe_radius > 0 ? activeSkillData.aoe_radius : 3f;
                 Collider[] hits = Physics.OverlapSphere(impactPos, aoeRadius);
-                int hitCount = 0;
                 float damageToApply = FinalActiveDamage;
-
-                Debug.Log($"[Character] AOE checking {hits.Length} colliders in {aoeRadius}m radius");
 
                 foreach (var hit in hits)
                 {
@@ -715,27 +754,20 @@ namespace Novelian.Combat
                     if (hitTarget == null || !hitTarget.IsAlive())
                         continue;
 
-                    // 데미지 적용
-                    Debug.Log($"[Character] AOE applying {damageToApply:F1} damage to {hit.name}");
                     hitTarget.TakeDamage(damageToApply);
-                    hitCount++;
 
-                    // Support 스킬 상태이상 적용
-                    if (supportSkill != null && supportSkill.statusEffectType != StatusEffectType.None)
+                    // Apply status effects
+                    if (supportData != null && supportData.GetStatusEffectType() != StatusEffectType.None)
                     {
                         ApplyStatusEffect(hitTarget);
                     }
                 }
 
-                Debug.Log($"[Character] AOE skill {activeSkill.skillName} completed: {hitCount} targets hit with {damageToApply:F1} damage each");
-
-                // Meteor 이펙트 정리 (hitEffect보다 먼저 사라지게)
+                // Cleanup
                 if (meteorEffect != null)
                 {
                     Object.Destroy(meteorEffect, 0.1f);
                 }
-
-                // Hit Effect 자동 정리 (2초 후)
                 if (hitEffect != null)
                 {
                     Object.Destroy(hitEffect, 2f);
@@ -747,7 +779,6 @@ namespace Novelian.Combat
             }
             finally
             {
-                // 예외 발생 시 이펙트 정리
                 if (castEffect != null) Object.Destroy(castEffect);
             }
         }
@@ -758,26 +789,24 @@ namespace Novelian.Combat
             var targets = new System.Collections.Generic.List<ITargetable> { firstTarget };
 
             // If no Chain support skill, return single target
-            if (supportSkill == null || supportSkill.statusEffectType != StatusEffectType.Chain)
+            if (supportData == null || supportData.GetStatusEffectType() != StatusEffectType.Chain)
             {
                 return targets;
             }
 
             // Build chain
-            int maxChainCount = supportSkill.chainCount;
+            int maxChainCount = supportData.chain_count;
             var hitTargets = new System.Collections.Generic.HashSet<ITargetable> { firstTarget };
             ITargetable currentTarget = firstTarget;
 
             for (int i = 0; i < maxChainCount; i++)
             {
-                ITargetable nextTarget = FindNextChainTarget(currentTarget.GetPosition(), supportSkill.chainRange, hitTargets);
+                ITargetable nextTarget = FindNextChainTarget(currentTarget.GetPosition(), supportData.chain_range, hitTargets);
                 if (nextTarget == null) break;
 
                 targets.Add(nextTarget);
                 hitTargets.Add(nextTarget);
                 currentTarget = nextTarget;
-
-                Debug.Log($"[Character] Chain {i + 1}/{maxChainCount}: {nextTarget.GetTransform().name}");
             }
 
             return targets;
@@ -800,7 +829,6 @@ namespace Novelian.Combat
                 if (target == null || !target.IsAlive())
                     continue;
 
-                // Skip already hit targets
                 if (hitTargets.Contains(target))
                     continue;
 
@@ -819,9 +847,14 @@ namespace Novelian.Combat
         //LMJ : Apply status effects to target (CC, DOT, Mark)
         private void ApplyStatusEffect(ITargetable target)
         {
-            if (supportSkill == null || target == null) return;
+            if (supportData == null || target == null) return;
 
-            switch (supportSkill.statusEffectType)
+            // Get effect prefabs
+            GameObject ccEffectPrefab = supportPrefabs?.ccEffectPrefab;
+            GameObject dotEffectPrefab = supportPrefabs?.dotEffectPrefab;
+            GameObject markEffectPrefab = supportPrefabs?.markEffectPrefab;
+
+            switch (supportData.GetStatusEffectType())
             {
                 case StatusEffectType.CC:
                     if (target.GetTransform().CompareTag(Tag.Monster))
@@ -829,8 +862,7 @@ namespace Novelian.Combat
                         Monster monster = target.GetTransform().GetComponent<Monster>();
                         if (monster != null)
                         {
-                            monster.ApplyCC(supportSkill.ccType, supportSkill.ccDuration, supportSkill.ccSlowAmount, supportSkill.ccEffectPrefab);
-                            Debug.Log($"[Character] Applied CC to {monster.name}: {supportSkill.ccType}");
+                            monster.ApplyCC(supportData.GetCCType(), supportData.cc_duration, supportData.cc_slow_amount, ccEffectPrefab);
                         }
                     }
                     else if (target.GetTransform().CompareTag(Tag.BossMonster))
@@ -838,8 +870,7 @@ namespace Novelian.Combat
                         BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
                         if (boss != null)
                         {
-                            boss.ApplyCC(supportSkill.ccType, supportSkill.ccDuration, supportSkill.ccSlowAmount, supportSkill.ccEffectPrefab);
-                            Debug.Log($"[Character] Applied CC to {boss.name}: {supportSkill.ccType}");
+                            boss.ApplyCC(supportData.GetCCType(), supportData.cc_duration, supportData.cc_slow_amount, ccEffectPrefab);
                         }
                     }
                     break;
@@ -850,8 +881,7 @@ namespace Novelian.Combat
                         Monster monster = target.GetTransform().GetComponent<Monster>();
                         if (monster != null)
                         {
-                            monster.ApplyDOT(supportSkill.dotType, supportSkill.dotDamagePerTick, supportSkill.dotTickInterval, supportSkill.dotDuration, supportSkill.dotEffectPrefab);
-                            Debug.Log($"[Character] Applied DOT to {monster.name}: {supportSkill.dotType}");
+                            monster.ApplyDOT(supportData.GetDOTType(), supportData.dot_damage_per_tick, supportData.dot_tick_interval, supportData.dot_duration, dotEffectPrefab);
                         }
                     }
                     else if (target.GetTransform().CompareTag(Tag.BossMonster))
@@ -859,8 +889,7 @@ namespace Novelian.Combat
                         BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
                         if (boss != null)
                         {
-                            boss.ApplyDOT(supportSkill.dotType, supportSkill.dotDamagePerTick, supportSkill.dotTickInterval, supportSkill.dotDuration, supportSkill.dotEffectPrefab);
-                            Debug.Log($"[Character] Applied DOT to {boss.name}: {supportSkill.dotType}");
+                            boss.ApplyDOT(supportData.GetDOTType(), supportData.dot_damage_per_tick, supportData.dot_tick_interval, supportData.dot_duration, dotEffectPrefab);
                         }
                     }
                     break;
@@ -871,8 +900,7 @@ namespace Novelian.Combat
                         Monster monster = target.GetTransform().GetComponent<Monster>();
                         if (monster != null)
                         {
-                            monster.ApplyMark(supportSkill.markType, supportSkill.markDuration, supportSkill.markDamageMultiplier, supportSkill.markEffectPrefab);
-                            Debug.Log($"[Character] Applied Mark to {monster.name}: {supportSkill.markType}");
+                            monster.ApplyMark(supportData.GetMarkType(), supportData.mark_duration, supportData.mark_damage_mult, markEffectPrefab);
                         }
                     }
                     else if (target.GetTransform().CompareTag(Tag.BossMonster))
@@ -880,8 +908,7 @@ namespace Novelian.Combat
                         BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
                         if (boss != null)
                         {
-                            boss.ApplyMark(supportSkill.markType, supportSkill.markDuration, supportSkill.markDamageMultiplier, supportSkill.markEffectPrefab);
-                            Debug.Log($"[Character] Applied Mark to {boss.name}: {supportSkill.markType}");
+                            boss.ApplyMark(supportData.GetMarkType(), supportData.mark_duration, supportData.mark_damage_mult, markEffectPrefab);
                         }
                     }
                     break;
@@ -892,23 +919,11 @@ namespace Novelian.Combat
             }
         }
 
-        //LMJ : Update beam effect to connect character and target
-        private void UpdateBeamEffect(GameObject beamEffect, ITargetable target)
-        {
-            if (beamEffect == null || target == null) return;
-
-            Vector3 startPos = transform.position + spawnOffset;
-            Vector3 endPos = target.GetPosition();
-
-            UpdateBeamEffect(beamEffect, startPos, endPos);
-        }
-
-        //LMJ : Update beam effect to connect two positions (for chain beams)
+        //LMJ : Update beam effect to connect two positions
         private void UpdateBeamEffect(GameObject beamEffect, Vector3 startPos, Vector3 endPos)
         {
             if (beamEffect == null) return;
 
-            // Try LineRenderer first (most common for beam effects)
             LineRenderer lineRenderer = beamEffect.GetComponent<LineRenderer>();
             if (lineRenderer != null)
             {
@@ -917,13 +932,13 @@ namespace Novelian.Combat
                 return;
             }
 
-            // Fallback: Transform-based (position, scale, rotation)
+            // Fallback: Transform-based
             Vector3 direction = endPos - startPos;
             float distance = direction.magnitude;
 
             beamEffect.transform.position = startPos;
             beamEffect.transform.rotation = Quaternion.LookRotation(direction);
-            beamEffect.transform.localScale = new Vector3(1f, 1f, distance); // Stretch along Z-axis
+            beamEffect.transform.localScale = new Vector3(1f, 1f, distance);
         }
 
         // IPoolable implementation
@@ -933,12 +948,12 @@ namespace Novelian.Combat
 
             if (!isInitialized)
             {
-                Start(); // Initialize if not started yet
+                Start();
             }
             else
             {
-                StartAttackLoop(); // Restart attack loop
-                StartActiveSkillLoop(); // Restart active skill loop
+                StartAttackLoop();
+                StartActiveSkillLoop();
             }
 
             Debug.Log("[Character] Character spawned and ready");
@@ -979,6 +994,15 @@ namespace Novelian.Combat
         public void SetTargetingStrategy(bool useWeight)
         {
             useWeightTargeting = useWeight;
+        }
+
+        //LMJ : Set skill IDs at runtime
+        public void SetSkillIds(int basicAttackId, int activeId = 0, int supportId = 0)
+        {
+            basicAttackSkillId = basicAttackId;
+            activeSkillId = activeId;
+            supportSkillId = supportId;
+            LoadSkillData();
         }
     }
 }

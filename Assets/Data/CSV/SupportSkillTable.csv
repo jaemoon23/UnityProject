@@ -1,0 +1,8 @@
+﻿서포트ID,//서포트명,서포트카테고리,호환타입,추가투사체,추가관통,데미지배율,속도배율,범위배율,쿨다운배율,마나배율,공속배율,시전배율,상태효과,CC타입,CC지속,슬로우량,DOT타입,DOT지속,DOT틱간격,DOT틱데미지,표식타입,표식지속,표식데미지배율,체인수,체인범위,체인데미지감소,//설명
+support_id,//support_name,support_category,compatible_types,add_projectiles,add_pierce,damage_mult,speed_mult,aoe_mult,cooldown_mult,mana_mult,attack_speed_mult,cast_time_mult,status_effect,cc_type,cc_duration,cc_slow_amount,dot_type,dot_duration,dot_tick_interval,dot_damage_per_tick,mark_type,mark_duration,mark_damage_mult,chain_count,chain_range,chain_damage_reduction,//description
+int,//string,int,int,int,int,float,float,float,float,float,float,float,int,int,float,float,int,float,float,float,int,float,float,int,float,float,//string
+2001,다중 발사체,8001,1000,3,0,1,1,1,1,1,1,1,4000,5000,0,0,6000,0,0,0,7000,0,0,0,0,0,다중 발사체 프로토타입
+2002,체이닝,8004,1000,0,0,1,1,1,1,1,1,1,4004,5000,0,0,6000,0,0,0,7000,0,0,5,10,5,체이닝 프로토타입
+2003,도트,8002,1000,0,0,1,1,1,1,1,1,1,4002,5000,0,0,6001,5,0.5,5,7000,0,0,0,0,0,도트 프로토타입
+2004,스턴,8003,1000,0,0,1,1,1,1,1,1,1,4001,5001,2,50,6000,0,0,0,7000,0,0,0,0,0,프로토타입 CC
+2005,표식,8003,1000,0,0,1,1,1,1,1,1,1,4003,5000,0,0,6000,0,0,0,7007,10,10,0,0,0,표식 프로토타입

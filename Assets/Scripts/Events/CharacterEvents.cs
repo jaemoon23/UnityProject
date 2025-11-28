@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Novelian.Combat;
 
 namespace NovelianMagicLibraryDefense.Events
 {
