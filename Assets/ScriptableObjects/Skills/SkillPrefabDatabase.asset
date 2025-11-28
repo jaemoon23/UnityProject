@@ -12,5 +12,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ccc6b02694cc1a4e8925e2d6b885d90, type: 3}
   m_Name: SkillPrefabDatabase
   m_EditorClassIdentifier: 
-  mainSkillPrefabs: []
+  mainSkillPrefabs:
+  - skillId: 1001
+    skillName: "\uAE30\uBCF8 \uACF5\uACA9"
+    projectilePrefab: {fileID: 7785755858626788334, guid: 27fdad548a48ecf4bbf8a6c7542cc807, type: 3}
+    hitEffectPrefab: {fileID: 701876006405899356, guid: 3441db818ac82b642a02ee06d3522420, type: 3}
+    castEffectPrefab: {fileID: 0}
+    areaEffectPrefab: {fileID: 0}
+    trailEffectPrefab: {fileID: 0}
+  - skillId: 1002
+    skillName: "\uD30C\uC774\uC5B4\uBCFC"
+    projectilePrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    castEffectPrefab: {fileID: 0}
+    areaEffectPrefab: {fileID: 0}
+    trailEffectPrefab: {fileID: 0}
+  - skillId: 1003
+    skillName: "\uAD11\uC5ED \uC2A4\uD0AC"
+    projectilePrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    castEffectPrefab: {fileID: 0}
+    areaEffectPrefab: {fileID: 0}
+    trailEffectPrefab: {fileID: 0}
+  - skillId: 1004
+    skillName: "\uCC44\uB110\uB9C1"
+    projectilePrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    castEffectPrefab: {fileID: 0}
+    areaEffectPrefab: {fileID: 0}
+    trailEffectPrefab: {fileID: 0}
   supportSkillPrefabs: []
