@@ -36,6 +36,14 @@ public static class AddressableKey
     public static readonly string CharacterEnhancementTable = "CharacterEnhancementTable";
     public static readonly string StringTable = "StringTable";
 
+    // 새 스킬 시스템 CSV 테이블
+    public static readonly string MainSkillTable = "MainSkillTable";
+    public static readonly string SupportSkillTable = "SupportSkillTable";
+    public static readonly string SkillLevelTable = "SkillLevelTable";
+
+    // 스킬 Prefab 데이터베이스
+    public static readonly string SkillPrefabDatabase = "SkillPrefabDatabase";
+
     public static string GetCharacterKey(int characterId)
     {
         return $"Character_{characterId:D2}";
