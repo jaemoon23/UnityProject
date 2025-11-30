@@ -20,11 +20,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1b946b52f4b79034cbdb55e8bbc98445
-    m_Address: EnhancementLevelTable
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2c95c08767792c84baa977f946c61a79
     m_Address: PictoIcon_Check
     m_ReadOnly: 0
@@ -72,16 +67,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c0abb1aa60f13734ea6c1f447b1d19e2
     m_Address: GowunDodum-Regular SDF
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d6277d666d94a9649879a154fbf89429
-    m_Address: CharacterTable
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e0887ef28446ce2408802e3b8f0f7ef7
-    m_Address: StringTable
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

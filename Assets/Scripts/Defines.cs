@@ -34,6 +34,12 @@ public static class AddressableKey
     public static readonly string SkillTable = "SkillTable";
     public static readonly string EnhancementLevelTable = "EnhancementLevelTable";
     public static readonly string CharacterEnhancementTable = "CharacterEnhancementTable";
+    public static readonly string StageTable = "StageTable";
+    public static readonly string WaveTable = "WaveTable";
+    public static readonly string MonsterLevelTable = "MonsterLevelTable";
+    public static readonly string MonsterTable = "MonsterTable";
+    public static readonly string RewardTable = "RewardTable";
+    public static readonly string RewardGroupTable = "RewardGroupTable";
     public static readonly string StringTable = "StringTable";
 
 
