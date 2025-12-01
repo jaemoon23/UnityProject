@@ -331,6 +331,9 @@ namespace NovelianMagicLibraryDefense.UI
             // DeckManager에서 덱 가져오기
             var deck = DeckManager.Instance?.GetValidCharacters();
 
+            // JML: 덱 상태 디버그 로그
+            Debug.Log($"[CardSelectPanel] 덱 상태: {(deck != null ? $"[{string.Join(", ", deck)}] (총 {deck.Count}개)" : "null")}");
+
             if (deck == null || deck.Count == 0)
             {
                 Debug.LogWarning("[CardSelectPanel] DeckManager가 없거나 덱이 비어있습니다!");

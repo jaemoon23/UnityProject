@@ -131,12 +131,16 @@ public class DeckCharacterSlot : MonoBehaviour
     /// </summary>
     public void OnClicked()
     {
-        Debug.Log($"[DeckCharacterSlot] Clicked: {characterNameText.text} (ID: {characterId})");
+        Debug.Log($"[DeckCharacterSlot] OnClicked 호출됨 - {characterNameText.text} (ID: {characterId}), teamSetupPanel: {(teamSetupPanel != null ? "연결됨" : "NULL!")}");
 
         // TeamSetupPanel에 선택된 캐릭터 전달
         if (teamSetupPanel != null)
         {
             teamSetupPanel.OnCharacterSelected(characterId);
+        }
+        else
+        {
+            Debug.LogError("[DeckCharacterSlot] teamSetupPanel이 null입니다! SetPanel이 호출되지 않았습니다.");
         }
     }
 }
