@@ -1,17 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Dispatch
 {
     /// <summary>
-    /// 파견 시스템 매니저
+    /// 파견 시스템 매니저 (CSV 데이터 기반)
     /// </summary>
     public class DispatchManager : MonoBehaviour
     {
-        [Header("시간 설정")]
-        [SerializeField] private DispatchTimeSettings timeSettings;
-
         [Header("테스트 모드")]
         [SerializeField] private bool useTestMode = true;
         [SerializeField] private float testTimeScale = 900f; // 4시간(14400초) → 16초로 테스트
@@ -58,10 +56,10 @@ namespace Dispatch
         /// </summary>
         public void StartDispatch(int locationId, string locationName, DispatchType type, int hours)
         {
-            // timeSettings null 체크
-            if (timeSettings == null)
+            // CSV 로더 체크
+            if (!CSVLoader.Instance.IsInit)
             {
-                Debug.LogError("[DispatchManager] DispatchTimeSettings가 할당되지 않았습니다! Inspector에서 할당해주세요.");
+                Debug.LogError("[DispatchManager] CSVLoader가 초기화되지 않았습니다!");
                 return;
             }
 
@@ -86,11 +84,13 @@ namespace Dispatch
 
             activeDispatches[locationId] = dispatchInfo;
 
-            var timeData = timeSettings.GetTimeData(hours);
+            // CSV에서 보상 배율 가져오기
+            float rewardMultiplier = GetRewardMultiplier(locationId, hours);
+
             Debug.Log($"<color=cyan>[DispatchManager] 파견 시작!</color>\n" +
                       $"장소: {locationName}\n" +
-                      $"타입: {(type == DispatchType.Collection ? "채집형" : "전투형")}\n" +
-                      $"시간: {hours}시간 (배율: x{timeData.rewardMultiplier})\n" +
+                      $"타입: {(type == DispatchType.Combat ? "전투형" : "채집형")}\n" +
+                      $"시간: {hours}시간 (배율: x{rewardMultiplier})\n" +
                       $"시작: {startTime:yyyy-MM-dd HH:mm:ss}\n" +
                       $"완료 예정: {endTime:yyyy-MM-dd HH:mm:ss}");
 
@@ -106,7 +106,7 @@ namespace Dispatch
         /// </summary>
         private void CheckDispatchProgress()
         {
-            if (activeDispatches.Count == 0 || timeSettings == null) return;
+            if (activeDispatches.Count == 0 || !CSVLoader.Instance.IsInit) return;
 
             DateTime currentTime = timeProvider.GetCurrentTime();
             List<int> completedIds = new List<int>();
@@ -121,14 +121,13 @@ namespace Dispatch
                     dispatch.status = DispatchStatus.Completed;
                     completedIds.Add(kvp.Key);
 
-                    var timeData = timeSettings.GetTimeData(dispatch.durationHours);
-                    //Debug.Log($"<color=green>====================================</color>");
+                    float rewardMultiplier = GetRewardMultiplier(dispatch.locationId, dispatch.durationHours);
+
                     Debug.Log($"<color=green>[파견 완료!] {dispatch.durationHours}시간 파견 완료!</color>");
-                    //Debug.Log($"<color=green>====================================</color>");
                     Debug.Log($"장소: {dispatch.locationName}\n" +
-                              $"타입: {(dispatch.dispatchType == DispatchType.Collection ? "채집형" : "전투형")}\n" +
+                              $"타입: {(dispatch.dispatchType == DispatchType.Combat ? "전투형" : "채집형")}\n" +
                               $"소요 시간: {dispatch.durationHours}시간\n" +
-                              $"보상 배율: x{timeData.rewardMultiplier}\n" +
+                              $"보상 배율: x{rewardMultiplier}\n" +
                               $"완료 시간: {currentTime:yyyy-MM-dd HH:mm:ss}");
                 }
             }
@@ -138,6 +137,43 @@ namespace Dispatch
             {
                 activeDispatches.Remove(id);
             }
+        }
+
+        /// <summary>
+        /// CSV 데이터에서 보상 배율 가져오기
+        /// </summary>
+        private float GetRewardMultiplier(int locationId, int hours)
+        {
+            var timeTable = CSVLoader.Instance.GetTable<DispatchTimeTableData>();
+            var rewardTable = CSVLoader.Instance.GetTable<DispatchRewardTableData>();
+
+            if (timeTable == null || rewardTable == null)
+            {
+                Debug.LogWarning("[DispatchManager] CSV 테이블을 찾을 수 없습니다. 기본 배율 1.0 반환");
+                return 1.0f;
+            }
+
+            // 시간에 해당하는 Time_ID 찾기
+            var timeData = timeTable.FindAll(x => x.Required_Hours == hours).FirstOrDefault();
+            if (timeData == null)
+            {
+                Debug.LogWarning($"[DispatchManager] {hours}시간에 해당하는 시간 데이터를 찾을 수 없습니다.");
+                return 1.0f;
+            }
+
+            // locationId와 timeId로 보상 데이터 찾기
+            var reward = rewardTable.FindAll(x =>
+                x.Dispatch_Location_ID == locationId &&
+                x.Dispatch_Time_ID == timeData.Dispatch_Time_ID
+            ).FirstOrDefault();
+
+            if (reward != null)
+            {
+                return reward.Reward_Multiplier;
+            }
+
+            Debug.LogWarning($"[DispatchManager] 장소ID {locationId}, 시간 {hours}시간에 대한 보상 데이터를 찾을 수 없습니다.");
+            return 1.0f;
         }
 
         /// <summary>

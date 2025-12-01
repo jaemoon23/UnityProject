@@ -16,6 +16,7 @@ namespace NovelianMagicLibraryDefense.UI
         {
             LoadSceneWithFadeOnly("LobbyScene").Forget();
         }
+
         public void OnBookMarkButton()
         {
             LoadSceneWithFadeOnly("BookMarkCraftScene").Forget();
@@ -40,6 +41,11 @@ namespace NovelianMagicLibraryDefense.UI
         public void OnLibraryManagementButton()
         {
             LoadSceneWithFadeOnly("LibraryManagementScene(LCB)").Forget();
+        }
+        public void OnDisPatchButton()
+    
+        {
+            LoadSceneWithFadeOnly("DispatchSystemScene").Forget();
         }
 
         /// <summary>

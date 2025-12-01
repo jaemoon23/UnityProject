@@ -8,8 +8,8 @@ namespace Dispatch
     /// </summary>
     public enum DispatchType
     {
-        Collection,  // 채집형 (지상 파견)
-        Combat       // 전투형 (지하 파견)
+        Combat = 1,      // 전투형 (지하 파견)
+        Collection = 2,  // 채집형 (지상 파견)
     }
 
     /// <summary>

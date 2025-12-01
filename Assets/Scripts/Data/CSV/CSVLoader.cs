@@ -73,6 +73,10 @@ public class CSVLoader : MonoBehaviour
                 RegisterTableAsync<MonsterData>(AddressableKey.MonsterTable, x => x.Monster_ID),
                 RegisterTableAsync<RewardData>(AddressableKey.RewardTable, x => x.Reward_ID),
                 RegisterTableAsync<RewardGroupData>(AddressableKey.RewardGroupTable, x => x.Reward_Group_ID),
+                RegisterTableAsync<DispatchCategoryData>(AddressableKey.DispatchCategoryTable, x => x.Dispatch_ID),
+                RegisterTableAsync<DispatchLocationData>(AddressableKey.DispatchLocationTable, x => x.Dispatch_Location_ID),
+                RegisterTableAsync<DispatchTimeTableData>(AddressableKey.DispatchTimeTable, x => x.Dispatch_Time_ID),
+                RegisterTableAsync<DispatchRewardTableData>(AddressableKey.DispatchRewardTable, x => x.Dispatch_Reward_ID),
 
 
                 // 새 스킬 테이블 (3행 헤더 형식)
