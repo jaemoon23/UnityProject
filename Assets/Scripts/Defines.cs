@@ -41,8 +41,11 @@ public static class AddressableKey
     public static readonly string RewardTable = "RewardTable";
     public static readonly string RewardGroupTable = "RewardGroupTable";
     public static readonly string StringTable = "StringTable";
-
-
+    public static readonly string DispatchCategoryTable = "DispatchCategoryTable";
+    public static readonly string DispatchLocationTable = "DispatchLocationTable";
+    public static readonly string DispatchRewardTable = "DispatchRewardTable";
+    public static readonly string DispatchTimeTable = "DispatchTimeTable";
+    
     // JML: Icon Addressable Keys
     public static readonly string Icon_Mystery = "Icon_Mystery";
     public static readonly string IconAdventure = "Icon_Adventure";
@@ -150,3 +153,24 @@ public enum CurrencyType
     PaidCurrency = 2,
     SpecialCurrency = 3
 }
+
+public enum DispatchType
+{
+    Combat = 1,     // 전투형
+    Collection = 2  // 채집형
+}
+
+public enum DispatchLocation
+{
+    NightmareWarehouse = 1,     // 악몽의 창고
+    FateWarehouse = 2,          // 운명의 창고
+    LaughterWarehouse = 3,      // 웃음의 창고
+    TruthWarehouse = 4,         // 진실의 창고
+    UnknownWarehouse = 5,       // 미지의 창고
+    MagicLibraryOrganization = 6,   // 마도 서고 정돈
+    MagicBarrierInspection = 7,     // 마력 장벽 유지 검사
+    SpellbookCoverRestoration = 8,  // 마도서 표지 복원
+    SealStabilityCheck = 9,         // 봉인구 안정성 확인
+    MagicResiduePurification = 10   // 마력 잔재 정화
+}
+
