@@ -13,6 +13,7 @@ namespace NovelianMagicLibraryDefense.Managers
     {
         [Header("UI References")]
         [SerializeField] private GameObject panel3;
+        [SerializeField] private GameObject deckSetupTextPanel;
 
         private void Awake()
         {
@@ -57,6 +58,14 @@ namespace NovelianMagicLibraryDefense.Managers
         }
         public void OnLoadGameScene()
         {
+            // 0. 덱 설정 확인
+            if (DeckManager.Instance == null || DeckManager.Instance.IsDeckEmpty())
+            {
+                Debug.LogWarning("[StageSceneManager] 덱이 설정되지 않음!");
+                ShowDeckSetupWarning();
+                return;
+            }
+
             // 1. SelectedStage 데이터 확인
             if (!SelectedStage.HasSelection)
             {
@@ -97,7 +106,23 @@ namespace NovelianMagicLibraryDefense.Managers
 
         private async UniTaskVoid LoadGameSceneAsync()
         {
-            await FadeController.Instance.LoadSceneWithFade("GameScene");
+            await FadeController.Instance.LoadSceneWithFade("GameScene (JML)");
+        }
+
+        private void ShowDeckSetupWarning()
+        {
+            if (deckSetupTextPanel != null)
+            {
+                deckSetupTextPanel.SetActive(true);
+            }
+        }
+
+        public void HideDeckSetupWarning()
+        {
+            if (deckSetupTextPanel != null)
+            {
+                deckSetupTextPanel.SetActive(false);
+            }
         }
     }
 }
