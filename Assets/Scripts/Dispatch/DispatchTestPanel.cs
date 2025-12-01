@@ -3,12 +3,14 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 
 namespace Dispatch
 {
     /// <summary>
     /// 파견 시스템 테스트 UI 패널
     /// CSV 데이터 기반 보상 시스템
+    /// DisPatchSelect(전투형/채집형)별로 버튼 생성하여 장소별 보상 로직 테스트
     /// </summary>
     public class DispatchTestPanel : MonoBehaviour
     {
@@ -20,20 +22,65 @@ namespace Dispatch
         [SerializeField] private TextMeshProUGUI selectedTimeText;       // 선택된 시간 표시
         [SerializeField] private TextMeshProUGUI descriptionText;        // 파견 설명
         [SerializeField] private TextMeshProUGUI rewardInfoText;         // 보상 정보 표시
-        [SerializeField] private Button dispatchButton;                  // 파견하기 버튼
 
-        [Header("테스트 설정")]
-        [SerializeField] private DispatchLocation testLocation = DispatchLocation.MagicResiduePurification;  // 테스트용 파견 장소
+        [Header("전투형 버튼 (5개)")]
+        [SerializeField] private Button combatButton1;  // 악몽의 창고
+        [SerializeField] private Button combatButton2;  // 운명의 창고
+        [SerializeField] private Button combatButton3;  // 웃음의 창고
+        [SerializeField] private Button combatButton4;  // 진실의 창고
+        [SerializeField] private Button combatButton5;  // 미지의 창고
+
+        [Header("채집형 버튼 (5개)")]
+        [SerializeField] private Button collectionButton1;  // 마도 서고 정돈
+        [SerializeField] private Button collectionButton2;  // 마력 장벽 유지 검사
+        [SerializeField] private Button collectionButton3;  // 마도서 표지 복원
+        [SerializeField] private Button collectionButton4;  // 봉인구 안정성 확인
+        [SerializeField] private Button collectionButton5;  // 마력 잔재 정화
+
+        [Header("파견 실행 버튼")]
+        [SerializeField] private Button dispatchStartButton;  // 파견하기 버튼
+        [SerializeField] private TextMeshProUGUI dispatchButtonText;  // 버튼 텍스트
+        [SerializeField] private TextMeshProUGUI countdownTimerText;  // 카운트다운 타이머 텍스트
+        [SerializeField] private GameObject sliderObject;  // 슬라이더 오브젝트 (숨김 처리용)
 
         private int currentSelectedHours = 4;
         private int currentSelectedTimeID;
         private List<DispatchTimeTableData> availableTimes;
+        private DispatchLocation currentSelectedLocation = DispatchLocation.NightmareWarehouse;
+
+        // 파견 상태 관리
+        private bool isDispatching = false;
+        private float remainingTime = 0f;
 
         private void Start()
         {
             LoadCSVData();
             InitializeUI();
             SetupEventListeners();
+            SetupLocationButtons();
+
+            // 초기 UI 상태 설정
+            if (countdownTimerText != null)
+                countdownTimerText.gameObject.SetActive(false);
+
+            AddLog("파견 테스트 패널 초기화 완료");
+        }
+
+        private void Update()
+        {
+            // 파견 중일 때 카운트다운 업데이트
+            if (isDispatching && remainingTime > 0f)
+            {
+                remainingTime -= Time.deltaTime;
+
+                if (remainingTime <= 0f)
+                {
+                    remainingTime = 0f;
+                    OnDispatchComplete();
+                }
+
+                UpdateCountdownDisplay();
+            }
         }
 
         /// <summary>
@@ -87,7 +134,245 @@ namespace Dispatch
         private void SetupEventListeners()
         {
             timeSlider.onValueChanged.AddListener(OnTimeSliderChanged);
-            dispatchButton.onClick.AddListener(OnDispatchButtonClicked);
+
+            // 파견하기 버튼 이벤트 등록
+            if (dispatchStartButton != null)
+            {
+                dispatchStartButton.onClick.AddListener(OnDispatchStartButtonClicked);
+            }
+        }
+
+        /// <summary>
+        /// 장소별 버튼 이벤트 설정
+        /// </summary>
+        private void SetupLocationButtons()
+        {
+            AddLog("=== 버튼 이벤트 설정 ===");
+
+            // 전투형 버튼 설정
+            SetupButton(combatButton1, DispatchLocation.NightmareWarehouse);
+            SetupButton(combatButton2, DispatchLocation.FateWarehouse);
+            SetupButton(combatButton3, DispatchLocation.LaughterWarehouse);
+            SetupButton(combatButton4, DispatchLocation.TruthWarehouse);
+            SetupButton(combatButton5, DispatchLocation.UnknownWarehouse);
+
+            // 채집형 버튼 설정
+            SetupButton(collectionButton1, DispatchLocation.MagicLibraryOrganization);
+            SetupButton(collectionButton2, DispatchLocation.MagicBarrierInspection);
+            SetupButton(collectionButton3, DispatchLocation.SpellbookCoverRestoration);
+            SetupButton(collectionButton4, DispatchLocation.SealStabilityCheck);
+            SetupButton(collectionButton5, DispatchLocation.MagicResiduePurification);
+        }
+
+        /// <summary>
+        /// 개별 버튼 설정
+        /// </summary>
+        private void SetupButton(Button button, DispatchLocation location)
+        {
+            if (button == null)
+            {
+                Debug.LogWarning($"[DispatchTestPanel] {GetLocationName(location)} 버튼이 할당되지 않았습니다!");
+                AddLog($"⚠️ {GetLocationName(location)} 버튼 없음");
+                return;
+            }
+
+            // 버튼 클릭 이벤트 등록
+            button.onClick.AddListener(() => OnLocationButtonClicked(location));
+
+            // 버튼 텍스트 설정 (있을 경우)
+            TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = GetLocationName(location);
+            }
+
+            AddLog($"✓ {GetLocationName(location)} 버튼 설정 완료");
+        }
+
+        /// <summary>
+        /// 장소 버튼 클릭 시 (장소 선택만)
+        /// </summary>
+        private void OnLocationButtonClicked(DispatchLocation location)
+        {
+            currentSelectedLocation = location;
+
+            AddLog($"📍 선택된 장소: {GetLocationName(location)}");
+
+            // UI 업데이트 (보상 정보만 표시)
+            UpdateTimeDisplay(Mathf.RoundToInt(timeSlider.value));
+        }
+
+        /// <summary>
+        /// 파견하기 버튼 클릭 시 (실제 파견 실행)
+        /// </summary>
+        private void OnDispatchStartButtonClicked()
+        {
+            if (isDispatching)
+            {
+                // 파견 완료 - 보상 획득
+                OnClaimReward();
+            }
+            else
+            {
+                // 파견 시작
+                StartDispatch();
+            }
+        }
+
+        /// <summary>
+        /// 파견 시작
+        /// </summary>
+        private void StartDispatch()
+        {
+            AddLog("\n==============================================");
+            AddLog($"🚀 파견 시작 버튼 클릭!");
+
+            // 파견 실행 및 보상 로직 콘솔 출력
+            ExecuteDispatch(currentSelectedLocation);
+
+            // 파견 시작 상태로 전환
+            isDispatching = true;
+            // 테스트용: 초 단위로 시간 설정 (실제 게임에서는 시간 * 3600)
+            remainingTime = currentSelectedHours; // 선택한 숫자를 초로 사용 (4시간 선택 = 4초)
+
+            // UI 업데이트
+            UpdateDispatchUI();
+
+            AddLog($"⏰ 테스트 모드: {currentSelectedHours}초 후 완료 예정");
+            AddLog("==============================================\n");
+        }
+
+        /// <summary>
+        /// 파견 UI 업데이트 (파견 시작 시)
+        /// </summary>
+        private void UpdateDispatchUI()
+        {
+            // 슬라이더 숨김
+            if (sliderObject != null)
+                sliderObject.SetActive(false);
+
+            //시간 선택 텍스트 숨김
+            if (selectedTimeText != null)
+                selectedTimeText.gameObject.SetActive(false);
+
+            // 보상정보설명 텍스트 숨김
+            if (rewardInfoText != null)
+                rewardInfoText.gameObject.SetActive(false);
+
+            // 카운트다운 타이머 표시
+            if (countdownTimerText != null)
+                countdownTimerText.gameObject.SetActive(true);
+
+            // 버튼 텍스트 변경 및 비활성화
+            if (dispatchButtonText != null)
+                dispatchButtonText.text = "획득하기";
+
+            if (dispatchStartButton != null)
+                dispatchStartButton.interactable = false;
+
+            UpdateCountdownDisplay();
+        }
+
+        /// <summary>
+        /// 카운트다운 표시 업데이트
+        /// </summary>
+        private void UpdateCountdownDisplay()
+        {
+            if (countdownTimerText == null) return;
+
+            int hours = Mathf.FloorToInt(remainingTime / 3600f);
+            int minutes = Mathf.FloorToInt(remainingTime % 3600f / 60f);
+            int seconds = Mathf.FloorToInt(remainingTime % 60f);
+
+            countdownTimerText.text = $"남은 시간  {hours:D2} : {minutes:D2} : {seconds:D2}";
+        }
+
+        /// <summary>
+        /// 파견 완료 시
+        /// </summary>
+        private void OnDispatchComplete()
+        {
+            // 획득하기 버튼 활성화 (로그 없이)
+            if (dispatchStartButton != null)
+                dispatchStartButton.interactable = true;
+
+        }
+
+        /// <summary>
+        /// 보상 획득 버튼 클릭 시
+        /// </summary>
+        private void OnClaimReward()
+        {
+            AddLog("\n==============================================");
+            AddLog("🎁 보상 획득!");
+
+            // 보상 정보 출력
+            var locationData = GetLocationData(currentSelectedLocation);
+            if (locationData != null)
+            {
+                var categoryData = GetCategoryData(locationData.Dispatch_ID);
+                if (categoryData != null)
+                {
+                    string dispatchTypeName = ((DispatchType)categoryData.Dispatch_Category) == DispatchType.Combat ? "전투형" : "채집형";
+
+                    AddLog($"📍 장소: {GetLocationName(currentSelectedLocation)}");
+                    AddLog($"🎯 타입: {dispatchTypeName}");
+                    AddLog($"⏰ 소요 시간: {currentSelectedHours}시간");
+
+                    var rewardData = GetRewardData(locationData.Dispatch_Location_ID, currentSelectedTimeID);
+                    if (rewardData != null)
+                    {
+                        AddLog($"💰 보상 배율: x{rewardData.Reward_Multiplier}");
+
+                        // 보상 상세 정보 출력
+                        LogRewardDetails(rewardData);
+                    }
+
+                    AddLog($"✅ 완료 시간: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                }
+            }
+
+            AddLog("✅ 보상이 인벤토리에 추가되었습니다.");
+
+            // 파견 상태 초기화
+            ResetDispatchUI();
+
+            AddLog("==============================================\n");
+            // 슬라이더 다시 표시
+            if (sliderObject != null)
+                sliderObject.SetActive(true);
+
+            //시간 선택 텍스트 표시
+            if (selectedTimeText != null)
+                selectedTimeText.gameObject.SetActive(true);
+
+            // 보상정보설명 텍스트 표시
+            if (rewardInfoText != null)
+                rewardInfoText.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 파견 UI 초기화 (보상 획득 후)
+        /// </summary>
+        private void ResetDispatchUI()
+        {
+            isDispatching = false;
+            remainingTime = 0f;
+
+            // 슬라이더 다시 표시
+            if (sliderObject != null)
+                sliderObject.SetActive(true);
+
+            // 카운트다운 타이머 숨김
+            if (countdownTimerText != null)
+                countdownTimerText.gameObject.SetActive(false);
+
+            // 버튼 텍스트 복원
+            if (dispatchButtonText != null)
+                dispatchButtonText.text = "파견하기";
+
+            if (dispatchStartButton != null)
+                dispatchStartButton.interactable = true;
         }
 
         /// <summary>
@@ -115,7 +400,7 @@ namespace Dispatch
             selectedTimeText.text = $"{currentSelectedHours}시간";
 
             // 파견 장소 정보 가져오기
-            var locationData = GetLocationData(testLocation);
+            var locationData = GetLocationData(currentSelectedLocation);
             if (locationData == null)
             {
                 descriptionText.text = "장소 정보를 찾을 수 없습니다.";
@@ -130,8 +415,8 @@ namespace Dispatch
                 return;
             }
 
-            // 설명 텍스트
-            descriptionText.text = $"<size=auto><b>{GetLocationName(testLocation)}</b></size>\n" +
+            // 설명 텍스트 (에디터 텍스트 크기 사용)
+            descriptionText.text = $"<b>{GetLocationName(currentSelectedLocation)}</b>\n" +
                                    $"파견 시간: {currentSelectedHours}시간\n" +
                                    $"<color=yellow>보상 배율: x{rewardData.Reward_Multiplier}</color>";
 
@@ -266,52 +551,112 @@ namespace Dispatch
         }
 
         /// <summary>
-        /// 파견하기 버튼 클릭
+        /// 파견 실행 (보상 로직 테스트)
         /// </summary>
-        private void OnDispatchButtonClicked()
+        private void ExecuteDispatch(DispatchLocation location)
         {
-            if (dispatchManager == null)
+            var locationData = GetLocationData(location);
+            if (locationData == null)
             {
-                Debug.LogError("[DispatchTestPanel] DispatchManager가 할당되지 않았습니다!");
+                AddLog("❌ 장소 데이터를 찾을 수 없습니다!");
                 return;
             }
 
-            var locationData = GetLocationData(testLocation);
-            if (locationData == null)
-            {
-                Debug.LogError("[DispatchTestPanel] 장소 데이터를 찾을 수 없습니다!");
-                return;
-            }
+            // 장소 상세 정보 출력
+            AddLog($"🏛️ 장소 ID: {locationData.Dispatch_Location_ID}");
+            AddLog($"📋 Dispatch ID: {locationData.Dispatch_ID}");
 
             // Dispatch_ID로 카테고리 조회
             var categoryData = GetCategoryData(locationData.Dispatch_ID);
             if (categoryData == null)
             {
-                Debug.LogError($"[DispatchTestPanel] Dispatch_ID {locationData.Dispatch_ID}에 대한 카테고리 데이터를 찾을 수 없습니다!");
+                AddLog($"❌ Dispatch_ID {locationData.Dispatch_ID}에 대한 카테고리를 찾을 수 없습니다!");
                 return;
             }
 
-            // 파견 시작
-            dispatchManager.StartDispatch(
-                locationData.Dispatch_Location_ID,
-                GetLocationName(testLocation),
-                (DispatchType)categoryData.Dispatch_Category,
-                currentSelectedHours
-            );
+            string dispatchTypeName = ((DispatchType)categoryData.Dispatch_Category) == DispatchType.Combat ? "전투형" : "채집형";
+            AddLog($"🎯 파견 타입: {dispatchTypeName}");
+            AddLog($"⏰ 파견 시간: {currentSelectedHours}시간 (Time ID: {currentSelectedTimeID})");
 
-            // 버튼 비활성화 (진행 중에는 중복 파견 불가)
-            dispatchButton.interactable = false;
+            // 보상 데이터 가져오기
+            var rewardData = GetRewardData(locationData.Dispatch_Location_ID, currentSelectedTimeID);
+            if (rewardData == null)
+            {
+                AddLog("❌ 보상 데이터를 찾을 수 없습니다!");
+                return;
+            }
 
-            // 일정 시간 후 버튼 다시 활성화 (테스트용)
-            Invoke(nameof(EnableDispatchButton), 2f);
+            AddLog($"💰 보상 배율: x{rewardData.Reward_Multiplier}");
+            AddLog($"🎁 보상 그룹 ID: {rewardData.Reward_Group_ID}");
+
+            // 보상 로직 실행 및 로그 출력
+            LogRewardDetails(rewardData);
+
+            // 파견 시작 (DispatchManager가 있는 경우에만)
+            if (dispatchManager != null)
+            {
+                dispatchManager.StartDispatch
+                (
+                    locationData.Dispatch_Location_ID,
+                    GetLocationName(location),
+                    (DispatchType)categoryData.Dispatch_Category,
+                    currentSelectedHours
+                );
+                AddLog("✅ 파견 시작!");
+            }
+            else
+            {
+                AddLog("⚠️ DispatchManager가 없어 파견은 시작되지 않았습니다. (보상 로직만 테스트)");
+            }
         }
 
         /// <summary>
-        /// 파견하기 버튼 다시 활성화
+        /// 보상 상세 로그 출력
         /// </summary>
-        private void EnableDispatchButton()
+        private void LogRewardDetails(DispatchRewardTableData rewardData)
         {
-            dispatchButton.interactable = true;
+            // 보상 그룹 데이터 가져오기
+            var rewardGroupData = CSVLoader.Instance.GetData<RewardGroupData>(rewardData.Reward_Group_ID);
+            if (rewardGroupData == null)
+            {
+                AddLog("❌ 보상 그룹 정보 없음");
+                return;
+            }
+
+            AddLog("🎁 예상 보상:");
+
+            // Reward_1_ID ~ Reward_5_ID 체크
+            int[] rewardIDs = new int[]
+            {
+                rewardGroupData.Reward_1_ID,
+                rewardGroupData.Reward_2_ID,
+                rewardGroupData.Reward_3_ID,
+                rewardGroupData.Reward_4_ID,
+                rewardGroupData.Reward_5_ID
+            };
+
+            foreach (var rewardID in rewardIDs)
+            {
+                if (rewardID == 0) continue;
+
+                var reward = CSVLoader.Instance.GetData<RewardData>(rewardID);
+                if (reward != null)
+                {
+                    int minCount = Mathf.FloorToInt(reward.Min_Count * rewardData.Reward_Multiplier);
+                    int maxCount = Mathf.FloorToInt(reward.Max_Count * rewardData.Reward_Multiplier);
+
+                    string fixedText = reward.Is_Fixed ? "[고정]" : $"[{reward.Probability * 100:F0}%]";
+                    AddLog($"  {fixedText} 아이템 ID {reward.Item_ID}: {minCount}~{maxCount}개");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 로그 추가 (콘솔 출력)
+        /// </summary>
+        private void AddLog(string message)
+        {
+            Debug.Log($"[DispatchTestPanel] {message}");
         }
 
         private void OnDestroy()
@@ -319,8 +664,9 @@ namespace Dispatch
             // 이벤트 리스너 제거
             if (timeSlider != null)
                 timeSlider.onValueChanged.RemoveListener(OnTimeSliderChanged);
-            if (dispatchButton != null)
-                dispatchButton.onClick.RemoveListener(OnDispatchButtonClicked);
+
+            if (dispatchStartButton != null)
+                dispatchStartButton.onClick.RemoveListener(OnDispatchStartButtonClicked);
         }
     }
 }
