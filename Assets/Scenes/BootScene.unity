@@ -454,7 +454,7 @@ MonoBehaviour:
   bookMarkManager: {fileID: 729743808}
   deckManager: {fileID: 729743809}
   characterEnhancementManager: {fileID: 729743810}
-  stageProgressManager: {fileID: 0}
+  stageProgressManager: {fileID: 729743812}
   loadingUIManager: {fileID: 729743811}
   minimumLoadTime: 1
 --- !u!4 &1862903903

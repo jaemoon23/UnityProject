@@ -121,6 +121,8 @@ public class TeamSetupPanel : MonoBehaviour
     /// </summary>
     public void OnDeckSlotClicked(int slotIndex)
     {
+        Debug.Log($"[TeamSetupPanel] OnDeckSlotClicked 호출됨 - slotIndex: {slotIndex}, 이전 selectedDeckSlotIndex: {selectedDeckSlotIndex}");
+
         // 기존 선택된 슬롯의 프레임 비활성화
         if (selectedDeckSlotIndex >= 0 && selectedDeckSlotIndex < deckSlots.Count)
         {
@@ -131,7 +133,7 @@ public class TeamSetupPanel : MonoBehaviour
         selectedDeckSlotIndex = slotIndex;
         deckSlots[slotIndex].SetSelected(true);
 
-        Debug.Log($"[TeamSetupPanel] 덱 슬롯 {slotIndex} 선택됨");
+        Debug.Log($"[TeamSetupPanel] 덱 슬롯 {slotIndex} 선택됨, selectedDeckSlotIndex: {selectedDeckSlotIndex}");
 
         // 캐릭터가 설정되어 있으면 해제 패널 표시, 아니면 캐릭터 탭 열기
         if (deckSlots[slotIndex].IsSet)
@@ -149,9 +151,11 @@ public class TeamSetupPanel : MonoBehaviour
     /// </summary>
     public void OnCharacterSelected(int characterId)
     {
+        Debug.Log($"[TeamSetupPanel] OnCharacterSelected 호출됨 - characterId: {characterId}, selectedDeckSlotIndex: {selectedDeckSlotIndex}");
+
         if (selectedDeckSlotIndex < 0 || selectedDeckSlotIndex >= deckSlots.Count)
         {
-            Debug.LogWarning("[TeamSetupPanel] 선택된 덱 슬롯이 없습니다.");
+            Debug.LogWarning($"[TeamSetupPanel] 선택된 덱 슬롯이 없습니다. selectedDeckSlotIndex: {selectedDeckSlotIndex}");
             return;
         }
 
@@ -178,10 +182,13 @@ public class TeamSetupPanel : MonoBehaviour
         }
 
         // 선택된 덱 슬롯에 캐릭터 설정
-        deckSlots[selectedDeckSlotIndex].SetCharacter(characterId);
+        int targetSlot = selectedDeckSlotIndex;
+        deckSlots[targetSlot].SetCharacter(characterId);
+
+        Debug.Log($"[TeamSetupPanel] 슬롯 {targetSlot}에 캐릭터 설정 후 - IsSet: {deckSlots[targetSlot].IsSet}, CharacterId: {deckSlots[targetSlot].CharacterId}");
 
         // 선택 프레임 비활성화 및 선택 초기화
-        deckSlots[selectedDeckSlotIndex].SetSelected(false);
+        deckSlots[targetSlot].SetSelected(false);
         selectedDeckSlotIndex = -1;
 
         Debug.Log($"[TeamSetupPanel] 캐릭터 ID {characterId} 설정 완료. 현재 덱: {GetSetDeckCount()}/4");
@@ -303,6 +310,13 @@ public class TeamSetupPanel : MonoBehaviour
 
     private void OnDisable()
     {
+        // JML: 덱 상태 디버그 로그
+        Debug.Log($"[TeamSetupPanel] OnDisable - 현재 덱 슬롯 수: {GetSetDeckCount()}, deckSlots.Count: {deckSlots.Count}");
+        for (int i = 0; i < deckSlots.Count; i++)
+        {
+            Debug.Log($"[TeamSetupPanel] Slot[{i}] - IsSet: {deckSlots[i].IsSet}, CharacterId: {deckSlots[i].CharacterId}");
+        }
+
         if (IsDeckValid())
         {
             // 3개 이상이면 DeckManager에 저장
@@ -314,7 +328,7 @@ public class TeamSetupPanel : MonoBehaviour
             // 3개 미만이면 DeckManager 초기화
             if (DeckManager.Instance != null)
                 DeckManager.Instance.ClearDeck();
-            Debug.Log("[TeamSetupPanel] 덱이 3개 미만이므로 초기화합니다.");
+            Debug.Log($"[TeamSetupPanel] 덱이 3개 미만({GetSetDeckCount()}개)이므로 초기화합니다.");
         }
 
         // UI 슬롯은 항상 초기화 (다음에 OnEnable에서 복원됨)
