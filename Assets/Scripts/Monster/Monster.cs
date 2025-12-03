@@ -185,13 +185,6 @@ public class Monster : BaseEntity, ITargetable, IMovable
     {
         if (isDead) return;
 
-        // 무적 모드일 때 데미지 무시 (테스트용)
-        if (isInvincible)
-        {
-            Debug.Log("[Monster] 무적 모드로 데미지 무시");
-            return;
-        }
-
         // Apply Mark damage multiplier if active
         float finalDamage = damage;
         bool isCritical = false;
@@ -202,11 +195,18 @@ public class Monster : BaseEntity, ITargetable, IMovable
             Debug.Log($"[Monster] Mark amplified damage: {damage:F1} -> {finalDamage:F1} (+{markDamageMultiplier}%)");
         }
 
-        // LMJ: Show floating damage text
+        // LMJ: Show floating damage text (무적 상태에서도 표시)
         if (NovelianMagicLibraryDefense.Managers.DamageTextManager.Instance != null)
         {
             Vector3 textPosition = collider3D != null ? collider3D.bounds.center : transform.position;
             NovelianMagicLibraryDefense.Managers.DamageTextManager.Instance.ShowDamage(textPosition, finalDamage, isCritical);
+        }
+
+        // 무적 모드일 때는 데미지 텍스트만 표시하고 실제 체력 감소는 스킵 (테스트용)
+        if (isInvincible)
+        {
+            Debug.Log($"[Monster] 무적 모드 - 데미지 표시만: {finalDamage:F1}");
+            return;
         }
 
         base.TakeDamage(finalDamage);
