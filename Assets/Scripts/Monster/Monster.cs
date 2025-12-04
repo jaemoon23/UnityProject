@@ -1035,6 +1035,12 @@ public class Monster : BaseEntity, ITargetable, IMovable
 
         // 목적지는 WaveManager에서 SetDestination()으로 설정됨
 
+        // NavMesh에 Warp (위치 동기화)
+        if (monsterMove != null)
+        {
+            monsterMove.WarpToPosition(transform.position);
+        }
+
         // Face toward Wall on spawn
         FaceTowardWall();
 
