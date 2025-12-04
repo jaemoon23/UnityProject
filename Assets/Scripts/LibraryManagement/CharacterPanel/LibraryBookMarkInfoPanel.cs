@@ -121,6 +121,20 @@ public class LibraryBookMarkInfoPanel : MonoBehaviour
         int slotIndex = characterInfoPanel.GetSelectedSlotIndex();
         int characterID = characterInfoPanel.CharacterID;
 
+        // JML: 타입별 장착 개수 제한 체크
+        if (!BookMarkManager.Instance.CanEquipBookmarkType(characterID, currentBookmark.Type))
+        {
+            string warningMessage = currentBookmark.Type switch
+            {
+                BookmarkType.Skill => WarningText.MainSkillBookmarkLimitReached,
+                BookmarkType.SubSkill => WarningText.SubSkillBookmarkLimitReached,
+                BookmarkType.Stat => WarningText.StatBookmarkLimitReached,
+                _ => WarningText.FeatureNotReady
+            };
+            NovelianMagicLibraryDefense.Managers.WarningUIManager.Instance.ShowWarning(warningMessage);
+            return;
+        }
+
         // BookMarkManager를 통해 장착
         bool success = BookMarkManager.Instance.EquipBookmarkToCharacter(
             characterID,
@@ -210,6 +224,24 @@ public class LibraryBookMarkInfoPanel : MonoBehaviour
 
         int targetSlotIndex = characterInfoPanel.GetSelectedSlotIndex();
         int characterID = characterInfoPanel.CharacterID;
+
+        // JML: 미장착 책갈피를 다른 타입 책갈피와 교체하는 경우 타입 제한 체크
+        // (이미 장착된 책갈피를 이동하는 경우는 체크 불필요)
+        if (!currentBookmark.IsEquipped && previousBookmark != null && previousBookmark.Type != currentBookmark.Type)
+        {
+            if (!BookMarkManager.Instance.CanEquipBookmarkType(characterID, currentBookmark.Type))
+            {
+                string warningMessage = currentBookmark.Type switch
+                {
+                    BookmarkType.Skill => WarningText.MainSkillBookmarkLimitReached,
+                    BookmarkType.SubSkill => WarningText.SubSkillBookmarkLimitReached,
+                    BookmarkType.Stat => WarningText.StatBookmarkLimitReached,
+                    _ => WarningText.FeatureNotReady
+                };
+                NovelianMagicLibraryDefense.Managers.WarningUIManager.Instance.ShowWarning(warningMessage);
+                return;
+            }
+        }
 
         // 스왑을 위한 변수 저장
         int oldSlotIndex = -1;

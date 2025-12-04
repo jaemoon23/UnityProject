@@ -322,6 +322,50 @@ public class BookMarkManager : MonoBehaviour
         return result;
     }
 
+    /// <summary>
+    /// JML: 캐릭터에 장착된 특정 타입 책갈피 개수 확인
+    /// </summary>
+    public int GetEquippedBookmarkCountByType(int characterID, BookmarkType type)
+    {
+        BookMark[] bookmarks = GetOrCreateBookmarkArray(characterID);
+        int count = 0;
+
+        for (int i = 0; i < bookmarks.Length; i++)
+        {
+            if (bookmarks[i] != null && bookmarks[i].Type == type)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// JML: 책갈피 타입별 최대 장착 개수
+    /// Stat: 3개, Skill: 1개, SubSkill: 1개
+    /// </summary>
+    public int GetMaxBookmarkCountByType(BookmarkType type)
+    {
+        return type switch
+        {
+            BookmarkType.Stat => 3,
+            BookmarkType.Skill => 1,
+            BookmarkType.SubSkill => 1,
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// JML: 해당 타입 책갈피를 더 장착할 수 있는지 확인
+    /// </summary>
+    public bool CanEquipBookmarkType(int characterID, BookmarkType type)
+    {
+        int currentCount = GetEquippedBookmarkCountByType(characterID, type);
+        int maxCount = GetMaxBookmarkCountByType(type);
+        return currentCount < maxCount;
+    }
+
     // 사용법
     // // 캐릭터 ID로 장착된 모든 책갈피 가져오기 (null 제외)
     // List<BookMark> equippedBookmarks = BookMarkManager.Instance.GetEquippedBookmarksForCharacter(characterID);
