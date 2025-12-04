@@ -35,8 +35,11 @@ namespace Dispatch
 
         private void Start()
         {
-            // 항상 초기 상태로 시작 (Red Dot은 파견 완료 시에만 활성화됨)
+            // UI 초기화
             InitializeUI();
+
+            // 파견 완료 상태 확인 및 Red Dot 표시
+            CheckDispatchStateAndShowRedDot();
         }
 
         /// <summary>
@@ -72,12 +75,75 @@ namespace Dispatch
                 Debug.Log("[DispatchController] Map 초기 활성화");
             }
 
-            // Red Dot 비활성화 (초기 상태)
+            // Red Dot은 초기 비활성화 (파견 상태 확인 후 활성화 여부 결정)
             if (redDotImage != null)
             {
                 redDotImage.SetActive(false);
                 Debug.Log("[DispatchController] Red Dot 초기 비활성화");
             }
+        }
+
+        /// <summary>
+        /// 파견 완료 상태 확인 및 Red Dot 표시
+        /// </summary>
+        private void CheckDispatchStateAndShowRedDot()
+        {
+            const string DISPATCH_SAVE_KEY = "DispatchTestPanel_SaveData";
+
+            if (!PlayerPrefs.HasKey(DISPATCH_SAVE_KEY))
+            {
+                Debug.Log("[DispatchController] 저장된 파견 상태 없음");
+                return;
+            }
+
+            string json = PlayerPrefs.GetString(DISPATCH_SAVE_KEY);
+            var saveData = JsonUtility.FromJson<DispatchSaveData>(json);
+
+            if (saveData == null || !saveData.isDispatching)
+            {
+                Debug.Log("[DispatchController] 파견 중이 아님");
+                return;
+            }
+
+            // 시작 시간 파싱
+            if (!System.DateTime.TryParse(saveData.startTimeString, out System.DateTime startTime))
+            {
+                Debug.LogError("[DispatchController] 파견 시작 시간 파싱 실패");
+                return;
+            }
+
+            // 경과 시간 계산
+            System.TimeSpan elapsed = System.DateTime.Now - startTime;
+            float elapsedSeconds = (float)elapsed.TotalSeconds;
+            float remainingTime = saveData.totalDispatchTime - elapsedSeconds;
+
+            // 파견 완료 상태라면 Red Dot 활성화
+            if (remainingTime <= 0f)
+            {
+                if (redDotImage != null)
+                {
+                    redDotImage.SetActive(true);
+                    Debug.Log("[DispatchController] ✅ 파견 완료 - Map에 Red Dot 표시");
+                }
+            }
+            else
+            {
+                Debug.Log($"[DispatchController] 파견 진행 중 - 남은 시간: {remainingTime:F0}초");
+            }
+        }
+
+        /// <summary>
+        /// 파견 상태 저장 데이터 구조 (DispatchPanel과 동일)
+        /// </summary>
+        [System.Serializable]
+        private class DispatchSaveData
+        {
+            public bool isDispatching;
+            public float totalDispatchTime;
+            public string startTimeString;
+            public int selectedLocation;
+            public int selectedHours;
+            public int selectedTimeID;
         }
 
         /// <summary>
@@ -225,8 +291,8 @@ namespace Dispatch
         /// </summary>
         public void OnDispatchCompleted()
         {
-            Debug.Log("[CombatDispatchController] 파견 완료 - Red Dot 활성화 (현재 씬에서만 유지)");
-
+          
+                Debug.Log("[CombatDispatchController] 파견 완료 - Map에 Red Dot 활성화");
             // Red Dot 활성화
             if (redDotImage != null)
             {

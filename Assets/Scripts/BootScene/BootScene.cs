@@ -451,10 +451,10 @@ public class BootScene : MonoBehaviour
     /// </summary>
     private void ClearDispatchState()
     {
-        const string DISPATCH_STATE_KEY = "DispatchController_State";
-        if (PlayerPrefs.HasKey(DISPATCH_STATE_KEY))
+        const string DISPATCH_SAVE_KEY = "DispatchTestPanel_SaveData";
+        if (PlayerPrefs.HasKey(DISPATCH_SAVE_KEY))
         {
-            PlayerPrefs.DeleteKey(DISPATCH_STATE_KEY);
+            PlayerPrefs.DeleteKey(DISPATCH_SAVE_KEY);
             PlayerPrefs.Save();
             Log("파견 상태 초기화됨");
         }

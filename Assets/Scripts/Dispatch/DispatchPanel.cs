@@ -1182,13 +1182,22 @@ namespace Dispatch
             // 파견 UI 상태 복원
             UpdateDispatchUI();
 
-            // 파견 완료 상태라면 획득하기 버튼 활성화
+            // 파견 완료 상태라면 획득하기 버튼 활성화 + Red Dot 활성화
             if (isDispatching && remainingTime <= 0f)
             {
                 if (dispatchStartButton != null)
                     dispatchStartButton.interactable = true;
 
-                AddLog("✅ 파견 UI 복원 완료 - 획득하기 버튼 활성화");
+                // CombatDispatchController에게 파견 완료 알림 (Red Dot 활성화)
+                if (combatDispatchController != null)
+                {
+                    combatDispatchController.OnDispatchCompleted();
+                    AddLog("✅ 파견 UI 복원 완료 - 획득하기 버튼 활성화 + Red Dot 활성화");
+                }
+                else
+                {
+                    AddLog("✅ 파견 UI 복원 완료 - 획득하기 버튼 활성화");
+                }
             }
             else
             {
