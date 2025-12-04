@@ -1,5 +1,5 @@
 ﻿Mon_Level_ID,Level_Type,Monster_Grade,Monster_Weight,Endurance,HP,Power,ATK,Move_Speed,Attack_Speed,Exp_Value
-2201,Level1,Normal,27.5,110,40,20,16,1,0.8,20
+2201,Level1,Normal,27.5,110,40,20,16,2.5,0.8,20
 2202,Level2,Normal,30,120,216,30,48,1,0.8,22
 2203,Level3,Normal,32.5,130,351,40,96,1,0.8,24
 2204,Level4,Normal,35,140,504,50,160,1,0.8,26

@@ -1783,6 +1783,10 @@ MonoBehaviour:
   attackSpeedModifier: 0
   projectileSpeedModifier: 0
   rangeModifier: 0
+  critChanceModifier: 0
+  critMultiplierModifier: 0
+  bonusDamageModifier: 0
+  healthRegenModifier: 0
   spawnOffset: {x: 0, y: 1, z: 0}
   projectileTemplate: {fileID: 3357175333104331083, guid: ee1636ee49cbc2c42b1139f8b22070f4, type: 3}
   useWeightTargeting: 1
