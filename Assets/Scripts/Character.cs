@@ -121,7 +121,7 @@ namespace Novelian.Combat
             : 1000f;
 
         private float FinalProjectileLifetime => basicAttackData != null
-            ? basicAttackData.skill_lifetime
+            ? (basicAttackData.skill_lifetime > 0 ? basicAttackData.skill_lifetime : 5f)
             : 5f;
 
         // Active Skill 최종 수치 계산 프로퍼티 (새 데미지 공식 적용)
@@ -310,14 +310,21 @@ namespace Novelian.Combat
                 }
             }
 
-            // Support Skill
+            // Support Skill + Compatibility 검증
             if (supportSkillId > 0)
             {
                 supportData = CSVLoader.Instance.GetData<SupportSkillData>(supportSkillId);
                 if (supportData != null)
                 {
+                    // CompatibilityTable 검증
+                    bool isCompatible = ValidateSupportCompatibility(basicAttackData, supportData);
+                    if (!isCompatible)
+                    {
+                        Debug.LogWarning($"[Character] 서포트 스킬 '{supportData.support_name}'은(는) 메인 스킬 '{basicAttackData?.skill_name}'과 호환되지 않습니다! 서포트 효과가 제한됩니다.");
+                    }
+
                     supportPrefabs = prefabDb?.GetSupportSkillEntry(supportSkillId);
-                    Debug.Log($"[Character] Loaded support skill: {supportData.support_name} (ID: {supportSkillId}, speed_mult: {supportData.speed_mult}, damage_mult: {supportData.damage_mult})");
+                    Debug.Log($"[Character] Loaded support skill: {supportData.support_name} (ID: {supportSkillId}, speed_mult: {supportData.speed_mult}, damage_mult: {supportData.damage_mult}, compatible: {isCompatible})");
                 }
                 else
                 {
@@ -331,6 +338,40 @@ namespace Novelian.Combat
                 supportPrefabs = null;
                 Debug.Log("[Character] No support skill selected (supportData = null)");
             }
+        }
+
+        /// <summary>
+        /// 서포트 스킬과 메인 스킬의 호환성 검증
+        /// SupportCompatibilityTable 기반
+        /// </summary>
+        private bool ValidateSupportCompatibility(MainSkillData mainSkill, SupportSkillData support)
+        {
+            if (mainSkill == null || support == null) return false;
+
+            var compatibilityTable = CSVLoader.Instance?.GetTable<SupportCompatibilityData>();
+            if (compatibilityTable == null)
+            {
+                Debug.LogWarning("[Character] SupportCompatibilityTable not loaded. Skipping compatibility check.");
+                return true; // 테이블 없으면 통과
+            }
+
+            var compatibility = compatibilityTable.GetId(support.support_id);
+            if (compatibility == null)
+            {
+                Debug.LogWarning($"[Character] Compatibility data not found for support {support.support_id}");
+                return true; // 데이터 없으면 통과
+            }
+
+            return compatibility.IsCompatibleWith(mainSkill.GetSkillType());
+        }
+
+        /// <summary>
+        /// 현재 서포트 스킬이 메인 스킬과 호환되는지 확인
+        /// </summary>
+        private bool IsSupportCompatible(MainSkillData mainSkill)
+        {
+            if (supportData == null) return true; // 서포트 없으면 항상 true
+            return ValidateSupportCompatibility(mainSkill, supportData);
         }
 
         //LMJ : Initialize projectile pool (from basic attack skill)
@@ -720,7 +761,15 @@ namespace Novelian.Combat
                 int tickCount = 0;
                 bool firstTick = true;
 
-                while (elapsed < activeSkillData.channel_duration)
+                // Issue #362 - 채널링 지속시간 배율 적용
+                float finalChannelDuration = activeSkillData.channel_duration;
+                if (supportData != null && supportData.channel_duration_mult > 0)
+                {
+                    finalChannelDuration = DamageCalculator.CalculateChannelDuration(
+                        activeSkillData.channel_duration, supportData.channel_duration_mult);
+                }
+
+                while (elapsed < finalChannelDuration)
                 {
                     // Update beam effects and clean up dead targets
                     for (int i = 0; i < beamEffects.Count && i < chainTargets.Count; i++)
@@ -927,9 +976,16 @@ namespace Novelian.Combat
                     if (hitTarget == null || !hitTarget.IsAlive())
                         continue;
 
-                    hitTarget.TakeDamage(damageToApply);
+                    // 데미지 적용 (디버프 스킬은 데미지 0일 수 있음)
+                    if (damageToApply > 0)
+                    {
+                        hitTarget.TakeDamage(damageToApply);
+                    }
 
-                    // Apply status effects
+                    // MainSkillData 자체 효과 적용 (CC/DOT/표식/디버프)
+                    ApplyMainSkillEffectsToTarget(hitTarget, activeSkillData);
+
+                    // Support 효과 적용
                     if (supportData != null && supportData.GetStatusEffectType() != StatusEffectType.None)
                     {
                         ApplyStatusEffect(hitTarget);
@@ -1100,10 +1156,20 @@ namespace Novelian.Combat
                     hitEffect = Object.Instantiate(hitEffectPrefab, effectPos, Quaternion.identity);
                 }
 
-                // 3. Apply buff effect
-                // TODO: 버프 시스템 구현 필요 (공격속도 증가, 치명타 확률 증가 등)
-                // 현재는 이펙트만 재생
-                Debug.Log($"[Character] Buff skill effect played: {activeSkillData.skill_name} (버프 로직 미구현)");
+                // 3. Apply buff effect to allies in range
+                float buffValue = activeSkillData.base_buff_value;
+                if (supportData != null) buffValue *= supportData.buff_value_mult;
+
+                float buffDuration = activeSkillData.skill_lifetime;
+                if (supportData != null) buffDuration *= supportData.buff_value_mult; // 지속시간도 배율 적용
+
+                BuffType buffType = activeSkillData.GetBuffType();
+                float buffRadius = activeSkillData.aoe_radius > 0 ? activeSkillData.aoe_radius : 400f; // 기본 범위
+
+                // 범위 내 아군 캐릭터에게 버프 적용
+                ApplyBuffToAlliesInRange(buffType, buffValue, buffDuration, buffRadius);
+
+                Debug.Log($"[Character] Buff skill applied: {activeSkillData.skill_name} (Type: {buffType}, Value: {buffValue}%, Duration: {buffDuration}s, Radius: {buffRadius})");
 
                 // Cleanup
                 if (hitEffect != null)
@@ -1119,6 +1185,65 @@ namespace Novelian.Combat
             {
                 if (castEffect != null) Object.Destroy(castEffect);
             }
+        }
+
+        /// <summary>
+        /// 범위 내 아군에게 버프 적용
+        /// </summary>
+        private void ApplyBuffToAlliesInRange(BuffType buffType, float buffValue, float duration, float radius)
+        {
+            // 범위 내 모든 캐릭터 찾기
+            Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+
+            foreach (var hit in hits)
+            {
+                if (!hit.CompareTag(Tag.Character)) continue;
+
+                Character ally = hit.GetComponent<Character>();
+                if (ally == null || ally == this) continue; // 자신 제외 (세레나데 등)
+
+                // 버프 타입에 따라 스탯 적용
+                float percentValue = buffValue / 100f; // % → 소수
+                switch (buffType)
+                {
+                    case BuffType.ATK_Damage_UP:
+                        ally.ApplyTemporaryBuff(StatType.Damage, percentValue, duration);
+                        break;
+                    case BuffType.ATK_Speed_UP:
+                        ally.ApplyTemporaryBuff(StatType.AttackSpeed, percentValue, duration);
+                        break;
+                    case BuffType.ATK_Range_UP:
+                        ally.ApplyTemporaryBuff(StatType.Range, percentValue, duration);
+                        break;
+                    case BuffType.Critical_Damage_UP:
+                        ally.ApplyTemporaryBuff(StatType.CritMultiplier, percentValue, duration);
+                        break;
+                    case BuffType.Battle_Exp_UP:
+                        // 경험치 버프는 별도 시스템 필요
+                        Debug.Log($"[Character] EXP buff applied to {ally.name}: +{buffValue}%");
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 일시적 버프 적용 (지속시간 후 해제)
+        /// </summary>
+        public void ApplyTemporaryBuff(StatType statType, float value, float duration)
+        {
+            // 버프 적용
+            ApplyStatBuff(statType, value);
+            Debug.Log($"[Character] Temporary buff applied: {statType} +{value * 100}% for {duration}s");
+
+            // 지속시간 후 해제
+            RemoveBuffAfterDurationAsync(statType, value, duration).Forget();
+        }
+
+        private async UniTaskVoid RemoveBuffAfterDurationAsync(StatType statType, float value, float duration)
+        {
+            await UniTask.Delay((int)(duration * 1000));
+            ApplyStatBuff(statType, -value); // 버프 해제 (음수로 제거)
+            Debug.Log($"[Character] Temporary buff expired: {statType} -{value * 100}%");
         }
 
         //LMJ : Build chain targets for channeling skill
@@ -1254,6 +1379,84 @@ namespace Novelian.Combat
                 case StatusEffectType.Chain:
                     // Chain is handled in BuildChainTargets
                     break;
+            }
+        }
+
+        /// <summary>
+        /// MainSkillData 자체 효과를 타겟에게 적용 (CC/DOT/표식/디버프)
+        /// </summary>
+        private void ApplyMainSkillEffectsToTarget(ITargetable target, MainSkillData skillData)
+        {
+            if (target == null || skillData == null) return;
+
+            GameObject hitEffectPrefab = activeSkillPrefabs?.hitEffectPrefab;
+
+            // CC 효과
+            if (skillData.HasCCEffect)
+            {
+                if (target.GetTransform().CompareTag(Tag.Monster))
+                {
+                    Monster monster = target.GetTransform().GetComponent<Monster>();
+                    monster?.ApplyCC(skillData.GetCCType(), skillData.cc_duration, skillData.cc_slow_amount, hitEffectPrefab);
+                }
+                else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                {
+                    BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                    boss?.ApplyCC(skillData.GetCCType(), skillData.cc_duration, skillData.cc_slow_amount, hitEffectPrefab);
+                }
+            }
+
+            // DOT 효과
+            if (skillData.HasDOTEffect)
+            {
+                if (target.GetTransform().CompareTag(Tag.Monster))
+                {
+                    Monster monster = target.GetTransform().GetComponent<Monster>();
+                    monster?.ApplyDOT(DOTType.Burn, skillData.dot_damage_per_tick, skillData.dot_tick_interval, skillData.dot_duration, hitEffectPrefab);
+                }
+                else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                {
+                    BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                    boss?.ApplyDOT(DOTType.Burn, skillData.dot_damage_per_tick, skillData.dot_tick_interval, skillData.dot_duration, hitEffectPrefab);
+                }
+            }
+
+            // 표식 효과
+            if (skillData.HasMarkEffect)
+            {
+                if (target.GetTransform().CompareTag(Tag.Monster))
+                {
+                    Monster monster = target.GetTransform().GetComponent<Monster>();
+                    monster?.ApplyMark(skillData.GetElementBasedMarkType(), skillData.mark_duration, skillData.mark_damage_mult / 100f, hitEffectPrefab);
+                }
+                else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                {
+                    BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                    boss?.ApplyMark(skillData.GetElementBasedMarkType(), skillData.mark_duration, skillData.mark_damage_mult / 100f, hitEffectPrefab);
+                }
+            }
+
+            // 디버프 효과
+            if (skillData.HasDebuffEffect)
+            {
+                DeBuffType debuffType = skillData.GetDeBuffType();
+                float debuffValue = skillData.base_debuff_value;
+                if (supportData != null) debuffValue *= supportData.debuff_value_mult;
+
+                float debuffDuration = skillData.skill_lifetime > 0 ? skillData.skill_lifetime : 10f;
+
+                if (target.GetTransform().CompareTag(Tag.Monster))
+                {
+                    Monster monster = target.GetTransform().GetComponent<Monster>();
+                    monster?.ApplyDebuff(debuffType, debuffValue, debuffDuration, hitEffectPrefab);
+                }
+                else if (target.GetTransform().CompareTag(Tag.BossMonster))
+                {
+                    BossMonster boss = target.GetTransform().GetComponent<BossMonster>();
+                    boss?.ApplyDebuff(debuffType, debuffValue, debuffDuration, hitEffectPrefab);
+                }
+
+                Debug.Log($"[Character] Debuff applied: {debuffType} -{debuffValue}% for {debuffDuration}s");
             }
         }
 
