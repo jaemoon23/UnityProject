@@ -32,7 +32,8 @@ public static class AddressableKey
     public static readonly string BookmarkTable = "BookmarkTable";
     public static readonly string BookmarkCraftTable = "BookMarkCraftTable";
     public static readonly string BookmarkOptionTable = "BookmarkOptionTable";
-    public static readonly string BookmarkListTable = "BookmarkListTable";
+    public static readonly string BookmarkStatListTable = "BookmarkStatListTable";
+    public static readonly string BookmarkSkillListTable = "BookmarkSkillListTable";
     public static readonly string BookmarkSkillTable = "BookmarkSkillTable";
     public static readonly string CurrencyTable = "CurrencyTable";
     public static readonly string GradeTable = "GradeTable";
@@ -262,5 +263,8 @@ public enum StatType
 public static class WarningText
 {
     public const string FeatureNotReady = "준비 중인 기능입니다";
+    public const string MainSkillBookmarkLimitReached = "메인 스킬 책갈피는 1개만 장착 가능합니다";
+    public const string SubSkillBookmarkLimitReached = "서브 스킬 책갈피는 1개만 장착 가능합니다";
+    public const string StatBookmarkLimitReached = "스탯 책갈피는 3개까지만 장착 가능합니다";
 }
 
