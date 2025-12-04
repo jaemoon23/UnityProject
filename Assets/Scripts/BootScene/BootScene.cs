@@ -27,6 +27,7 @@ public class BootScene : MonoBehaviour
     [SerializeField] private CharacterOwnershipManager characterOwnershipManager;
     [SerializeField] private WarningUIManager warningUIManager; 
     [SerializeField] private LoadingUIManager loadingUIManager;
+    [SerializeField] private InputManager inputManager;
 
     [Header("Loading Progress")]
     [SerializeField] private float minimumLoadTime = 1.0f; // JML: Minimum time to show loading screen
@@ -86,10 +87,35 @@ public class BootScene : MonoBehaviour
             InitializeDeckManager(),
             InitializeCharacterEnhancementManager(),
             InitializeCharacterOwnershipManager(),
-            InitializeWarningUIManager()
+            InitializeWarningUIManager(),
+            InitializeInputManager()
         );
 
         Log("--- All Boot Systems Initialized ---");
+    }
+
+    private async UniTask InitializeInputManager()
+    {
+        Log("Initializing InputManager...");
+
+        if (inputManager == null)
+        {
+            Debug.LogError("✗ InputManager reference is NULL! Assign it in Inspector.");
+            return;
+        }
+
+        // JML: Wait for Awake to complete
+        await UniTask.WaitUntil(() => InputManager.Instance != null);
+        await UniTask.DelayFrame(1); // JML: Wait one more frame for Start()
+
+        if (InputManager.Instance != null)
+        {
+            Log("✓ InputManager ready");
+        }
+        else
+        {
+            Debug.LogError("✗ InputManager failed to initialize!");
+        }
     }
 
     private async UniTask InitializeWarningUIManager()
