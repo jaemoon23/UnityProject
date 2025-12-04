@@ -43,9 +43,6 @@ namespace NovelianMagicLibraryDefense.Managers
 
         // JML: 키 기반 몬스터 풀링용 (Monster_ID → Addressable_Key 캐시)
         private Dictionary<int, string> monsterKeyCache = new Dictionary<int, string>();
-
-        // JML: 최대 동시 활성 몬스터 수 (웜업 제한)
-        private const int MAX_CONCURRENT_MONSTERS = 40;
         #endregion
 
         protected override void OnInitialize()
@@ -212,33 +209,53 @@ namespace NovelianMagicLibraryDefense.Managers
         /// </summary>
         private async UniTask PreloadMonsterPoolsAsync(List<WaveData> waves)
         {
-            // 중복 제거하여 고유 Monster_ID 목록 추출
+            // JML: 먼저 모든 Monster_ID → Addressable_Key 매핑 구축
             var uniqueMonsterIds = waves.Select(w => w.Monster_ID).Distinct().ToList();
-
-            Debug.Log($"[WaveManager] Preloading {uniqueMonsterIds.Count} monster types...");
 
             foreach (var monsterId in uniqueMonsterIds)
             {
                 string addressableKey = GetMonsterAddressableKey(monsterId);
-                if (string.IsNullOrEmpty(addressableKey))
+                if (!string.IsNullOrEmpty(addressableKey))
                 {
-                    Debug.LogError($"[WaveManager] Failed to get addressable key for Monster_ID: {monsterId}");
-                    continue;
+                    monsterKeyCache[monsterId] = addressableKey;
                 }
+            }
 
-                // 캐시에 저장 (스폰 시 빠른 조회)
-                monsterKeyCache[monsterId] = addressableKey;
+            // JML: Addressable_Key 기준으로 그룹화하여 웜업 수량 계산
+            // 같은 프리팹을 사용하는 모든 Monster_ID의 웨이브 중 최대 수량 사용
+            var keyToWarmUpCount = new Dictionary<string, int>();
 
-                // 풀 생성 (이미 있으면 스킵)
+            foreach (var wave in waves)
+            {
+                if (monsterKeyCache.TryGetValue(wave.Monster_ID, out string key))
+                {
+                    if (!keyToWarmUpCount.ContainsKey(key))
+                    {
+                        keyToWarmUpCount[key] = wave.Monster_Count;
+                    }
+                    else
+                    {
+                        // 같은 키의 웨이브 중 최대값 사용
+                        keyToWarmUpCount[key] = Mathf.Max(keyToWarmUpCount[key], wave.Monster_Count);
+                    }
+                }
+            }
+
+            Debug.Log($"[WaveManager] Preloading {keyToWarmUpCount.Count} unique monster prefabs...");
+
+            // JML: 고유 Addressable_Key 기준으로 풀 생성 및 웜업
+            foreach (var kvp in keyToWarmUpCount)
+            {
+                string addressableKey = kvp.Key;
+                int warmUpCount = kvp.Value;
+
                 if (!poolManager.HasPoolByKey(addressableKey))
                 {
-                    bool success = await poolManager.CreatePoolByKeyAsync<Monster>(addressableKey, defaultCapacity: 20, maxSize: 100);
+                    bool success = await poolManager.CreatePoolByKeyAsync<Monster>(addressableKey, defaultCapacity: 20, maxSize: 500);
                     if (success)
                     {
-                        // JML: 비동기 웜업 - 해당 몬스터 타입의 필요 수량 계산 (최대 40개 제한)
-                        int warmUpCount = waves.Where(w => w.Monster_ID == monsterId).Sum(w => w.Monster_Count);
-                        warmUpCount = Mathf.Min(warmUpCount, MAX_CONCURRENT_MONSTERS);
                         await poolManager.WarmUpByKeyAsync<Monster>(addressableKey, warmUpCount);
+                        Debug.Log($"[WaveManager] Pool '{addressableKey}' warm-up: {warmUpCount}");
                     }
                     else
                     {
@@ -248,7 +265,7 @@ namespace NovelianMagicLibraryDefense.Managers
             }
 
             isPoolReady = true;
-            Debug.Log($"[WaveManager] Monster pools preloaded and warmed up: {monsterKeyCache.Count} types");
+            Debug.Log($"[WaveManager] Monster pools preloaded and warmed up: {keyToWarmUpCount.Count} prefabs, {monsterKeyCache.Count} monster types");
         }
 
         /// <summary>
