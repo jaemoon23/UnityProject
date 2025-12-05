@@ -24,6 +24,9 @@ public class RetroBeamStatic : MonoBehaviour
     public float beamEndOffset = 0f; //How far from the raycast hit point the end effect is positioned
     public float textureScrollSpeed = 0f; //How fast the texture scrolls along the beam, can be negative or positive.
     public float textureLengthScale = 1f;   //Set this to the horizontal length of your texture relative to the vertical. Example: if texture is 200 pixels in height and 600 in length, set this to 3
+
+    // LMJ: Wall Layer를 무시하는 LayerMask (Channeling 스킬이 Wall을 통과하도록)
+    private int raycastLayerMask = -1;
 	
 	[Header("Width Pulse Options")]
 	public float widthMultiplier = 1.5f;
@@ -38,21 +41,34 @@ public class RetroBeamStatic : MonoBehaviour
 		SpawnBeam();
 		originalWidth = line.startWidth;
 		customWidth = originalWidth * widthMultiplier;
+
+		// LMJ: Wall Layer를 제외한 LayerMask 생성
+		int wallLayer = LayerMask.NameToLayer("Wall");
+		if (wallLayer != -1)
+		{
+			// 모든 레이어에서 Wall Layer만 제외
+			raycastLayerMask = ~(1 << wallLayer);
+		}
+		else
+		{
+			raycastLayerMask = -1; // 모든 레이어
+		}
     }
 
     void FixedUpdate()
 	{
-		if (beam) 
+		if (beam)
 		{
 			line.SetPosition(0, transform.position);
 			Vector3 end = transform.position + (transform.forward * beamLength);
 			RaycastHit hit;
-			
-			if (beamCollides && Physics.Raycast(transform.position, transform.forward, out hit))
+
+			// LMJ: Wall Layer를 제외한 Raycast (raycastLayerMask 사용)
+			if (beamCollides && Physics.Raycast(transform.position, transform.forward, out hit, beamLength, raycastLayerMask))
 			{
 				end = hit.point - (transform.forward * beamEndOffset);
-				end = Vector3.Distance(transform.position, end) > beamLength 
-					? transform.position + (transform.forward * beamLength) 
+				end = Vector3.Distance(transform.position, end) > beamLength
+					? transform.position + (transform.forward * beamLength)
 					: end;
 			}
 			else

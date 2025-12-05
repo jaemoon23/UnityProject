@@ -1018,37 +1018,80 @@ namespace Novelian.Combat
                     return;
                 }
 
+                // 모든 Channeling 이펙트가 Wall을 통과하도록 레이어 설정용
+                int projectileLayer = LayerMask.NameToLayer("Projectile");
+
                 // 2. Start Effect (빔 발사 지점)
                 if (projectileEffectPrefab != null)
                 {
                     Vector3 spawnPos = transform.position + spawnOffset;
                     startEffect = UnityEngine.Object.Instantiate(projectileEffectPrefab, spawnPos, Quaternion.identity);
                     startEffect.transform.SetParent(transform);
-                    Debug.Log("[Character] Start Effect spawned");
+
+                    // Wall 통과를 위해 Projectile 레이어 설정 및 Collider 비활성화
+                    if (projectileLayer != -1)
+                    {
+                        SetLayerRecursively(startEffect, projectileLayer);
+                    }
+                    DisableCollidersRecursively(startEffect);
+
+                    // 렌더링 순서 조정 (Wall 앞에 렌더링되도록)
+                    SetBeamRenderingOrder(startEffect, 100);
+
+                    Debug.Log("[Character] Start Effect spawned (Layer: Projectile, Colliders disabled, RenderQueue: 3100)");
                 }
 
                 // 3. Build chain targets (if Chain support skill is active)
                 System.Collections.Generic.List<ITargetable> chainTargets = BuildChainTargets(target);
 
                 // 4. Create beam effects for all targets
+                // 빔 이펙트가 Wall을 통과하도록 레이어 설정 및 Collider 비활성화
                 if (areaEffectPrefab != null)
                 {
                     for (int i = 0; i < chainTargets.Count; i++)
                     {
                         Vector3 spawnPos = (i == 0) ? transform.position + spawnOffset : chainTargets[i - 1].GetPosition();
                         GameObject beamEffect = UnityEngine.Object.Instantiate(areaEffectPrefab, spawnPos, Quaternion.identity);
+
+                        // Wall 통과를 위해 Projectile 레이어 설정
+                        if (projectileLayer != -1)
+                        {
+                            SetLayerRecursively(beamEffect, projectileLayer);
+                        }
+
+                        // Collider 비활성화 (빔은 시각적 효과만, 물리 충돌 불필요)
+                        DisableCollidersRecursively(beamEffect);
+
+                        // 렌더링 순서 조정 (Wall 앞에 렌더링되도록)
+                        SetBeamRenderingOrder(beamEffect, 100);
+
+                        // RetroBeamStatic의 beamCollides 비활성화 (Wall Raycast 충돌 방지)
+                        DisableBeamCollision(beamEffect);
+
                         beamEffects.Add(beamEffect);
                     }
-                    Debug.Log($"[Character] Created {beamEffects.Count} beam effects for {chainTargets.Count} targets");
+                    Debug.Log($"[Character] Created {beamEffects.Count} beam effects for {chainTargets.Count} targets (beamCollides disabled)");
                 }
 
                 // 5. Create hit effects for all targets
+                // 히트 이펙트도 Wall 통과 처리
                 if (hitEffectPrefab != null)
                 {
                     for (int i = 0; i < chainTargets.Count; i++)
                     {
                         GameObject hitEffect = UnityEngine.Object.Instantiate(hitEffectPrefab, chainTargets[i].GetPosition(), Quaternion.identity);
                         hitEffect.transform.SetParent(chainTargets[i].GetTransform());
+
+                        // Wall 통과를 위해 Projectile 레이어 설정 및 Collider 비활성화
+                        if (projectileLayer != -1)
+                        {
+                            SetLayerRecursively(hitEffect, projectileLayer);
+                        }
+                        DisableCollidersRecursively(hitEffect);
+
+                        // 렌더링 순서 조정 (Wall 앞에 렌더링되도록)
+                        SetBeamRenderingOrder(hitEffect, 100);
+
                         hitEffects.Add(hitEffect);
                     }
                 }
@@ -1116,9 +1159,21 @@ namespace Novelian.Combat
                             chainTargets[i].TakeDamage(currentDamage);
 
                             // 틱마다 히트 이펙트 재생 (타겟 위치에 새로 생성)
+                            // Wall 통과 처리 포함
                             if (hitEffectPrefab != null)
                             {
                                 GameObject tickHitEffect = UnityEngine.Object.Instantiate(hitEffectPrefab, chainTargets[i].GetPosition(), Quaternion.identity);
+
+                                // Wall 통과를 위해 Projectile 레이어 설정 및 Collider 비활성화
+                                if (projectileLayer != -1)
+                                {
+                                    SetLayerRecursively(tickHitEffect, projectileLayer);
+                                }
+                                DisableCollidersRecursively(tickHitEffect);
+
+                                // 렌더링 순서 조정 (Wall 앞에 렌더링되도록)
+                                SetBeamRenderingOrder(tickHitEffect, 100);
+
                                 UnityEngine.Object.Destroy(tickHitEffect, 0.5f); // 짧은 시간 후 자동 삭제
                             }
                         }
@@ -1718,6 +1773,75 @@ namespace Novelian.Combat
             beamEffect.transform.position = startPos;
             beamEffect.transform.rotation = Quaternion.LookRotation(direction);
             beamEffect.transform.localScale = new Vector3(1f, 1f, distance);
+        }
+
+        /// <summary>
+        /// LMJ: 빔 이펙트의 렌더러가 Wall 앞에 렌더링되도록 설정
+        /// LineRenderer/ParticleSystem의 sortingOrder를 높여서 Depth 문제 해결
+        /// </summary>
+        private void SetBeamRenderingOrder(GameObject beamEffect, int sortingOrder = 100)
+        {
+            if (beamEffect == null) return;
+
+            // LineRenderer 설정
+            LineRenderer lineRenderer = beamEffect.GetComponent<LineRenderer>();
+            if (lineRenderer != null)
+            {
+                lineRenderer.sortingOrder = sortingOrder;
+                // Material의 renderQueue도 높여서 Wall 앞에 렌더링
+                if (lineRenderer.material != null)
+                {
+                    lineRenderer.material.renderQueue = 3100; // Transparent 이후 렌더링
+                }
+            }
+
+            // ParticleSystemRenderer 설정 (파티클 이펙트가 있는 경우)
+            ParticleSystemRenderer[] particleRenderers = beamEffect.GetComponentsInChildren<ParticleSystemRenderer>();
+            int particleCount = particleRenderers.Length;
+            for (int i = 0; i < particleCount; i++)
+            {
+                particleRenderers[i].sortingOrder = sortingOrder;
+                if (particleRenderers[i].material != null)
+                {
+                    particleRenderers[i].material.renderQueue = 3100;
+                }
+            }
+
+            // 일반 MeshRenderer 설정
+            MeshRenderer[] meshRenderers = beamEffect.GetComponentsInChildren<MeshRenderer>();
+            int meshCount = meshRenderers.Length;
+            for (int i = 0; i < meshCount; i++)
+            {
+                if (meshRenderers[i].material != null)
+                {
+                    meshRenderers[i].material.renderQueue = 3100;
+                }
+            }
+        }
+
+        /// <summary>
+        /// LMJ: RetroArsenal 빔 이펙트의 Raycast 충돌 비활성화
+        /// RetroBeamStatic 컴포넌트의 beamCollides를 false로 설정하여 Wall을 통과하도록 함
+        /// </summary>
+        private void DisableBeamCollision(GameObject beamEffect)
+        {
+            if (beamEffect == null) return;
+
+            // RetroBeamStatic 컴포넌트 찾기 (자식 포함)
+            var beamStatic = beamEffect.GetComponent<RetroArsenal.RetroBeamStatic>();
+            if (beamStatic != null)
+            {
+                beamStatic.beamCollides = false;
+                Debug.Log("[Character] RetroBeamStatic.beamCollides disabled");
+            }
+
+            // 자식에서도 찾기
+            var childBeamStatics = beamEffect.GetComponentsInChildren<RetroArsenal.RetroBeamStatic>();
+            int count = childBeamStatics.Length;
+            for (int i = 0; i < count; i++)
+            {
+                childBeamStatics[i].beamCollides = false;
+            }
         }
 
         // IPoolable implementation
@@ -2642,6 +2766,22 @@ namespace Novelian.Combat
             if (characterAnimator != null)
             {
                 characterAnimator.SetTrigger(ANIM_ATTACK);
+        #region 이펙트 레이어/콜라이더 유틸리티 (Channeling Wall 통과용)
+
+        /// <summary>
+        /// LMJ: GameObject와 모든 자식의 레이어를 재귀적으로 설정
+        /// Channeling 빔 이펙트가 Wall을 통과하도록 Projectile 레이어로 설정
+        /// </summary>
+        private void SetLayerRecursively(GameObject obj, int layer)
+        {
+            if (obj == null) return;
+
+            obj.layer = layer;
+
+            int childCount = obj.transform.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                SetLayerRecursively(obj.transform.GetChild(i).gameObject, layer);
             }
         }
 
@@ -2664,6 +2804,26 @@ namespace Novelian.Combat
             if (characterAnimator != null)
             {
                 characterAnimator.SetTrigger(ANIM_VICTORY);
+        /// LMJ: GameObject와 모든 자식의 Collider를 재귀적으로 비활성화
+        /// Channeling 빔은 시각적 효과만 필요하므로 물리 충돌 제거
+        /// </summary>
+        private void DisableCollidersRecursively(GameObject obj)
+        {
+            if (obj == null) return;
+
+            // 현재 오브젝트의 모든 Collider 비활성화
+            Collider[] colliders = obj.GetComponents<Collider>();
+            int colCount = colliders.Length;
+            for (int i = 0; i < colCount; i++)
+            {
+                colliders[i].enabled = false;
+            }
+
+            // 자식들도 재귀적으로 처리
+            int childCount = obj.transform.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                DisableCollidersRecursively(obj.transform.GetChild(i).gameObject);
             }
         }
 
