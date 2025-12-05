@@ -224,49 +224,23 @@ namespace Novelian.Combat
                 Debug.Log($"[Projectile] Boomerang initialized: maxDistance={boomerangMaxDistance}, ownerPos={ownerPosition}");
             }
 
-            // Initialize Dynamite state (다이너마이트 시스템 - 타겟 거리 기반 동적 물리 계산)
+            // Initialize Dynamite state (다이너마이트 시스템 - 단순화된 3회 튕김 + 폭발)
             if (skillData != null && skillData.IsDynamiteSkill)
             {
                 isDynamite = true;
-                dynamiteFuseTime = skillData.skill_lifetime; // skill_lifetime을 폭발 딜레이로 사용
-                dynamiteAoeRadius = skillData.aoe_radius; // 폭발 범위
+                dynamiteFuseTime = skillData.skill_lifetime; // skill_lifetime을 폭발 딜레이로 사용 (CSV: 2초)
+                dynamiteAoeRadius = skillData.aoe_radius; // 폭발 범위 (CSV: 5)
                 dynamiteExploded = false;
                 dynamiteStopped = false;
                 dynamiteBounceCount = 0;
                 dynamiteTargetPosition = targetPos;
 
-                // 타겟까지의 수평 거리 계산
-                Vector3 toTarget = targetPos - spawnPos;
-                float horizontalDistance = new Vector3(toTarget.x, 0f, toTarget.z).magnitude;
+                // 단순화: 고정된 물리값 사용 (가까운 적에게 던지는 폭탄)
+                dynamiteHorizontalSpeed = speed; // CSV의 projectile_speed 사용 (8)
+                dynamiteVerticalVelocity = 4f; // 낮은 포물선
+                dynamiteGravity = 15f; // 빠르게 떨어지는 중력
 
-                // 3번 튕겨서 타겟에 도착하도록 물리값 계산
-                // 총 비행 시간 = 3번의 튕김 (각 튕김당 약 0.5초 기준)
-                // 튕김 후 속도 감소: 수직 60%, 수평 70%
-                // 총 수평 이동 거리 = v * (t1 + t2*0.7 + t3*0.7^2)
-                // t1 = t2 = t3 ≈ 0.5초라고 가정하면 계수 = 1 + 0.7 + 0.49 = 2.19
-
-                float totalFlightTime = 1.5f; // 총 비행 시간 (3번 튕김, 각 0.5초)
-                float horizontalSpeedCoefficient = 1f + 0.7f + 0.49f; // 속도 감소 계수
-                float effectiveFlightTime = totalFlightTime * horizontalSpeedCoefficient / 3f; // 유효 비행 시간
-
-                // 수평 속도 계산: 거리 / 유효 시간
-                dynamiteHorizontalSpeed = horizontalDistance / (effectiveFlightTime * 1.5f);
-
-                // 최소/최대 속도 제한
-                dynamiteHorizontalSpeed = Mathf.Clamp(dynamiteHorizontalSpeed, 5f, 30f);
-
-                // 초기 수직 속도 계산 (포물선 높이 결정)
-                // 거리에 비례하여 높이 조절 (가까우면 낮게, 멀면 높게)
-                float heightFactor = Mathf.Clamp(horizontalDistance / 20f, 0.5f, 2f);
-                dynamiteVerticalVelocity = 6f * heightFactor;
-
-                // 중력 계산 (수직 속도와 튕김 시간에 맞게)
-                // 첫 튕김까지 시간 = 2 * v0 / g (올라갔다 내려오는 시간)
-                // 목표: 약 0.5초 내에 첫 튕김
-                float firstBounceTime = 0.5f;
-                dynamiteGravity = (2f * dynamiteVerticalVelocity) / firstBounceTime;
-
-                Debug.Log($"[Projectile] Dynamite initialized: distance={horizontalDistance:F1}, hSpeed={dynamiteHorizontalSpeed:F1}, vSpeed={dynamiteVerticalVelocity:F1}, gravity={dynamiteGravity:F1}");
+                Debug.Log($"[Projectile] Dynamite initialized: fuseTime={dynamiteFuseTime}s, aoeRadius={dynamiteAoeRadius}, speed={dynamiteHorizontalSpeed}");
             }
 
             // Initialize Legendary Staff state (전설의 지팡이 - 일직선 이동하며 경로상 AOE 데미지)
@@ -609,15 +583,13 @@ namespace Novelian.Combat
             Vector3 explosionPos = transform.position;
             Debug.Log($"[Projectile] Dynamite exploding at {explosionPos}, radius={dynamiteAoeRadius}");
 
-            // 폭발 이펙트 재생 (AOE 범위에 맞춰 스케일 조절)
+            // 폭발 이펙트 재생 (적절한 크기로)
             GameObject hitEffectPrefab = skillPrefabs?.hitEffectPrefab;
             if (hitEffectPrefab != null)
             {
                 GameObject explosionEffect = UnityEngine.Object.Instantiate(hitEffectPrefab, explosionPos, Quaternion.identity);
-                // AOE 범위에 맞춰 스케일 조절 (baseEffectSize 25로 이펙트 크기 확대)
-                float baseEffectSize = 25f;
-                float scaleFactor = dynamiteAoeRadius / baseEffectSize;
-                explosionEffect.transform.localScale = Vector3.one * scaleFactor;
+                // 폭발 이펙트는 기본 크기 사용 (너무 크거나 작지 않게)
+                explosionEffect.transform.localScale = Vector3.one * 1.5f;
                 UnityEngine.Object.Destroy(explosionEffect, 2f);
             }
 

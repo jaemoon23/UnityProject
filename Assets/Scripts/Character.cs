@@ -2119,8 +2119,9 @@ namespace Novelian.Combat
                 {
                     ApplyStatBookmark(bookmark);
                 }
-                else if (bookmark.Type == BookmarkType.Skill)
+                else if (bookmark.Type == BookmarkType.Skill || bookmark.Type == BookmarkType.SubSkill)
                 {
+                    // JML: Skill(메인스킬)과 SubSkill(서포트스킬) 모두 ApplySkillBookmark로 처리
                     ApplySkillBookmark(bookmark);
                 }
             }

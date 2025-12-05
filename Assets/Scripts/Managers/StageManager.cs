@@ -19,7 +19,6 @@ namespace NovelianMagicLibraryDefense.Managers
     {
         [Header("Dependencies")]
         [SerializeField] private WaveManager waveManager;
-        [SerializeField] private UIManager uiManager;
         [SerializeField] private MonsterEvents monsterEvents;
         [SerializeField] private StageEvents stageEvents;
         [SerializeField] private Wall wallComponent; // JML: Wall 참조 (Barrier HP 설정용)
@@ -227,12 +226,13 @@ namespace NovelianMagicLibraryDefense.Managers
         {
             Debug.Log("[StageManager] Opening start card selection (2 character cards)");
 
-            if (uiManager != null)
+            var ui = GameManager.Instance?.UI;
+            if (ui != null)
             {
-                uiManager.OpenCardSelectForGameStart(); // Opens 2 character cards, no pause
+                ui.OpenCardSelectForGameStart(); // Opens 2 character cards, no pause
 
                 // Wait until card panel is closed
-                while (uiManager != null && uiManager.IsCardSelectOpen())
+                while (ui != null && ui.IsCardSelectOpen())
                 {
                     await UniTask.Yield();
                 }
@@ -309,10 +309,7 @@ namespace NovelianMagicLibraryDefense.Managers
                     RemainingTime = endTime - Time.time;
 
                     // LMJ: Update UI timer display
-                    if (uiManager != null)
-                    {
-                        uiManager.UpdateWaveTimer(RemainingTime);
-                    }
+                    GameManager.Instance?.UI?.UpdateWaveTimer(RemainingTime);
 
                     if ((int)RemainingTime <= 0)
                     {
@@ -357,7 +354,7 @@ namespace NovelianMagicLibraryDefense.Managers
             int maxExp = GetRequiredExpForNextLevel();
             currentExp += monster.Exp;
             // Debug.Log($"[StageManager] Exp +{monster.Exp} -> {currentExp}/{maxExp}"); // LCB: Debug exp gain
-            uiManager.UpdateExperience(currentExp, maxExp);
+            GameManager.Instance?.UI?.UpdateExperience(currentExp, maxExp);
             if (currentExp >= maxExp)
             {
                 // Debug.Log($"[StageManager] Level up triggered! currentExp={currentExp}, maxExp={maxExp}"); // LCB: Debug level up trigger
@@ -374,6 +371,8 @@ namespace NovelianMagicLibraryDefense.Managers
             var previousTimeScale = Time.timeScale;
             // Debug.Log($"타임 스케일 {previousTimeScale}"); // LCB: Debug previous time scale
             int maxExp = GetRequiredExpForNextLevel();
+            var ui = GameManager.Instance?.UI;
+
             while (currentExp >= maxExp && !IsMaxLevel())
             {
                 currentExp -= maxExp;
@@ -381,17 +380,17 @@ namespace NovelianMagicLibraryDefense.Managers
 
                 // 다음 레벨의 필요 경험치로 갱신
                 maxExp = GetRequiredExpForNextLevel();
-                uiManager.UpdateExperience(currentExp, maxExp);
+                ui?.UpdateExperience(currentExp, maxExp);
 
                 // LMJ: Open card selection for level up
                 Debug.Log($"[StageManager] Level up to {level}! (Next: {maxExp} exp)");
 
-                if (uiManager != null)
+                if (ui != null)
                 {
-                    uiManager.OpenCardSelectForLevelUp(); // Opens with 2 random cards (character + ability mix)
+                    ui.OpenCardSelectForLevelUp(); // Opens with 2 random cards (character + ability mix)
 
                     // Wait until card panel is closed
-                    while (uiManager != null && GameManager.Instance?.UI?.IsCardSelectOpen() == true)
+                    while (ui != null && ui.IsCardSelectOpen())
                     {
                         await UniTask.Yield();
                     }
@@ -480,6 +479,17 @@ namespace NovelianMagicLibraryDefense.Managers
         /// <param name="value">증가 값 (% 단위, 예: 0.1 = 10%)</param>
         public void ApplyGlobalStatBuff(StatType statType, float value)
         {
+            // HealthRegen은 Wall에 즉시 체력 회복 적용
+            if (statType == StatType.HealthRegen)
+            {
+                if (wallComponent != null)
+                {
+                    wallComponent.HealByPercent(value);
+                    Debug.Log($"[StageManager] Wall 체력 회복: +{value * 100f}%");
+                }
+                return;
+            }
+
             // 1. 전역 버프 저장소에 누적
             if (globalStatBuffs.ContainsKey(statType))
             {

@@ -261,5 +261,8 @@ public enum StatType
 public static class WarningText
 {
     public const string FeatureNotReady = "준비 중인 기능입니다";
+    public const string MainSkillBookmarkLimitReached = "메인 스킬 책갈피는 1개만 장착 가능합니다";
+    public const string SubSkillBookmarkLimitReached = "서브 스킬 책갈피는 1개만 장착 가능합니다";
+    public const string StatBookmarkLimitReached = "스탯 책갈피는 3개까지만 장착 가능합니다";
 }
 
